@@ -127,8 +127,11 @@ Prototyped headlessly against the real physics, base tilt 12°, from a standstil
 | 25° right | 1.13 m lateral (0.28 cells) |
 | 35° right | 1.45 m lateral (0.36 cells) |
 
-and with no input at all, base 12° gives **3.2 cells in 4 s — 0.8 cells/second**,
-better than twice today's pace before any other change.
+The pace with no input is unchanged by this, and the first draft of this document
+said otherwise: the board's existing lean **already is** 12.4° (`atan(0.22)`), so
+leaning it is a change to *steering*, not to speed. What the pace actually costs
+is measured in §9 — it is the physics manager's damping defaults, and they are
+worth more than the angle.
 
 What this buys, in order of how much it matters:
 
@@ -368,3 +371,151 @@ it is small. Worth building before agreeing the rest.
    and a best-time table might want the clock to be the *score* and falling off
    to be the only failure. Time crystals push in that direction.
 5. **Flippers**: in, out, or as the junction feature described in §3?
+
+---
+
+## 9. Phase 1, built: `spike/tilt-camera`
+
+Phase 1 of §7 exists and is playable. Every number below is measured against the
+real physics, headless; the suite is 127 tests, ruff and mypy clean.
+
+```bash
+oglc-marble                          # leaning the board, the camera back at 48 m
+oglc-marble --control spin           # the model it replaces, to compare
+oglc-marble --tilt 18 --lean 32      # the two angles, in degrees
+oglc-marble --damping 0.3 1.5        # the physics manager's own damping, to compare
+```
+
+![The board level, and the same board leaning left; the camera at 48 m, and the
+marble holding its place on screen while the world tips around it.](images/spike-level.png)
+
+![](images/spike-leaning.png)
+
+**C switches control model mid-run**, so the two are felt back to back rather
+than argued about, and the HUD carries the board's lean and which model is
+driving it.
+
+### What it does
+
+`tilt.TiltRig` is the whole control model, and nothing in it knows about a
+marble, a window or a clock: held input in, a gravity direction and a board
+rotation out. `MarbleGame` writes that direction onto `world.gravity` each frame
+— the physics re-reads it every step, so no engine change was needed for the
+control — and points one `Transform` at the board rotation, centred on the
+marble, so the world leans **around the ball** and the ball holds its place on
+screen. The camera needs to know nothing about any of it, because the point it
+follows is the one point the rotation does not move.
+
+Both models run on one gravity path: `SPIN` is the same rig with the player's
+lean bounded at zero. That is the whole difference, which is why the switch is
+instant and why neither model can drift away from the other.
+
+Input is **sampled, not evented**: the engine's `InputState` already accumulates
+every key transition, so a frame asks what is held. Holding two directions leans
+the board diagonally, and losing the window drops the lean rather than leaving
+it stuck on — both for free, and no held-key bookkeeping was written.
+
+### Steering: what changed
+
+Lateral travel holding *right* on a flat board, steel marble:
+
+| held | as it was | the spike |
+|---|---|---|
+| 0.10 s | 0.07 m | 0.01 m |
+| 0.25 s | 0.33 m | 0.06 m |
+| 0.50 s | 1.10 m | 0.27 m |
+| 1.00 s | 3.73 m | 1.10 m |
+| 2.00 s | **11.93 m** | 3.87 m |
+
+The old smallest input was a **0.72 m/s velocity jolt**, arriving ten a second
+while a key was held; there was nothing smaller and nothing in between. The new
+smallest is one frame of lean — 2.7° at 60 Hz, worth 0.46 m/s² of pull — and
+every size above it exists. Two seconds of full lean now moves one lane rather
+than three.
+
+**The marble materials mean something now.** Two seconds of held right:
+
+| | as it was | the spike |
+|---|---|---|
+| steel | 11.93 m | 3.87 m |
+| rubber | 11.96 m | 3.93 m |
+| ice | 12.17 m | 5.17 m |
+
+Under the old model the three are within 2% of each other, because the linear
+part of each kick bypassed the friction table and swamped the spin. Under the
+lean, ice carries a third further than steel — a difference the player feels,
+without any marble losing the ability to steer, since gravity acts whatever the
+ball is made of.
+
+### Three things the measurements turned up
+
+**The pace was never the board's lean; it was the damping.** The scenegraph
+physics manager defaults to 0.3 linear and 1.5 angular damping — right for
+settling a scene of boxes, and a continuous brake on a ball whose whole job is to
+roll, since rolling couples spin to travel. Free-rolling pace against those two
+numbers alone:
+
+| linear, angular | free-rolling | top speed |
+|---|---|---|
+| 0.3, 1.5 (the manager's) | 0.43 cells/s | 2.3 m/s |
+| 0.05, 0.2 (the game's now) | 0.94 cells/s | 6.8 m/s |
+| 0.0, 0.0 | 1.12 cells/s | 9.0 m/s |
+
+The game names its own (`ROLL_DAMPING`), keeping enough that a marble at rest
+settles. Board for board, that is most of the pace §2.4 asks for:
+
+| board | as it was | the spike |
+|---|---|---|
+| seed 7 d3 | 0.34 cells/s | 0.57 |
+| seed 1 d2 | 0.71 | 0.99 |
+| seed 5 d2 | 0.71 | 1.02 |
+| seed 3 d1 | 0.05 | 0.09 |
+| seed 11 d2 | 0.05 | 0.09 |
+
+**Two of those boards go nowhere, and it is not the controls.** The board's
+constant lean points +Z, and the generated path leaves the start *sideways* on
+seed 3 and seed 11 — so a player who touches nothing is pushed straight over the
+edge and falls twice in ten seconds. The lean and the path disagree. Either the
+base lean follows the carved route rather than a fixed axis, or the boards get
+wide enough that the disagreement does not reach an edge; §2.3 wants the second
+anyway, and the first is a few lines. This is the clearest single argument in the
+document for doing the generator work.
+
+**Raising the lean limit buys much less than it looks like it should.** Seconds
+of full lean to cross one 4 m lane from rest: 2.38 s at 20°, 2.05 s at 26°,
+1.67 s at 40°, 1.45 s at 50°. A rolling sphere accelerates at `(5/7)·g·sin θ`,
+and `sin` flattens out; the honest lever on how sharply the game turns is the
+damping above, not the angle. 26° is where the spike sits.
+
+### Also landed
+
+`FollowCamera` grew `pull_back` / `pull_back_speed` / `pull_back_rate` and an
+`advance(dt, speed)` in the **engine** (`spike/followcam-pullback` on
+OpenGLContext) — a chase camera that eases back as its target speeds up, seeing
+further exactly when there is least time to react. The easing is exponential in
+elapsed time rather than in frames, so the same run frames the same way on a fast
+machine and a slow one. `pull_back` defaults to zero, which is the fixed-offset
+camera unchanged, so no existing caller is affected. The demo sits at 48 m with
+0.30 of pull-back, against the 24 m that showed two cells.
+
+### What is deliberately not in it
+
+- **`TiltRig` is in the demo, not the engine.** The generic part is real — held
+  input to a smoothed, clamped, frame-rate-independent axis pair — but its final
+  shape depends on questions the spike is meant to answer: whether it needs a
+  third axis, a deadzone for an analog stick, per-axis rates. Deciding its home
+  after the shape settles is cheaper than guessing now; the move is small.
+- **No hop, no braiding, no screens.** Phases 3–5.
+- **The impact rules and the respawn freeze are untouched** (§2.4). They are
+  pace, and they belong with the rest of the pace work, where they can be judged
+  against a board that is worth crossing quickly.
+
+### One bug worth recording
+
+The first draft of `board_rotation` built the axis as `up × gradient`, which
+draws the board tipping **up** into the direction the marble accelerates — the
+world leaning the wrong way. The test that should have caught it asserted the
+axis was parallel to the forward axis *up to a sign*, which is exactly the thing
+that was wrong. Replacing it with an assertion about what the rotation *does* —
+push the board's up-vector through the engine's own `transformMatrix` and check
+which way it tips — catches it, and cannot be satisfied by the wrong convention.

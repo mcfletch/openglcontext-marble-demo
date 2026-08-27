@@ -6,6 +6,8 @@ strings over the finished frame through the engine's ``renderShaderOverlay`` hoo
 and shader text renderer).  Keeping the content pure means the interesting logic is
 tested without a window.
 """
+import math
+
 from OpenGLContext.scenegraph.text.shadertext import get_text_renderer
 
 from .game import LOST, PLAYING, WON
@@ -14,12 +16,20 @@ URGENT_TIME = 4.0            # seconds remaining below which the clock turns red
 
 
 def hud_lines(game):
-    """The lines drawn in the top-right corner: clock, speed, material, falls."""
+    """The lines drawn in the top-right corner.
+
+    The clock, how fast the marble is going, what it is made of, how many times
+    it has gone over the edge — and how far the board is leaning, with the
+    control model driving it, so what the controls are doing is on the screen
+    rather than inferred from how the marble moves.
+    """
+    lean = math.degrees(math.hypot(game.tilt.pitch, game.tilt.roll))
     return [
         f"TIME {game.time_left:4.1f}",
         f"SPEED {game.controller.speed:4.1f}",
         f"MARBLE {game.marble_material}",
         f"FALLS {game.controller.fall_count}",
+        f"LEAN {lean:4.1f} {game.control}",
     ]
 
 
@@ -60,9 +70,11 @@ class HUD:
     def _draw_status(self, shader, width, height):
         lines = hud_lines(self.game)
         line_h = self._text.char_height * 1.2
-        # Top-right, stacked downward.  x is inset from the right by a generous
-        # fixed width so the monospace columns don't run off-screen.
-        x = width - 190
+        # Top-right, stacked downward, inset by the width of the longest line
+        # rather than a fixed figure: the lines are monospace, so this is exact,
+        # and adding a line no longer risks it running off the edge.
+        longest = max((len(line) for line in lines), default=0)
+        x = max(self.margin, width - self.margin - longest * self._text.char_width)
         y = height - self.margin - self._text.char_height
         clock_color = (1.0, 0.3, 0.3, 1.0) if time_is_urgent(self.game) else (0.9, 1.0, 0.9, 1.0)
         for i, line in enumerate(lines):

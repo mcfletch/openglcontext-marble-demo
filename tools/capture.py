@@ -19,6 +19,13 @@ def main(argv=None):
     parser.add_argument("--marble", default="steel")
     parser.add_argument("--frames", type=int, default=60,
                         help="frames to simulate before capturing")
+    parser.add_argument("--control", default=None, choices=("tilt", "spin"))
+    parser.add_argument("--camera-distance", type=float, default=None,
+                        metavar="METRES", help="how far back the camera sits")
+    parser.add_argument("--lean", nargs=2, type=float, default=None,
+                        metavar=("FORWARD", "RIGHT"),
+                        help="hold this lean, in [-1, 1] per axis, while the "
+                             "frames run -- for picturing the board leaning")
     parser.add_argument("--out", default="marble.png")
     args = parser.parse_args(argv)
 
@@ -44,6 +51,15 @@ def main(argv=None):
     MarbleContext.seed = args.seed
     MarbleContext.difficulty = args.difficulty
     MarbleContext.marble_name = args.marble
+    if args.control is not None:
+        MarbleContext.control = args.control
+    if args.camera_distance is not None:
+        MarbleContext.camera_distance = args.camera_distance
+    if args.lean is not None:
+        # Stand in for the player's hands: the frames run with this held, so a
+        # picture can show the board leaning rather than only sitting level.
+        held = tuple(args.lean)
+        MarbleContext._lean_demand = lambda self, held=held: held
     MarbleContext.ContextMainLoop()
 
 

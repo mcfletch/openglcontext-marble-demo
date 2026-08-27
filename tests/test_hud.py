@@ -53,3 +53,22 @@ def test_lost_state_shows_a_lose_banner():
 def test_no_banner_while_playing():
     game = _game()
     assert hud.banner(game) is None
+
+
+# -- what the spike needs to see -----------------------------------------------
+
+def test_the_lean_line_reports_the_board_and_the_control_model():
+    """Judging a control model means seeing what it is doing."""
+    import math
+    game = _game()
+    game.tilt.roll = math.radians(17)
+    line = [l for l in hud.hud_lines(game) if "LEAN" in l]
+    assert line and "17" in line[0]
+
+
+def test_the_lean_line_says_which_model_is_driving():
+    from openglcontext_marble_demo.game import SPIN, TILT
+    assert any(TILT in l.lower() for l in hud.hud_lines(_game()))
+    spun = _game()
+    spun.control = SPIN
+    assert any(SPIN in l.lower() for l in hud.hud_lines(spun))
