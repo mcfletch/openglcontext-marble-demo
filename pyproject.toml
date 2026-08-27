@@ -1,0 +1,115 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "openglcontext-marble-demo"
+# Read from src/openglcontext_marble_demo/__init__.py -- see
+# [tool.setuptools.dynamic]. One definition, because
+# .github/workflows/release.yml decides whether to publish by reading
+# ``__version__``, and a second copy here that drifted from it would mean the
+# version checked against PyPI was not the version built.
+dynamic = ["version"]
+description = "Marble Madness re-interpretation for OpenGLContext: procedurally generated tracks, reflective PBR marbles, spin-to-steer physics."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE", "ASSET-LICENSES.md"]
+authors = [{ name = "Mike C. Fletcher", email = "vrplumber@gmail.com" }]
+keywords = ["OpenGLContext", "OpenGL", "physics", "game", "marble", "PBR", "demo", "3D"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: X11 Applications",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Topic :: Games/Entertainment",
+    "Topic :: Multimedia :: Graphics :: 3D Rendering",
+]
+dependencies = [
+    "OpenGLContext>=3.0.0a3",
+    "omi_physics>=0.3.0",
+    "numpy>=2.0",
+    "PyOpenGL>=4.0.0a1",
+    "glfw>=2.5",
+]
+
+[project.optional-dependencies]
+# Pillow is the render smoke test's only extra need: it reads back the captured
+# frame. That test skips where there is no GL display, so the extra installs
+# and the suite runs on a CI runner with neither.
+test = ["pytest>=7", "pytest-timeout", "pillow"]
+dev = ["openglcontext-marble-demo[test]", "ruff", "mypy"]
+
+[project.urls]
+Homepage = "http://pyopengl.sourceforge.net/context/"
+
+[project.scripts]
+oglc-marble = "openglcontext_marble_demo.run:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "openglcontext_marble_demo.__version__" }
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+# Bundle the runtime assets the demo loads (grout colour + normal maps).
+[tool.setuptools.package-data]
+openglcontext_marble_demo = ["assets/*"]
+
+# Lint standard: the engine's E/W/F/B base, plus import-order, pyupgrade and
+# blind-except checks, as glisteel and the forest demo use.
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "B",    # flake8-bugbear
+    "I",    # import ordering
+    "UP",   # pyupgrade
+    "BLE",  # no blind except
+    "S110", # no silent try/except/pass
+]
+ignore = [
+    "E501",   # line too long -- kept readable by hand, as in the engine
+    "E741",   # ambiguous name -- x/y/z read naturally as coordinates
+    "UP031",  # percent formatting, as the engine uses throughout
+]
+
+[tool.ruff.lint.per-file-ignores]
+# run.py sets the OPENGLCONTEXT_* environment the engine reads at import time,
+# so its imports deliberately are not all at the top.
+"src/openglcontext_marble_demo/run.py" = ["E402"]
+"tools/capture.py" = ["E402"]
+
+[tool.mypy]
+# 3.12 rather than the 3.10 floor in ``requires-python``: numpy's own stubs use
+# 3.12 type syntax, so checking against 3.10 fails before it reaches any code
+# here. What the floor promises is checked by the test suite, which runs on it.
+python_version = "3.12"
+warn_return_any = true
+warn_unused_ignores = true
+ignore_missing_imports = true
+
+# The engine and the physics ship no ``py.typed``, so mypy has nothing to check
+# their surface against. Saying so per package keeps the silence deliberate and
+# narrow: anything *else* that cannot be resolved is still an error worth
+# seeing, which a bare global ignore would hide.
+[[tool.mypy.overrides]]
+module = ["OpenGLContext.*", "omi_physics.*", "OpenGL.*", "glfw.*", "PIL.*"]
+ignore_missing_imports = true
+follow_untyped_imports = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+timeout = 300
+markers = [
+    "needs_gl: opens a real GL window; skipped where there is no display",
+]

@@ -1,0 +1,103 @@
+name: tests
+
+on:
+  pull_request:
+  workflow_dispatch:
+  # `release.yml` runs this on every push to main and then decides whether the
+  # version is worth publishing, so main is covered from there rather than by a
+  # `push:` trigger here -- which would run the whole matrix twice per push.
+  workflow_call:
+
+env:
+  # The game tracks the tip of the engine rather than its last release: it uses
+  # the follow camera, the pairwise-friction override, `apply_impulse` and the
+  # overlay hook, and those went in for this game. PyPI carries OpenGLContext
+  # 3.0.0a2 and PyOpenGL 4.0.0a1, so both come from the branch that is being
+  # developed against instead.
+  #
+  # That is deliberate, and it is what catches the drift this suite exists to
+  # catch: when the engine moves a module, this workflow is what says so on the
+  # day it happens rather than months later.
+  ENGINE_BRANCH: develop
+
+jobs:
+  test:
+    name: ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      # `--pre` throughout: most of the stack (PyOpenGL 4.0.0a, PyVRML97 2.3.4b,
+      # simpleparse 3.0.0a, TTFQuery 2.0.1a) carries pre-release versions, which
+      # pip skips by default.
+      - name: Install the engine from its development branch
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --pre \
+            "PyOpenGL @ git+https://github.com/mcfletch/pyopengl@${ENGINE_BRANCH}" \
+            "OpenGLContext @ git+https://github.com/mcfletch/openglcontext@${ENGINE_BRANCH}"
+
+      - name: Install the game
+        run: python -m pip install --pre -e ".[test]"
+
+      # No display on the runner, so the render smoke test skips itself and what
+      # runs is the headless half: steering, fall/respawn, the timer, win/lose,
+      # the generator and the mechanisms, all against the real physics world.
+      - name: Run the suite
+        run: python -m pytest -q
+
+  quality:
+    name: lint and types
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          # 3.12 rather than the 3.10 floor: numpy's stubs use 3.12 type syntax,
+          # matching `python_version` under [tool.mypy].
+          python-version: "3.12"
+
+      - name: Install the engine and the game
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --pre \
+            "PyOpenGL @ git+https://github.com/mcfletch/pyopengl@${ENGINE_BRANCH}" \
+            "OpenGLContext @ git+https://github.com/mcfletch/openglcontext@${ENGINE_BRANCH}"
+          python -m pip install --pre -e ".[dev]"
+
+      # Gates rather than good intentions: both are configured in pyproject.toml
+      # and a merge waits on them.
+      - name: ruff
+        run: ruff check .
+
+      - name: mypy
+        run: mypy src/openglcontext_marble_demo
+
+  install:
+    name: sdist installs clean
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      # `requires-python = ">=3.10"` is a claim about installing rather than
+      # about the test matrix, so it is checked where a user meets it.
+      - name: Build and install the sdist
+        run: |
+          python -m pip install --upgrade pip build
+          python -m pip install --pre \
+            "PyOpenGL @ git+https://github.com/mcfletch/pyopengl@${ENGINE_BRANCH}" \
+            "OpenGLContext @ git+https://github.com/mcfletch/openglcontext@${ENGINE_BRANCH}"
+          python -m build --sdist
+          python -m pip install --pre dist/*.tar.gz
+      - name: Import it from somewhere that is not the checkout
+        run: cd /tmp && python -c "import openglcontext_marble_demo as m; print(m.__version__)"
