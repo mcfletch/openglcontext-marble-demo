@@ -733,8 +733,8 @@ answers with its exit. Chaining them is what makes a board.
 whose whole purpose is getting from one plateau to the next, and what makes it
 worth playing is the *rule* it imposes:
 
-- **The kicker.** A dip you must enter fast enough to climb the far side. Too
-  slow and you roll back down and have to try again.
+- **The kicker.** A dip whose far side climbs higher than its near side dropped,
+  so what gets you out of it is the speed you brought in.
 - **The spillway.** A ramp with no wall at the bottom end: control the descent
   or overshoot into the void.
 - **The hairpin.** A right-angle turn onto a short way round. Take it at speed
@@ -857,21 +857,87 @@ and cannot be climbed at all: each riser is a wall in front of the marble. Every
 step of a slope now carries a `Ramp`, which tilts the tile so its far edge meets
 the next — a surface rather than a step.
 
-### Two rules that do not yet bite
-
-Recorded as strict `xfail`s rather than quietly dropped, with the measurements:
-
-- **The kicker's far side is not climbable at any speed.** A marble reaches 0.60
-  of the way at 8 m/s and the same at 20, so the dip takes everything it arrives
-  with. The ramps that made the descent rollable are not enough for the climb.
-- **Nothing gets off the spillway's open end.** 18 m/s in reaches 0.92 of the way
-  and stops, so the descent is not carrying speed into the run-out.
-
-Both are the same suspicion — a slope built of tilted tiles still costs more
-speed than a slope should — and both want the next session rather than a guess.
-
-The **hairpin** does bite: entered at 3 m/s a marble stays on and gets 0.57 of
+The **hairpin** bites: entered at 3 m/s a marble stays on and gets 0.57 of
 the way round; at 12 m/s it is carried straight off the piece.
+
+### 14.1 What a slope costs, measured
+
+The kicker and the spillway were recorded here as strict `xfail`s, on the
+suspicion that a slope built of tilted `Ramp` tiles costs far more speed than a
+slope should. Measured — a marble rolled at a known speed along the same
+twenty-metre run built four ways, on a level board so nothing but the surface
+was acting on it — the suspicion was right and the cause was the tile's shape.
+
+A `Ramp` was tilted the wrong way about its axis, and its face sat half a
+thickness proud of the cell it stood on. Its far edge therefore fell by `rise`
+where it should have risen by it, and both of its edges stood 0.2 m above the
+cells either side. A run of them was a flight of steps with a wall at every
+join, laid the opposite way to the slope it was describing. Casting a ray down a
+ramp cell asked for a rise of +0.90 over four metres and found a *fall* of 0.67,
+starting a metre above the cell behind it.
+
+The same six-cell run descending 3.6 m, built four ways on identical cells:
+
+| entry speed | flat, no slope | the tile as it was | the tile now | one long tilted box |
+|---|---|---|---|---|
+| 4 m/s | 0.102 | 0.743 | **-0.112** | -0.112 |
+| 8 m/s | 0.099 | 0.381 | **-0.029** | -0.030 |
+| 12 m/s | 0.094 | 0.190 | **0.051** | 0.013 |
+| 18 m/s | 0.102 | 0.123 | **0.053** | 0.053 |
+
+Metres per second lost per metre travelled; negative is speed gained, which is
+what a descent should give. As energy, in joules per kilogram per metre, which
+counts the drop as well as the speed: the flat run costs 0.55 to 2.37 across
+those entry speeds and the old tile 3.40 to 4.49, four to six times a level
+floor. The tile now costs 1.02 to 3.09 and a single plane 1.00 to 3.09 — the
+tiling itself costs nothing.
+
+Entered at 4 m/s the old surface stopped a marble dead after five metres, 0.73 m
+down a slope that falls 3.6.
+
+Two smaller things went with it:
+
+- **A plain slope carries no boost.** `_slope` gave every ramp a boost trigger
+  with `boost_speed=0.0`, which is not "no effect": the boost is a floor under
+  the speed along the ramp, and zero is a ratchet that cancels any backward
+  motion. `Ramp.boost_speed` now takes `None` for a ramp that is only a shape,
+  and that is what a slope asks for.
+- **A slope descends what it is asked for.** `_slope` divided its drop between
+  as many steps as it laid cells, while the last cell is the floor the slope
+  arrives at and carries no ramp — so a run asked for 4.5 m descended 3.75.
+  The drop is now divided between one fewer step than there are cells.
+
+### 14.2 What a leaning board can ask for
+
+With the shape fixed, both joiners were measured again, and the second answer is
+about the board rather than the tiles.
+
+The board leans downhill at a gradient of 0.22 and `MAX_STEP` is 0.9 over a
+four-metre cell, which is a gradient of 0.225. **The steepest slope a piece may
+build is one the board's own lean all but cancels**, so a marble creeps up any
+of them given time, and a dip that comes back to the height it started at is
+free at every entry speed: 0.94 of the way at 1 m/s and 0.95 at 20.
+
+So a joiner whose rule is about speed has to end *higher* than it began.
+
+- **The kicker** is now a short dip and a long way back up, leaving 3.6 or 4.5 m
+  above where it was entered. Measured as how far along the piece a marble gets
+  in five seconds, through being 0.80: 0.57 at 2 m/s, 0.63 at 4, 0.70 at 6, 0.76
+  at 8, 0.91 at 12 and 0.96 at 16, for the deepest of the four shapes it picks
+  between. Entered at 20 m/s on a 2.7 m dip the marble launches at the lip and
+  the hard-landing rule takes it, which is the game's own rule doing its job.
+- **The spillway** keeps its shape and gets a four-cell run-out. A flat run-out
+  cannot *stop* a marble — the lean pulls one along a flat as hard as anything on
+  the flat can hold it back — so what the run-out gives a player is the seconds
+  before the drop: the marble is lost and put back at 8.5 s entering at 1 m/s,
+  6.5 s at 8, and 4.6 s at 18. The piece says so in as many words.
+
+Measuring a piece at all needed two things of the harness. A piece's own
+playable level puts a finish pad on its exit, and a run that ends there cannot
+answer what happens *past* the exit — so `_furthest` will build the piece
+without one. And it counts a fall when the marble has been lost *and* put back,
+so the window has to cover the level's two-second respawn delay as well as the
+run.
 
 ---
 
@@ -900,20 +966,21 @@ Running out of time still loses, whatever the gates say.
 | Branch | State |
 |---|---|
 | `spike/tilt-feel` | **built** — §13 |
-| `spike/sections` | **built** — §14, with two rules recorded as xfail |
+| `spike/sections` | **built** — §14, and the two rules it recorded as xfail now bite — §14.1, §14.2 |
 | `spike/waypoints` | **built** — §15 |
 | `spike/theming` | **partly, inside `spike/sections`** — a piece names a theme, a theme is a floor material, a wall material and a sound name, and four exist. What is not done is the sound: `Theme.sound` names a set and nothing plays it. `omi_audio` is in the workspace and this is where it would hook in — one emitter per contact, chosen by the surface the marble is on. |
 | `spike/stories` | **not started** — `chain()` composes pieces from a list of names, which is the mechanism a story needs; what is missing is the *stories*, the branch a story takes when a player misses a turn-off, and the vocabulary for saying "if they miss this, drop them into that". |
 
 ### What the next session should take first
 
-**The two rules that do not bite.** The kicker cannot be climbed and the spillway
-cannot be overrun, and both look like one cause: a slope built of tilted tiles
-costs more speed than a slope should. Measure the speed a marble loses per metre
-of a tilted-tile ramp against the same descent on one flat plane, and the answer
-is either a tuning number or a defect in how a `Ramp` tile meets its neighbour.
-Until that is settled, no joiner whose rule is about *carrying speed* can work,
-which is most of the interesting ones.
+**The slope budget against the lean.** §14.2 has the number that shapes every
+joiner: `MAX_STEP / CELL_SIZE` is 0.225 and the board's lean is 0.22, so the
+steepest slope a piece may build is one the board carries a marble up on its
+own. Every rule about speed has to be built around that, and each one is a piece
+that ends higher than it began. The alternative is to raise the budget — the
+ceiling is the controller's `FALL_HEIGHT` of 1.5 m, above which a marble on a
+ramp reads as one that has fallen — or to lean the board less, which is the
+whole feel of the game and wants deciding rather than drifting.
 
 **Then stories.** The story in §12.2 needs one thing `chain()` does not have: a
 piece that has **two exits**, so missing the turn-off drops you somewhere rather
@@ -1039,8 +1106,8 @@ Tracked here as it is built. Status is one of *planned*, *in progress*, *merged*
 |---|---|---|---|
 | 1 | `plateau` | nothing — a place to be | merged (as a piece) |
 | 2 | `ramp_down` | nothing — the plain connector | merged (as a piece) |
-| 3 | `kicker` | enter fast enough to climb the far side | registered, rule not yet biting — agent on the slope speed loss |
-| 4 | `spillway` | hold the descent or run off the open end | registered, rule not yet biting — same agent |
+| 3 | `kicker` | carry speed into it or crawl out the far side | merged (as a piece) |
+| 4 | `spillway` | hold the descent or run off the open end | merged (as a piece) |
 | 5 | `hairpin` | brake for the right-angle | merged (as a piece) |
 | 6 | `bridge` | cross one cell with nothing beside it | merged (as a piece) |
 | 7 | `scatter` | get through bumpers that will not have you straight | merged (as a piece) |

@@ -160,18 +160,28 @@ def test_an_unknown_piece_is_refused_by_name():
 # That is the only way to know a challenge is a challenge: a ramp a marble can
 # always climb is scenery.
 
-def _furthest(piece, speed, seconds=5.0):
+def _furthest(piece, speed, seconds=5.0, goal=True):
     """Roll a marble onto ``piece`` at ``speed`` m/s down a board leaning as the
     game leans one; answer how far along it ever got, and whether it fell off.
 
     The *furthest* rather than where it ended: a piece on its own has nothing
     after it, so a marble that gets through runs off the end and is respawned,
     and where it finished would say it never made it.
+
+    A fall is counted when the marble has been lost *and* put back, so
+    ``seconds`` has to cover the level's respawn delay as well as the run.
+
+    ``goal=False`` leaves the finish pad off.  A piece whose rule is about what
+    happens *past* its exit cannot be asked about it while a pad sitting on that
+    exit ends the run first.
     """
     import numpy as np
 
     from openglcontext_marble_demo.game import MarbleGame
+    from openglcontext_marble_demo.level import Finish
     level = piece.level(time_limit=600.0)
+    if not goal:
+        level.features = [f for f in level.features if not isinstance(f, Finish)]
     game = MarbleGame(level)
     world, index = game.scene.world, game.marble.index
     facing = piece.entry.facing
@@ -198,27 +208,40 @@ def _furthest(piece, speed, seconds=5.0):
 THROUGH = 0.8
 
 
-@pytest.mark.xfail(reason='the far side is not climbable at any speed yet: the '
-                          'marble reaches 0.60 of the way at 8 m/s and at 20, '
-                          'so the dip takes everything it arrives with. The '
-                          'ramps that make the descent rollable are not enough '
-                          'to make the climb rollable.', strict=True)
-def test_a_kicker_has_to_be_entered_fast_enough_to_climb_the_far_side():
-    """The rule: too slow and you roll back down and try again."""
-    piece = _built(pieces.kicker)
+@pytest.mark.parametrize('depth', (1.8, 2.7))
+@pytest.mark.parametrize('lift', (3.6, 4.5))
+def test_a_kicker_has_to_be_entered_fast_enough_to_climb_the_far_side(depth, lift):
+    """The rule: the far side ends higher than the near side began, so what
+    gets a marble out of it is the speed it brought in.
+
+    Both shapes the piece picks between, because a rule that held for one of
+    them and not the other would be a rule the board only sometimes has.
+    """
+    piece = _built(pieces.kicker, depth=depth, lift=lift)
     assert _furthest(piece, 2.0)[0] < THROUGH, 'a crawl got over it'
     assert _furthest(piece, 16.0)[0] >= THROUGH, 'a run at it did not'
 
 
-@pytest.mark.xfail(reason='nothing gets off the open end: a marble entering at '
-                          '18 m/s reaches 0.92 of the way and stops, so the '
-                          'descent is not carrying speed into the run-out and '
-                          'the rule cannot bite.', strict=True)
+def test_a_kicker_is_climbed_out_of_higher_than_it_was_entered():
+    """Which is what makes the climb cost anything: see :func:`pieces.kicker`."""
+    piece = _built(pieces.kicker)
+    assert piece.exit.height >= piece.entry.height + 3.0
+
+
 def test_a_spillway_drops_a_marble_that_arrives_too_fast():
-    """The rule: the bottom end has no wall, so control the descent."""
+    """The rule: the bottom end has no wall, so the descent is the brakes.
+
+    Asked with the finish pad left off: the question is what the marble does
+    past the end of the piece, and a pad on the exit would end the run before it
+    got there.  A held-back descent still has run-out under it when the six
+    seconds are up; a headlong one is over the edge and back at its checkpoint
+    with a second and a half to spare.
+    """
     piece = _built(pieces.spillway)
-    assert not _furthest(piece, 1.0)[1], 'a careful descent fell off'
-    assert _furthest(piece, 18.0)[1], 'a headlong one did not'
+    assert not _furthest(piece, 1.0, seconds=6.0, goal=False)[1], \
+        'a careful descent was already off the end'
+    assert _furthest(piece, 18.0, seconds=6.0, goal=False)[1], \
+        'a headlong one was not'
 
 
 def test_a_spillway_is_open_at_the_bottom_and_walled_along_the_sides():

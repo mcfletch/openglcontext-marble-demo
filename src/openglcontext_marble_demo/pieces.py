@@ -19,7 +19,7 @@ about in, and they ask nothing.
 it imposes a rule a player has to satisfy to get through:
 
 :func:`kicker`
-    A dip you must enter fast enough to climb the far side.
+    A dip whose far side climbs higher than its near side dropped.
 :func:`spillway`
     A descent with no wall at the bottom: control it or overshoot.
 :func:`hairpin`
@@ -39,6 +39,7 @@ scenery.
     >>> joined(board.cells, board.start, board.finish)
     True
 """
+import math
 from collections import deque
 from dataclasses import dataclass, field
 from typing import Any
@@ -227,7 +228,9 @@ def _slope(cells, features, port, length, drop, width=None):
     """A run of ``length`` cells falling ``drop`` in total, in equal steps.
 
     The step is capped at :data:`MAX_STEP`, so a slope that asked for more than
-    it has room for is made longer rather than made uncrossable.
+    it has room for is made longer rather than made uncrossable.  The run ends
+    level: the last cell is the floor the slope arrives at, which is why
+    ``drop`` is divided between one fewer steps than there are cells.
 
     **Every step gets a ramp.**  Cells at stepped heights are a staircase, and a
     marble rolls *down* a staircase perfectly well and cannot roll up one at all:
@@ -235,10 +238,13 @@ def _slope(cells, features, port, length, drop, width=None):
     :class:`~openglcontext_marble_demo.level.Ramp` tilts the tile so its far edge
     meets the next one, which is a surface rather than a step -- and it is why
     the kicker works in one direction and not the other without them.
+
+    They are ramps with no boost on them: a slope is shape, and what a marble
+    carries down one is what it arrived with plus what the drop gives it.
     """
     width = port.width if width is None else width
-    steps = max(length, int(abs(drop) / MAX_STEP) + 1)
-    each = drop / steps
+    steps = max(length, math.ceil(abs(drop) / MAX_STEP) + 1, 2)
+    each = drop / (steps - 1)
     where = Port(cell=port.cell, facing=port.facing, height=port.height,
                  width=width)
     height = port.height
@@ -248,7 +254,7 @@ def _slope(cells, features, port, length, drop, width=None):
             cells[cell] = height
             if step < steps - 1 and abs(each) > 1e-6:
                 features.append(Ramp(cell=cell, direction=port.facing, rise=each,
-                                     boost_speed=0.0))
+                                     boost_speed=None))
         height = round(height + each, 6)
     return Port(cell=where.ahead(steps - 1).cell, facing=port.facing,
                 height=round(port.height + each * (steps - 1), 6), width=width)
@@ -326,40 +332,53 @@ def ramp_down(rng, entry, theme='stone', drop=None, length=None):
                  features=slopes + walls, theme=theme)
 
 
-def kicker(rng, entry, theme='stone', depth=None):
-    """A dip you must enter fast enough to climb the far side.
+def kicker(rng, entry, theme='stone', depth=None, lift=None):
+    """A dip whose far side climbs higher than its near side dropped.
 
-    Down and straight back up again.  A marble that arrives at a crawl runs out
-    of speed on the way up, rolls back into the bottom and has to try again from
-    a standing start on a slope; one that arrives at a run carries through.
-    Walled along both sides, because the answer to it is speed rather than aim.
+    A short dip and a long way back up, leaving ``lift`` above where it was
+    entered.  What that costs is time: the dip hands back what it took, so what
+    is left for the climb is the speed the marble brought to it, and a marble
+    that arrives at a crawl is still on the far side when a fast one is long
+    gone.  Walled along both sides, because the answer to it is speed rather
+    than aim.
+
+    The far side has to *rise* for that to be true.  A board that leans downhill
+    at a gradient of 0.22 carries a marble up anything shallower for nothing, so
+    a dip that came back to the height it started at would be a piece that asks
+    for nothing at all.
     """
-    depth = abs(depth if depth is not None else rng.choice((2.7, 3.6)))
+    depth = abs(depth if depth is not None else rng.choice((1.8, 2.7)))
+    lift = abs(lift if lift is not None else rng.choice((3.6, 4.5)))
     cells: dict = {}
     slopes: list = []
-    bottom = _slope(cells, slopes, entry, 3, -depth)
-    flat = _lay(cells, bottom.ahead(1), 2, height=bottom.height)
-    top = _slope(cells, slopes, flat.ahead(1), 3, depth)
+    bottom = _slope(cells, slopes, entry, 2, -depth)
+    flat = _lay(cells, bottom.ahead(1), 1, height=bottom.height)
+    top = _slope(cells, slopes, flat.ahead(1), 5, depth + lift)
     length = max(row for _, row in cells) - min(row for _, row in cells) + 1
     walls = _rails(cells, entry, length + 2)
     return Piece(name='kicker', cells=cells, entry=entry, exits={'ok': top},
                  features=slopes + walls, theme=theme,
-                 rule='enter fast enough to climb the far side')
+                 rule='carry speed into it or crawl out the far side')
 
 
-def spillway(rng, entry, theme='stone', drop=None):
+def spillway(rng, entry, theme='stone', drop=None, run_out=4):
     """A descent with no wall at the bottom: control it, or overshoot.
 
-    Walled down both sides and open at the end, with a short flat run-out.  The
-    rule is a rule about the *brakes*: a marble that comes down it headlong
-    carries off the end into the void, and one that is held back stops on the
-    run-out.
+    Walled down both sides and open at the end, with a flat run-out.  The rule
+    is a rule about the *brakes*, and what it is measured in is how much of the
+    run-out is left: a marble that comes down it headlong is off the end almost
+    as soon as it reaches the bottom, and one that is held back has the length
+    of the run-out to do something about it.
+
+    The run-out is time, not a barrier.  A board leaning downhill pulls a marble
+    along a flat as hard as anything on the flat can hold it back, so what the
+    run-out gives a player is the seconds before the drop rather than a stop.
     """
-    drop = -abs(drop if drop is not None else rng.choice((2.7, 3.6, 4.5)))
+    drop = -abs(drop if drop is not None else rng.choice((1.8, 2.7)))
     cells: dict = {}
     slopes: list = []
     bottom = _slope(cells, slopes, entry, 5, drop)
-    end = _lay(cells, bottom.ahead(1), 2, height=bottom.height)
+    end = _lay(cells, bottom.ahead(1), run_out, height=bottom.height)
     length = max(row for _, row in cells) - min(row for _, row in cells) + 1
     # Sides only.  The missing wall at the bottom is the whole piece.
     return Piece(name='spillway', cells=cells, entry=entry, exits={'ok': end},

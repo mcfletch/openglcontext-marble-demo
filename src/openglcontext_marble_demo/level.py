@@ -30,6 +30,8 @@ from .track import TrackMap
 
 CELL_SIZE = 4.0
 
+UP = np.array([0.0, 1.0, 0.0])
+
 
 def _world_direction(grid_dir):
     """A grid ``(dcol, drow)`` step as a unit world vector in the XZ plane."""
@@ -131,19 +133,29 @@ class Gate:
 
 @dataclass
 class Ramp:
-    """A sloped tile that speeds the marble up (and can launch it into a jump).
+    """A sloped tile: the cell's floor tilted, and optionally a boost over it.
 
-    The tile is tilted so its far edge (in ``direction``) is raised by ``rise``;
-    rolling onto it, a boost trigger brings the marble's speed *up to* ``boost_speed``
-    along ``direction`` (a cap, never a brake).  A ``launch`` ramp additionally pops
+    The face runs from the cell's own height at the near edge to ``rise`` above
+    it at the far edge (in ``direction``), so the cells on either side are met at
+    *their* heights and a marble crosses a join rather than a step.  ``direction``
+    is a grid step — ``(0, 1)``, ``(-1, 0)`` and so on — which is the way the
+    ground rises.
+
+    ``boost_speed`` brings the marble's speed *up to* that many metres a second
+    along ``direction`` while it is over the tile (a cap, never a brake), and
+    ``None`` is a ramp that is only a slope.  A ``launch`` ramp additionally pops
     the marble upward so a fast approach clears the tiles ahead in a real arc.
     """
     cell: tuple[int, int]
     direction: tuple[int, int] = (0, 1)
     rise: float = 0.9
-    boost_speed: float = 8.0
+    boost_speed: float | None = 8.0
     launch: bool = False
     launch_up: float = 5.0
+
+    #: How thick the sloped tile is.  Only its top is ever touched; the rest is
+    #: there so that nothing arriving fast passes through it.
+    THICKNESS = 0.4
 
     def owned_cells(self):
         return {self.cell}
@@ -153,19 +165,33 @@ class Ramp:
         base = level.cells[self.cell]
         cs = level.cell_size
         wdir = _world_direction(self.direction)
-
-        # Tilt about the horizontal axis perpendicular to travel (up × dir) so the
-        # +direction edge rises by ``rise`` over the cell length.
-        angle = math.atan2(self.rise, cs)
-        axis = np.cross((0.0, 1.0, 0.0), wdir)
-        axis = axis / (np.linalg.norm(axis) or 1.0)
         color = _ramp_color(self.launch)
-        tile = scene.add_box(size=(cs, 0.4, cs), position=(x, base + self.rise / 2.0, z),
+
+        # The face is the hypotenuse of the cell and the rise, so that its
+        # *horizontal* span is exactly one cell: a box a cell long, tilted, would
+        # fall short by the cosine and leave a notch at each end.
+        tilt = math.atan2(self.rise, cs)
+        face = math.hypot(cs, self.rise)
+        # Turning about ``up × direction`` by a positive angle carries the far
+        # edge down, so a rise is the negative of it.
+        axis = np.cross(UP, wdir)
+        axis = axis / (np.linalg.norm(axis) or 1.0)
+        # The box's *top* is the face, half a thickness along the face's normal
+        # from the box's centre -- so the centre sits that far under the middle
+        # of the slope, which is at ``base + rise / 2``.
+        normal = UP * math.cos(tilt) - wdir * math.sin(tilt)
+        centre = np.array([x, base + self.rise / 2.0, z]) - normal * (self.THICKNESS / 2.0)
+        along = np.abs(wdir)
+        size = (cs + along[0] * (face - cs), self.THICKNESS,
+                cs + along[2] * (face - cs))
+        tile = scene.add_box(size=size, position=tuple(centre),
                              color=color, dynamic=False, material=index[level.surface],
-                             rotation=(axis[0], axis[1], axis[2], angle))
+                             rotation=(axis[0], axis[1], axis[2], -tilt))
         tile.transform.children[0].appearance = render.color_appearance(
             color, metallic=0.2, roughness=0.45)
 
+        if self.boost_speed is None and not self.launch:
+            return                       # a slope, and nothing else
         trigger = scene.add_trigger_box(
             size=(cs * 0.9, 2.0, cs * 0.9), position=(x, base + 1.0, z), color=color)
         result.feature_bodies.append(trigger)
@@ -175,11 +201,11 @@ class Ramp:
         boost_speed, launch, launch_up = self.boost_speed, self.launch, self.launch_up
 
         def effect(world, marble):
-            v = world.linear_velocity[marble]
-            along = float(np.dot(v, wdir))
             mass = world.mass[marble]
-            if along < boost_speed:                      # cap, never a brake
-                world.apply_impulse(marble, wdir * (boost_speed - along) * mass)
+            if boost_speed is not None:
+                along = float(np.dot(world.linear_velocity[marble], wdir))
+                if along < boost_speed:                  # cap, never a brake
+                    world.apply_impulse(marble, wdir * (boost_speed - along) * mass)
             if launch:
                 world.apply_impulse(marble, (0.0, launch_up * mass, 0.0))
         return effect
