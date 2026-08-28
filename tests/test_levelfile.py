@@ -117,7 +117,16 @@ def test_an_unknown_feature_kind_is_refused_by_name():
 
 
 def test_every_feature_class_the_game_has_can_be_written():
-    """A mechanism added to level.py without a name here would not save."""
+    """A mechanism added to level.py without a name here would not save.
+
+    A subset rather than an equality: mechanisms also arrive from the
+    ``mechanisms/`` package, where registering one *is* what puts it in
+    ``FEATURES``, so the registry is properly larger than what ``level.py``
+    defines.  That direction is held by
+    ``test_registry.test_every_mechanism_is_a_feature_the_file_format_can_write``;
+    what is asserted here is the one a person can still get wrong, which is
+    writing a feature class into ``level.py`` and forgetting to name it.
+    """
     import dataclasses
 
     from openglcontext_marble_demo import level as level_module
@@ -125,7 +134,9 @@ def test_every_feature_class_the_game_has_can_be_written():
         obj for obj in vars(level_module).values()
         if dataclasses.is_dataclass(obj) and isinstance(obj, type)
         and hasattr(obj, 'build') and hasattr(obj, 'owned_cells')}
-    assert authorable == set(levelfile.FEATURES.values())
+    missing = authorable - set(levelfile.FEATURES.values())
+    assert not missing, 'unsaveable: %s' % ', '.join(
+        sorted(cls.__name__ for cls in missing))
 
 
 # -- version and provenance ----------------------------------------------------
