@@ -647,3 +647,125 @@ appearance like every other body in the game — which it should have had anyway
 and now has — did not cure it. The pass catches it, so the rest of the frame
 renders. Worth chasing: it is the engine's instanced/kinematic draw path meeting
 a plain `Box`, and nothing in the game can work around it.
+
+---
+
+## 12. What the game is missing, and what to build
+
+Watching a recorded run says two things the tests could not.
+
+### 12.1 The board does not feel like an object
+
+It reads as a pinball flipper rather than a table: a huge surface thrown about
+with no weight in it, and the world heaving around a ball that stays put.
+Measured over one autopilot run (seed 1, difficulty 2, 771 frames):
+
+| | |
+|---|---|
+| drawn lean, mean | **16°** |
+| drawn lean, 90th percentile | **26°** |
+| drawn lean, peak | **35°** |
+| frames past 25° | **30%** |
+| frames where the pilot's demand is at the stop | **34%** |
+| how far a far corner of a 36 m board swings at peak | **20 m** |
+
+Four separate causes, and they compound:
+
+1. **The limit is per axis, so a diagonal exceeds it.** `pitch` and `roll` are
+   each bounded at 26°, and the board is drawn at `atan(|gradient|)` — the two
+   combined. A full diagonal draws **35°**, not 26°. The limit does not limit.
+2. **The drawn lean is the whole lean.** `visual_gain` is 1.0, so every degree
+   the physics uses is a degree the world turns through.
+3. **There is no mass.** The lean moves at 160°/s: full deflection in 0.16 s.
+   A table with a marble on it does not do that, and neither do hands.
+4. **The pilot lives at the stop.** Its demand saturates on a third of frames,
+   so what a viewer sees is mostly the extreme.
+
+**What it should feel like.** A heavy table, tilted by hand: it takes an
+appreciable fraction of a second to reach a lean, it eases in and out rather
+than snapping, and the useful range is a handful of degrees rather than a
+quarter turn. The *physics* lean and the *drawn* lean are already separate
+knobs; the drawn one should be a hint of the real one, because a small visible
+tilt over a large surface already reads as a large tilt.
+
+**Requirements**
+
+- The combined lean is bounded, not each axis separately.
+- The board accelerates into a lean and eases out of it, rather than moving at a
+  constant rate — second order, so there is something to feel.
+- The drawn lean is a fraction of the physical one, and the fraction is a
+  tunable with a default that keeps a far corner's swing under a cell or two.
+- The pilot asks for a lean proportional to what it needs, and reaches the stop
+  when it is in trouble rather than as a matter of course.
+- The ball stays in frame: whatever the board does, the camera holds the marble.
+
+### 12.2 There is one level, and it is a floor
+
+Every board is the same board: a wide, gently terraced plane with a few things
+scattered on it. There is nowhere you *must* reach, nothing to overcome, and no
+reason to be anywhere in particular. Rolling across it is rolling across a
+slightly bumpy floor.
+
+What is wanted instead is **a series of stories**: a board that is a chain of
+places, each with a thing to do, joined by transitions that are themselves the
+challenge. Something like —
+
+> On the first plateau you avoid the bumpers, because they give you too much
+> energy and you will miss the turn-off; so you sneak round by bouncing off one
+> wall, which lines you up for the ramp. On the ramp you have to backspin hard to
+> get round the corner, which drops you into the bowl with enough speed to come
+> out the far side and hit the lever that opens the door to the final room. Miss
+> the turn-off and you are dropped onto the middle ramp — the forest of banking
+> mushrooms — where you must hit a bumper hard enough to get through the passage
+> of pinball bunkers that fling you about, and then over a narrow bridge to the
+> ramp down.
+
+Every noun in that is a piece, and every verb is a transition.
+
+**Requirements**
+
+**Pieces with ports.** A board is built from named pieces, each of which knows
+where it is entered and where it is left — a cell, a facing and a height. A
+piece places its own cells, walls and mechanisms relative to its entry, and
+answers with its exit. Chaining them is what makes a board.
+
+**Transitions are functions, and they are the challenge.** A joiner is a piece
+whose whole purpose is getting from one plateau to the next, and what makes it
+worth playing is the *rule* it imposes:
+
+- **The kicker.** A dip you must enter fast enough to climb the far side. Too
+  slow and you roll back down and have to try again.
+- **The spillway.** A ramp with no wall at the bottom end: control the descent
+  or overshoot into the void.
+- **The hairpin.** A right-angle turn onto a short way round. Take it at speed
+  and you miss it and are committed to the long way, which is passable and slow.
+- **The narrow bridge.** A one-cell span with nothing either side.
+- **The scatter.** A field of bumpers that flings you about: getting through is
+  partly luck and entirely about arriving with the right speed.
+
+**Waypoints.** A board has places you must reach before the finish will take
+you, so a route is a route rather than a direction. A gate is a trigger like the
+finish, and the finish refuses until every gate has been passed.
+
+**Themes per area.** A piece names a theme, and a theme says what its floors and
+walls are made of — which is a look *and* a feel, since the material is the grip
+— and, later, what they sound like. A board that changes underfoot as you move
+through it is a board you can navigate by.
+
+**Stories compose pieces.** A story is a list of piece-builders, so the same
+kicker used in three stories is the same function, and a new challenge is a new
+function rather than a new generator. Written as functions, not generated by a
+model: a model in the build path is a dependency, a cost and a source of boards
+nobody can reproduce, and the vocabulary here is small enough to write down.
+
+### 12.3 Where the experiments are
+
+One branch each, so each can be judged on its own:
+
+| Branch | What it tries |
+|---|---|
+| `spike/tilt-feel` | §12.1 — the board as something with mass |
+| `spike/sections` | pieces with ports, and the joiners that are the challenges |
+| `spike/waypoints` | gates the finish waits for |
+| `spike/theming` | per-area materials, and where sound would hook in |
+| `spike/stories` | chains of pieces, and the stories built from them |
