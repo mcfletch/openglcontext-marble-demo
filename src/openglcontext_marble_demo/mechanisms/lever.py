@@ -49,13 +49,6 @@ _SIDES = {'N': (0, -1), 'S': (0, 1), 'E': (1, 0), 'W': (-1, 0)}
 
 _UP = np.array([0.0, 1.0, 0.0])
 
-#: Where the channel table hangs off a build.  A mechanism meets its partner on
-#: the :class:`~openglcontext_marble_demo.level.BuildResult` it is handed, and
-#: one board's channels must not be reachable from another's, so the table
-#: lives on that result and dies with it.
-_TABLE = '_lever_channels'
-
-
 class Channel:
     """The wire between levers and the doors they open, named by a string.
 
@@ -92,17 +85,15 @@ class Channel:
 
 
 def channels(result):
-    """Every channel in one build, by name, created on first use.
+    """Every channel in one build, by name.
 
     ``result`` is what :meth:`~openglcontext_marble_demo.level.Level.build_into`
-    returns.  This is how a game (or a test) asks whether a board's levers have
-    been thrown and which bodies its doors are.
+    returns, and :attr:`~openglcontext_marble_demo.level.BuildResult.channels`
+    is where mechanisms that have to find each other do it.  This is how a game
+    (or a test) asks whether a board's levers have been thrown and which bodies
+    its doors are.
     """
-    table = getattr(result, _TABLE, None)
-    if table is None:
-        table = {}
-        setattr(result, _TABLE, table)
-    return table
+    return result.channels
 
 
 def _channel(result, name):

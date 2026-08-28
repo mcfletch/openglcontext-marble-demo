@@ -365,6 +365,12 @@ class BuildResult:
     # Trigger-body-index -> the Gate it belongs to.  The game keeps the set of
     # gates still to be passed and refuses the finish until it is empty.
     gate_bodies: dict = field(default_factory=dict)
+    # Somewhere for mechanisms that have to find each other to do it: a lever
+    # and the door it opens, named by a string both carry.  Per build rather
+    # than global, so one board's channels are not reachable from another's,
+    # and here rather than hung off the result by each mechanism that wants it,
+    # because every mechanism that talks to another will want the same table.
+    channels: dict = field(default_factory=dict)
 
 
 @dataclass
