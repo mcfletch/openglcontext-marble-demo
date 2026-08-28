@@ -46,7 +46,7 @@ from typing import Any
 from .level import CELL_SIZE, Bumper, Finish, Level, Ramp, Wall
 
 __all__ = ['Port', 'Piece', 'Board', 'Theme', 'THEMES', 'PIECES', 'MAX_STEP',
-           'joined', 'chain', 'plateau', 'ramp_down', 'kicker', 'spillway',
+           'joined', 'distance', 'chain', 'plateau', 'ramp_down', 'kicker', 'spillway',
            'hairpin', 'bridge', 'scatter']
 
 NEIGHBOURS = ((1, 0), (-1, 0), (0, 1), (0, -1))
@@ -183,6 +183,24 @@ def joined(cells, origin, target):
                 seen.add(nxt)
                 queue.append(nxt)
     return target in seen
+
+
+def distance(cells, origin, target):
+    """Steps from ``origin`` to ``target`` over ``cells``, or None if unreachable."""
+    if origin not in cells:
+        return None
+    seen = {origin: 0}
+    queue = deque([origin])
+    while queue:
+        cell = queue.popleft()
+        if cell == target:
+            return seen[cell]
+        for dcol, drow in NEIGHBOURS:
+            nxt = (cell[0] + dcol, cell[1] + drow)
+            if nxt in cells and nxt not in seen:
+                seen[nxt] = seen[cell] + 1
+                queue.append(nxt)
+    return None
 
 
 # -- building blocks ------------------------------------------------------
