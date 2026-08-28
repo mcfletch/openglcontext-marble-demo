@@ -519,3 +519,131 @@ axis was parallel to the forward axis *up to a sign*, which is exactly the thing
 that was wrong. Replacing it with an assertion about what the rotation *does* —
 push the board's up-vector through the engine's own `transformMatrix` and check
 which way it tips — catches it, and cannot be satisfied by the wrong convention.
+
+---
+
+## 10. Phase 4, built: braided boards
+
+Section 2.3 exists. `boards.py` builds a **region** in four steps that each
+answer one question — where the route goes, how much room there is, how many
+ways round there are, and how far the marble has come — and hands back the
+**strands** that decoration hangs on, because "the short way is the dangerous
+one" is a statement about strands and cannot be said about loose cells.
+
+`generator.py` decorates by strand: hazards go on the strands that *save cells*,
+the long way round stays clear, and every hazard is checked against the board as
+it is placed — one that would leave no clean route from start to finish is not
+placed at all.
+
+### What holds now, over twenty-four seeds each
+
+| | |
+|---|---|
+| no board is a one-cell corridor | every cell has two ways off it |
+| two routes share nothing but their ends | vertex-disjoint, every board |
+| a braid is a different way round | not the next lane: 13 of 13 scenic strands cost ≥ 3 cells |
+| a hazard-free route always exists | at difficulty 1, 3 and 5 |
+| the quick line is the one that asks something | the clean route is never shorter |
+| every route cell has board downhill of it | 0 exceptions in 72 boards |
+
+That last row is the defect §9 turned up, closed. The old generator's constant
++Z lean pushed a player who touched nothing straight over the edge on two of
+five sampled boards; there is now not one route cell on any board with nothing
+in front of it.
+
+### Two things that had to change to get there
+
+**Room is a radius, not a width.** Widening only sideways leaves the places the
+route goes *sideways* one cell tall — a corridor turned ninety degrees, with a
+cell in it every route has to pass through. Three of the first six boards had
+exactly that pinch. A radius has no direction to get wrong.
+
+**Height is a function of rank alone.** It gives the terraced look, makes
+downhill and forward the same direction, and holds the slope budget by
+construction rather than by a check afterwards: neighbours are one rank apart at
+most, so they are one terrace apart at most.
+
+### Difficulty reversed
+
+It shortens the route and thins the plazas rather than adding tiles — a long easy
+board is only a long one. Hazards go from 0.9 a board to 2.1, and the clock lands
+between 15 and 45 seconds, which is short enough that another go is cheap. The
+old test asserting that a harder board had *more* cells is now a test asserting
+the opposite, which is a deliberate change of contract rather than a loosened
+assertion.
+
+---
+
+## 11. The editor
+
+`marble-editor` is a sibling project — a game does not link an editor, exactly as
+glisteel and glisteel-editor are separate.
+
+```bash
+oglc-marble-editor                    # a blank board to draw on
+oglc-marble-editor spiral.marble      # carry on with one
+oglc-marble-editor --from-seed 7      # start from a generated board
+oglc-marble --board spiral.marble     # play one
+```
+
+![The editor: the board as a map, the tools down the left, the read-outs beside
+them.](images/editor.png)
+
+Six tools — tiles, height, surface, pieces, markers, pan — and two conventions
+that run through all of them: **left does and right undoes**, and **a drag is one
+step**. Ramps, launch ramps, rails, bumpers, springs, elevators and rotating arms
+all place with a click, because the board works out which way a ramp points and
+which side a rail faces.
+
+### Where the parts are
+
+`board.py` is the only thing that changes a level, so every rule about what a
+board may be is a question a test can ask, and the tools are left holding nothing
+but gestures. Undo is a **snapshot**: a board is small enough that keeping the
+whole of one costs less than the bookkeeping for inverting each kind of change,
+and a snapshot cannot get an inverse wrong.
+
+Nothing stops a designer making a board that is half-drawn — that is a normal
+thing to be looking at, and an editor that refused would be fighting them for the
+whole middle of the work. The read-out says what would stop it being *played*
+instead, most usefully that the finish cannot be reached from the start.
+
+### What it is built on, and what it is not
+
+The authoring toolkit in **OpenGLContext itself**: `edit` for the plan view and
+the tool modes that give the tool in force first refusal of the pointer, `ui` for
+the palette, the menus and the read-outs. The same foundation glisteel-editor
+uses.
+
+**`OpenGLContext-editor` is deliberately not a dependency.** That package is the
+world-authoring half — DEM terrain, road alignment, 3D Tiles baking — and a board
+is a grid of tiles. Depending on it would buy nothing and cost every editor user
+a terrain toolchain.
+
+The **board format belongs to the game** (`levelfile.py`), which is what keeps
+the editor and the game from ever disagreeing about it. A mechanism writes itself
+out of its own dataclass fields, and a test holds the registry to every authorable
+class in `level.py`, so a mechanism added without a name there fails rather than
+silently not saving.
+
+### One thing the pointer bridge duplicates
+
+`marble_editor/controls.py` turns pointer events into a
+`~OpenGLContext.edit.tools.Pointer` and routes them, and glisteel-editor's
+`MapControls` does the same job. The engine has the tool modes and the map view
+but not the bridge between them. It is a candidate for `OpenGLContext.edit`, once
+the second implementation has shown which parts of it are actually general — the
+marble one wants no height function and no grab reach, and the glisteel one wants
+both.
+
+### A defect this turned up
+
+A board carrying an **elevator or a rotating arm** logs one
+`Failure in Box render: MissingVertexInput: the shader reads aColor, aJoints,
+aTangent, aTexCoord1, aWeights` per run, and that one node does not draw. It
+reproduces on generated boards (`--seed 0 --difficulty 4`) as readily as on
+authored ones, so it predates this work. Giving the kinematic body a PBR
+appearance like every other body in the game — which it should have had anyway,
+and now has — did not cure it. The pass catches it, so the rest of the frame
+renders. Worth chasing: it is the engine's instanced/kinematic draw path meeting
+a plain `Box`, and nothing in the game can work around it.

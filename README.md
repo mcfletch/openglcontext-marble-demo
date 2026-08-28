@@ -33,8 +33,14 @@ pip install --pre "PyOpenGL @ git+https://github.com/mcfletch/pyopengl@develop" 
 pip install --pre -e .
 ```
 
-`--help` lists the options: `--seed` and `--difficulty` pick the generated level,
-`--marble` the starting material.
+`--help` lists the options: `--seed` and `--difficulty` pick the generated
+board, `--marble` the starting material, and `--board FILE` plays a board drawn
+in [the editor](https://github.com/mcfletch/marble-editor) instead of a
+generated one.
+
+```bash
+oglc-marble --board spiral.marble
+```
 
 ## Controls
 
