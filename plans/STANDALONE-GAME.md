@@ -1039,14 +1039,50 @@ Tracked here as it is built. Status is one of *planned*, *in progress*, *merged*
 |---|---|---|---|
 | 1 | `plateau` | nothing — a place to be | merged (as a piece) |
 | 2 | `ramp_down` | nothing — the plain connector | merged (as a piece) |
-| 3 | `kicker` | enter fast enough to climb the far side | in progress |
-| 4 | `spillway` | hold the descent or run off the open end | in progress |
+| 3 | `kicker` | enter fast enough to climb the far side | registered, rule not yet biting — agent on the slope speed loss |
+| 4 | `spillway` | hold the descent or run off the open end | registered, rule not yet biting — same agent |
 | 5 | `hairpin` | brake for the right-angle | merged (as a piece) |
 | 6 | `bridge` | cross one cell with nothing beside it | merged (as a piece) |
 | 7 | `scatter` | get through bumpers that will not have you straight | merged (as a piece) |
-| 8–32 | — | see §17.4 and the ideas below | planned |
 
-Ideas not yet assigned a number: the sand trap, the lever and door, the water
-trap, the peg board, the rockfall, a chicane, a pair of parallel routes at
-different speeds, a drop with a landing you have to hit, a conveyor, a rotating
-table, a funnel, a switchback stair, a wind tunnel, a magnet.
+### Mechanisms — one agent each, one module each
+
+| Mechanism | What it does | Status |
+|---|---|---|
+| `lever` + `door` | opens when struck hard enough | agent working |
+| `sand` | hard-edged drag: navigate it or be launched over it | agent working |
+| `water` | sinks the marble; the plug opens when it reaches the bottom | agent working |
+| `pegs` | plinko, one fast slot among ordinary ones | agent working |
+| `rockfall` | bounceable descent that randomises the way you leave | agent working |
+| `destruction` | the marble can be lost: struck, dropped, crushed, burned | waiting on the slope work, which is in the same file |
+
+### Fragments 8 onward
+
+| # | Fragment | Asks | Status |
+|---|---|---|---|
+| 8 | `chicane` | weave an S-bend without losing the line | agent working |
+| 9 | `narrows` | a funnel that pinches to one lane | agent working |
+| 10 | `split` | two routes: one quick and mean, one slow and kind | agent working |
+| 11 | `stepping_stones` | carry speed across gaps | agent working |
+| 12 | `drop` | a fall with a landing you have to hit | agent working |
+| 13 | `switchback` | a zigzag descent that punishes carrying too much | agent working |
+| 14 | `banked_turn` | a curve you can use the wall of | agent working |
+| 15 | `gauntlet` | rotating arms in sequence | agent working |
+| 16–32 | — | the mechanism fragments, once the mechanisms land | planned |
+
+Still unassigned as ideas: a conveyor, a rotating table, a wind tunnel, a
+magnet, a see-saw, a lift you have to wait for, a one-way gate, a collapsing
+floor.
+
+### What is built and merged
+
+- **The registries** (§17.1): `fragments/` and `mechanisms/`, both discovered by
+  scanning their directory, so a new file is a new entry and no shared file
+  records it.
+- **`Piece.exits`** (§17.3): a mapping, with `'ok'` the way on.
+- **`stories.py`**: a story is a graph, laid out main line first with branches
+  pushed sideways until they fit and rejoins connected rather than overlapped.
+  A story may ask a fragment for an exit it has not got, and gets a slower route
+  rather than an error — a generator recombining fragments should not have to
+  know which of them can be failed.
+- **Seven fragments** registered with three or four variants each.
