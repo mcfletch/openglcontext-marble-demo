@@ -1123,23 +1123,52 @@ Tracked here as it is built. Status is one of *planned*, *in progress*, *merged*
 | `rockfall` | bounceable descent that randomises the way you leave | **merged** — exit headings spread 7–12°, against 0.00° for the same slope with the rock taken off; 90% get through |
 | `destruction` | the marble can be lost: struck, dropped, crushed, burned | agent working — `controller.py` freed by the ramp fix |
 
-### Fragments 8 onward
+### The library as it stands: 15 fragments, 7 mechanisms
 
-| # | Fragment | Asks | Status |
-|---|---|---|---|
-| 8 | `chicane` | weave an S-bend without losing the line | agent working |
-| 9 | `narrows` | a funnel that pinches to one lane | agent working |
-| 10 | `split` | two routes: one quick and mean, one slow and kind | agent working |
-| 11 | `stepping_stones` | carry speed across gaps | agent working |
-| 12 | `drop` | a fall with a landing you have to hit | agent working |
-| 13 | `switchback` | a zigzag descent that punishes carrying too much | agent working |
-| 14 | `banked_turn` | a curve you can use the wall of | agent working |
-| 15 | `gauntlet` | rotating arms in sequence | agent working |
-| 16–32 | — | the mechanism fragments, once the mechanisms land | planned |
+| # | Fragment | Variants | Cost | Asks |
+|---|---|---|---|---|
+| 1 | `plateau` | 4 | 0 | nothing — a place to be |
+| 2 | `ramp_down` | 4 | 0 | nothing — the plain connector |
+| 3 | `kicker` | 4 | 4 | enter fast enough to climb the far side |
+| 4 | `spillway` | 3 | 6 | hold the descent or run off the open end |
+| 5 | `hairpin` | 3 | 5 | brake for the right-angle or be carried past it |
+| 6 | `bridge` | 3 | 6 | cross a single cell with nothing beside it |
+| 7 | `scatter` | 3 | 3 | get through bumpers that will not have you straight |
+| 8 | `chicane` | 4 | 4 | weave it in rhythm; too much speed and the walls have you |
+| 9 | `narrows` | 4 | 5 | be on the line by the throat |
+| 10 | `stepping_stones` | 4 | 8 | carry enough speed across the gaps; easing off is how you go in |
+| 11 | `banked_turn` | 4 | 2 | find the speed for it: a crawl and a charge both cost you |
+| 12 | `split` | 4 | 5 | take the plank or pay for the long way round |
+| 13 | `drop` | 4 | 7 | leave the lip fast enough to reach the landing, and not so fast you clear it |
+| 14 | `switchback` | 4 | 6 | take the corners slowly enough to turn |
+| 15 | `gauntlet` | 4 | 5 | go through when the arms lie along the lane |
+| 16–20 | `sand_pit`, `locked_room`, `cistern`, `plinko`, `scree` | — | — | agent working: the chapters that make the mechanisms reachable from a generated board |
+| 21–32 | — | — | — | planned: a conveyor, a rotating table, a wind tunnel, a magnet, a see-saw, a lift you wait for, a one-way gate, a collapsing floor, a chimney, a spiral, a weighbridge, a cannon |
 
-Still unassigned as ideas: a conveyor, a rotating table, a wind tunnel, a
-magnet, a see-saw, a lift you have to wait for, a one-way gate, a collapsing
-floor.
+**Mechanisms merged:** `sand`, `lever`, `door`, `water`, `pegs`, `rockfall`,
+`burner`, plus marble destruction as a rule of the game.
+
+### Three findings the fragments turned up
+
+**A driven marble settles at about 5 m/s on a descent, however far it has
+fallen** — 5.08 m/s on a switchback's first fall and 5.15 on its second, and
+4.6–5.1 over every shelf of a piece built with three, five or seven cells of
+descent a leg. Steering across the board's lean spends the pull that would
+otherwise have been speed. So a corner bites on the speed a marble was *given*
+by whatever came before it, not on any the piece itself builds. That is why
+`switchback`'s "speed accumulates" rule is a strict xfail carrying its numbers,
+and it is the most important thing to design around: **pieces cannot manufacture
+speed for the piece after them.**
+
+**A walled corner takes back exactly what a descent gave.** The 90% wall-impact
+scrub defeated `switchback`'s own premise until its corners were opened, which
+is a general point about walls on anything meant to carry speed.
+
+**The camber of a banked turn does nothing measurable.** What holds a marble
+that a hairpin loses is laying the corner square whole and walling it. The
+`banked_turn` fragment keeps the reward and its rule string says what it
+actually is — a corner with an optimum, where 6 m/s comes round in 7.41 s
+against 7.97 for a crawl and 8.32 for a charge.
 
 ### What is built and merged
 
