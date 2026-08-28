@@ -1119,9 +1119,9 @@ Tracked here as it is built. Status is one of *planned*, *in progress*, *merged*
 | `lever` + `door` | opens when struck hard enough | **merged** — throws at a 4 m/s blow; the blow also stops you, so a run at one costs a pass |
 | `sand` | hard-edged drag: navigate it or be launched over it | **merged** — 8.30 s to churn two cells against 0.98 s over floor; launching over costs what stone costs |
 | `water` | sinks the marble; the plug opens when it reaches the bottom | **merged** — 2.000 s to sink two metres against 0.667 s in air |
-| `pegs` | plinko, one fast slot among ordinary ones | agent working |
-| `rockfall` | bounceable descent that randomises the way you leave | agent working |
-| `destruction` | the marble can be lost: struck, dropped, crushed, burned | waiting on the slope work, which is in the same file |
+| `pegs` | plinko, one fast slot among ordinary ones | **merged** — entering left takes the left slot 65% against 10% entering right; the fast slot exits at 16.0 m/s against 7.2 |
+| `rockfall` | bounceable descent that randomises the way you leave | **merged** — exit headings spread 7–12°, against 0.00° for the same slope with the rock taken off; 90% get through |
+| `destruction` | the marble can be lost: struck, dropped, crushed, burned | agent working — `controller.py` freed by the ramp fix |
 
 ### Fragments 8 onward
 
@@ -1159,6 +1159,42 @@ floor.
   be a different board from the one the player started on.
 - **The editor's Story menu**: a chapter from the library appended to the board,
   one press of undo, then the tile tools.
+- **`storygen.compose`**: a whole board out of the library, with a rhythm to it
+  rather than a shuffle — places and questions alternate, a board begins and ends
+  somewhere safe, the same question is not asked twice running, a long board asks
+  at least two kinds, cheap fragments are dealt into the first half so it gets
+  harder as it goes, and something has a way round it.
+
+### The measurement that unblocked everything
+
+`level.Ramp` tilted **the wrong way**: `Ramp(rise=+0.9)` put the far edge 0.878 m
+*below* the near one. Since every slope puts a ramp on every step, every slope in
+the game was a sawtooth of 0.88 m risers rather than an incline. Two agents found
+it independently. With the half-thickness and the horizontal span also corrected,
+a row of ramp tiles now costs what one plane costs:
+
+| entry | flat floor | ramp as it was | ramp now | one long tilted box |
+|---|---|---|---|---|
+| 4 m/s | 0.102 | 0.743 | **−0.112** | −0.112 |
+| 8 m/s | 0.099 | 0.381 | **−0.029** | −0.030 |
+| 12 m/s | 0.094 | 0.190 | **0.051** | 0.013 |
+| 18 m/s | 0.102 | 0.123 | **0.053** | 0.053 |
+
+(metres a second lost per metre travelled; negative is speed gained)
+
+Entered at 4 m/s the old surface stopped a marble dead after 5.4 m, less than a
+metre down a slope that falls 3.6.
+
+### A constraint that came out of it
+
+`MAX_STEP / CELL_SIZE` is 0.225 and the board leans at 0.22, so **the steepest
+slope a piece may build is one the lean all but cancels**. A dip that returns to
+its entry height is free at every entry speed. That is why the kicker now lifts
+a player *above* where they entered, and why the spillway's rule had to change:
+a flat run-out cannot stop a marble under a permanent lean — the lean supplies
+1.54 m/s² everywhere and the steepest apron resists 0.49, so a marble arriving at
+8 m/s would need 65 m of rising run-out. What the descent buys is time, and that
+is what the piece now says.
 
 ### Measurements worth keeping
 
