@@ -108,6 +108,35 @@ def test_a_marble_left_of_the_line_is_steered_the_other_way():
     assert right > 0
 
 
+def test_a_demand_too_big_to_hold_keeps_the_direction_it_asked_for():
+    """Clipping each axis on its own turns two-forward-one-right into
+    one-and-one: a different direction, chosen by the clip."""
+    level = _straight(depth=10)
+    driver = _pilot(level, steer_gain=50.0)          # certain to be over the stop
+    forward, right = driver.lean(np.array([-8.0, 0.0, 0.0]), np.zeros(3))
+    assert math.hypot(forward, right) == pytest.approx(1.0)
+
+
+def test_it_reaches_the_stop_when_it_is_in_trouble_and_not_otherwise():
+    """A pilot that asks for everything the board has as a matter of course is a
+    demo of the extremes rather than of the game."""
+    level = generator.generate(seed=1, difficulty=2)
+    game = MarbleGame(level)
+    driver = _pilot(level, forward_axis=game.tilt.forward_axis,
+                    right_axis=game.tilt.right_axis)
+    world = game.scene.world
+    at_stop = frames = 0
+    for _ in range(int(20.0 / (1 / 120.0))):
+        demand = driver.lean(world.position[game.marble.index],
+                             world.linear_velocity[game.marble.index])
+        at_stop += math.hypot(*demand) >= 0.999
+        frames += 1
+        game.lean(*demand)
+        if game.advance(1 / 120.0) != 'playing':
+            break
+    assert at_stop / frames < 0.15
+
+
 def test_the_demand_never_exceeds_what_a_player_could_hold():
     """A pilot that asked for more lean than a key gives would be cheating, and
     a recording of it would not be a recording of the game."""

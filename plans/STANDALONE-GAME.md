@@ -769,3 +769,48 @@ One branch each, so each can be judged on its own:
 | `spike/waypoints` | gates the finish waits for |
 | `spike/theming` | per-area materials, and where sound would hook in |
 | `spike/stories` | chains of pieces, and the stories built from them |
+
+---
+
+## 13. `spike/tilt-feel`, built
+
+All four causes in §12.1, on the same run (seed 1, difficulty 2):
+
+| | was | now |
+|---|---|---|
+| drawn lean, mean | 16.3° | **3.6°** |
+| drawn lean, peak | 34.6° | **7.7°** |
+| frames past 20° | 38% | **0%** |
+| pilot at the stop | 34% | **7%** |
+| far-corner swing at peak | 5.0 cells | **1.2 cells** |
+
+The run still finishes, with no falls.
+
+**The limit bounds the pair.** `pitch` and `roll` were each held under the limit,
+so a full diagonal reached it times root two — 26° each drawing as 35°. They are
+scaled together now, which takes away the excess and keeps the direction asked
+for.
+
+**A demand scales the pull, not the angle.** Half a stick is half the sideways
+gravity, which is the quantity the marble answers to. Scaling the angle made a
+half-and-full diagonal fall in a direction that was neither.
+
+**The lean is a critically damped spring.** It accelerates into a lean and eases
+out of one — about half a second to full deflection at `STIFFNESS = 8`, against
+0.16 s for the rate limiter it replaces. Critically damped for two reasons: a
+board that rang after being let go is a board nobody could aim, and such a system
+never overshoots, so the limit holds without being clamped to. Semi-implicit, so
+a slow frame settles rather than diverging.
+
+**The drawn lean is a third of the physical one** (`VISUAL_GAIN = 0.32`). A small
+tilt over a large surface already reads as a large tilt; the whole of it heaved
+the world 5 cells past a ball that never moves.
+
+**The pilot no longer lives at the stop.** Its demand was clipped per axis, which
+turned two-forward-one-right into one-and-one — a direction chosen by the clip
+rather than by the pilot — and it sat at full lean for over half a run. Scaling
+the pair took that to 15%, and softening the steering gain from 1.5 to 0.75 took
+it to 3% while finishing the same boards with fewer falls.
+
+Every one of those is a number in a dataclass with a test on it, so the feel can
+be argued about by changing them.

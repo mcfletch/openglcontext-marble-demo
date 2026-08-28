@@ -76,12 +76,16 @@ def test_half_a_lean_travels_less_than_a_full_one():
 
 
 def test_letting_go_stops_adding_sideways_pull():
-    """Released, the board comes back to level and stops pulling sideways."""
+    """Released, the board settles back to level and stops pulling sideways.
+
+    Settles rather than snaps: the lean is damped, so what is asserted is that
+    what is left is too small to steer with.
+    """
     game = _game()
     _run(game, right=1.0, seconds=1.0)
-    _run(game, right=0.0, seconds=1.5)
-    assert game.tilt.roll == pytest.approx(0.0, abs=1e-9)
-    assert game.scene.world.gravity.direction[0] == pytest.approx(0.0, abs=1e-9)
+    _run(game, right=0.0, seconds=3.0)
+    assert abs(math.degrees(game.tilt.roll)) < 0.05
+    assert abs(game.scene.world.gravity.direction[0]) < 1e-3
 
 
 # -- grip changes the feel, not the authority ----------------------------------

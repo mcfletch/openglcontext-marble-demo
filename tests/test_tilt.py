@@ -107,19 +107,27 @@ def test_a_diagonal_hold_does_not_exceed_the_limit_on_either_axis():
     assert abs(rig.roll) <= math.radians(25) + 1e-9
 
 
-def test_a_partial_input_leans_partway():
-    """An analog stick at half deflection asks for half the lean."""
+def test_a_partial_input_asks_for_that_fraction_of_the_pull():
+    """An analog stick at half deflection asks for half the sideways gravity.
+
+    Half the *pull* rather than half the angle: the pull is what the marble
+    answers to, and it is what makes a half-and-full diagonal fall in the
+    direction it was asked to.
+    """
     half = _hold(_rig(), 0.0, 0.5, 10.0).roll
     full = _hold(_rig(), 0.0, 1.0, 10.0).roll
-    assert half == pytest.approx(full / 2.0, rel=1e-6)
+    assert math.tan(half) == pytest.approx(math.tan(full) / 2.0, rel=1e-6)
+    assert half < full / 2.0 * 1.1
 
 
 # -- letting go ----------------------------------------------------------------
 
 def test_releasing_returns_the_board_to_level():
+    """Asymptotically: a damped board approaches level rather than arriving at
+    it, so what is asserted is that nothing worth seeing is left."""
     rig = _hold(_rig(), 0.0, 1.0, 2.0)
-    _hold(rig, 0.0, 0.0, 3.0)
-    assert rig.roll == pytest.approx(0.0, abs=1e-6)
+    _hold(rig, 0.0, 0.0, 4.0)
+    assert abs(math.degrees(rig.roll)) < 0.01
 
 
 def test_the_board_does_not_overshoot_level_on_the_way_back():
@@ -130,10 +138,10 @@ def test_the_board_does_not_overshoot_level_on_the_way_back():
         assert rig.roll >= -1e-12
 
 
-def test_recovery_can_be_slower_than_the_push():
+def test_settling_can_be_slower_than_the_push():
     """Separate rates: a board that snaps flat the instant a key lifts feels twitchy."""
-    quick = _rig(rate=math.radians(200), recover=math.radians(200))
-    slow = _rig(rate=math.radians(200), recover=math.radians(40))
+    quick = _rig(stiffness=9.0, settle=9.0)
+    slow = _rig(stiffness=9.0, settle=2.0)
     _hold(quick, 0.0, 1.0, 2.0)
     _hold(slow, 0.0, 1.0, 2.0)
     _hold(quick, 0.0, 0.0, 0.1)
@@ -142,20 +150,25 @@ def test_recovery_can_be_slower_than_the_push():
 
 
 def test_reversing_the_input_crosses_level_at_the_push_rate():
-    """Pushing the other way is a push, not a recovery."""
-    rig = _rig(rate=math.radians(200), recover=math.radians(20))
+    """Pushing the other way is a push, not a settling."""
+    rig = _rig(stiffness=9.0, settle=1.0)
     _hold(rig, 0.0, 1.0, 2.0)
-    _hold(rig, 0.0, -1.0, 0.5)
+    _hold(rig, 0.0, -1.0, 0.8)
     assert rig.roll < 0
 
 
 # -- frame-rate independence ---------------------------------------------------
 
 def test_the_lean_does_not_depend_on_the_frame_rate():
-    """The same held second leans the same board on a fast machine and a slow one."""
+    """The same held second leans the same board on a fast machine and a slow one.
+
+    To within what an integrator gives: the lean is a differential equation
+    stepped once a frame, so eight times the step size is not the same arithmetic
+    -- only the same answer.
+    """
     slow = _hold(_rig(), 0.0, 1.0, 0.5, dt=1 / 30.0)
     fast = _hold(_rig(), 0.0, 1.0, 0.5, dt=1 / 240.0)
-    assert slow.roll == pytest.approx(fast.roll, abs=1e-6)
+    assert slow.roll == pytest.approx(fast.roll, rel=0.05)
 
 
 # -- the board rotation the renderer draws -------------------------------------
@@ -210,16 +223,16 @@ def test_the_drawn_board_stays_a_rotation():
     assert np.linalg.norm(_drawn_normal(rig)) == pytest.approx(1.0)
 
 
-def test_the_visible_lean_matches_the_lean_that_was_asked_for():
-    rig = _hold(_rig(limit=math.radians(25)), 0.0, 1.0, 5.0)
+def test_the_visible_lean_is_the_physical_one_through_the_gain():
+    rig = _hold(_rig(limit=math.radians(25), visual_gain=0.5), 0.0, 1.0, 5.0)
     *_, angle = rig.board_rotation()
-    assert math.degrees(angle) == pytest.approx(25.0, abs=1e-6)
+    assert math.degrees(angle) == pytest.approx(12.5, abs=0.05)
 
 
 def test_the_visible_lean_can_be_scaled_without_changing_the_physics():
     """A gain on the drawn lean is a look, not a rule."""
-    subtle = _rig(limit=math.radians(25), visual_gain=0.5)
-    plain = _rig(limit=math.radians(25))
+    subtle = _rig(limit=math.radians(25), visual_gain=0.25)
+    plain = _rig(limit=math.radians(25), visual_gain=0.5)
     _hold(subtle, 0.0, 1.0, 5.0)
     _hold(plain, 0.0, 1.0, 5.0)
     assert subtle.board_rotation()[3] == pytest.approx(plain.board_rotation()[3] / 2.0)
@@ -242,3 +255,105 @@ def test_the_lean_follows_the_camera_axes_it_was_given():
     _hold(rig, 0.0, 1.0, 5.0)
     direction = rig.gravity_direction()
     assert direction[0] > 0 and direction[2] > 0    # leaned along the screen axis
+
+
+# -- the board as something with mass ------------------------------------------
+#
+# A board thrown to full deflection in a sixth of a second reads as a pinball
+# flipper. These are the properties that make it read as a table instead.
+
+def test_the_combined_lean_is_bounded_not_each_axis_separately():
+    """A full diagonal must not exceed the limit.
+
+    Bounding pitch and roll apart lets the two together reach the limit times
+    root two -- 26 degrees each drawing as 35 -- so the limit did not limit.
+    """
+    rig = _hold(_rig(limit=math.radians(20)), 1.0, 1.0, 10.0)
+    combined = math.degrees(math.atan(math.hypot(math.tan(rig.pitch),
+                                                 math.tan(rig.roll))))
+    assert combined <= 20.0 + 1e-6
+
+
+def test_a_diagonal_lean_keeps_its_direction_while_it_is_bounded():
+    """Bounding the pair must not turn a diagonal into something else.
+
+    The direction is the *gradient's* -- what gravity is given and what the
+    board is drawn at -- so it is the tangents that keep their ratio rather than
+    the angles.
+    """
+    rig = _hold(_rig(limit=math.radians(20)), 1.0, 0.5, 10.0)
+    assert math.tan(rig.pitch) / math.tan(rig.roll) == pytest.approx(2.0, rel=1e-6)
+
+
+def test_the_board_takes_a_moment_to_reach_a_lean():
+    """Hands do not snap a table to full deflection."""
+    rig = _rig()
+    _hold(rig, 0.0, 1.0, 0.08)
+    assert rig.roll < rig.limit * 0.5
+
+
+def test_the_board_gets_there_in_the_end():
+    rig = _hold(_rig(), 0.0, 1.0, 3.0)
+    assert rig.roll == pytest.approx(rig.limit, rel=1e-3)
+
+
+def test_the_board_eases_in_rather_than_moving_at_one_rate():
+    """Second order: it accelerates into the lean, so there is weight to feel.
+
+    A constant rate covers the same ground in each equal slice of time; a board
+    with mass covers less at first and more once it is moving.
+    """
+    rig = _rig()
+    first = _hold(rig, 0.0, 1.0, 0.1).roll
+    before = rig.roll
+    second = _hold(rig, 0.0, 1.0, 0.1).roll - before
+    assert second > first * 1.2
+
+
+def test_the_board_eases_out_rather_than_stopping_dead():
+    rig = _hold(_rig(), 0.0, 1.0, 2.0)
+    _hold(rig, 0.0, 0.0, 0.08)
+    assert rig.roll > rig.limit * 0.5
+
+
+def test_the_board_still_never_passes_the_limit_however_long_it_is_held():
+    """Something with momentum must not overshoot the stop."""
+    rig = _rig(limit=math.radians(18))
+    for _ in range(2000):
+        rig.update(1 / 120.0, 0.0, 1.0)
+        assert rig.roll <= math.radians(18) + 1e-9
+
+
+def test_the_board_does_not_ring_after_a_release():
+    """A spring that oscillated would be a table nobody could aim."""
+    rig = _hold(_rig(), 0.0, 1.0, 2.0)
+    crossings = 0
+    was = rig.roll
+    for _ in range(600):
+        rig.update(1 / 120.0, 0.0, 0.0)
+        if (rig.roll < 0) != (was < 0) and abs(rig.roll) > 1e-6:
+            crossings += 1
+        was = rig.roll
+    assert crossings == 0
+
+
+def test_the_weight_does_not_depend_on_the_frame_rate():
+    slow = _hold(_rig(), 0.0, 1.0, 0.3, dt=1 / 30.0)
+    fast = _hold(_rig(), 0.0, 1.0, 0.3, dt=1 / 240.0)
+    assert slow.roll == pytest.approx(fast.roll, rel=0.05)
+
+
+# -- what a viewer sees --------------------------------------------------------
+
+def test_the_drawn_lean_is_a_hint_of_the_physical_one():
+    """A small tilt across a large surface already reads as a large tilt."""
+    rig = _hold(_rig(limit=math.radians(20)), 0.0, 1.0, 5.0)
+    assert math.degrees(rig.board_rotation()[3]) < 10.0
+
+
+def test_a_far_corner_does_not_swing_across_the_screen():
+    """The world heaving twenty metres about a stationary ball is what made the
+    board read as a flipper."""
+    rig = _hold(_rig(), 1.0, 1.0, 5.0)
+    span = 36.0                                  # a typical board, corner to corner
+    assert span * math.sin(rig.board_rotation()[3]) < 2 * 4.0     # under two cells

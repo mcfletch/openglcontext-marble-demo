@@ -32,6 +32,7 @@ is the same thing a player does at the top of a drop.
     >>> driver.route[0] == board.start_cell
     True
 """
+import math
 from collections import deque
 
 import numpy as np
@@ -55,17 +56,21 @@ LOOK_AHEAD = 1.6
 #: How hard the lean answers being off the line, per cell of error, and how hard
 #: it answers the speed it is closing at.  The second is what stops the weave:
 #: without it the pilot arrives on the line at full lean and crosses it.
-STEER_GAIN = 1.5
-DAMPING = 0.35
+STEER_GAIN = 0.75
+DAMPING = 0.45
 
 #: Above this speed toward the aim, the pilot starts leaning back against its own
 #: travel, and by this much per metre a second over.
 #:
-#: These four numbers are worth their measurements.  Over twelve boards at
-#: difficulty 2: a look-ahead of 2.2 with light braking finishes 10 and falls off
-#: 18 times; these finish 11 and fall off 3.  Aiming nearer and braking earlier is
-#: most of the difference between a demo worth watching and one that is mostly a
-#: marble in the void.
+#: These numbers are worth their measurements.  Over twelve boards at difficulty
+#: 2: a look-ahead of 2.2 with light braking finishes 10 boards and falls off 18
+#: times; aiming nearer and braking earlier finishes 11 and falls off 3.
+#:
+#: The steering gain is set by how often the pilot ends up asking for everything
+#: the board has.  At 1.5 it is at the stop for well over half the run, which is
+#: a demo of the extremes rather than of the game; at 0.75 it is there for 3% of
+#: it, and finishes the same boards with fewer falls.  A pilot should reach the
+#: stop when it is in trouble, not as a matter of course.
 BRAKE_SPEED = 4.5
 BRAKE_GAIN = 0.28
 
@@ -157,9 +162,9 @@ class Autopilot:
         # Steer at where it should be, less how fast it is already getting
         # there: the damping is what turns a weave into a line.
         demand = error * self.steer_gain - velocity * self.damping
-        forward = float(np.dot(demand, self.forward_axis))
+        forward = float(np.dot(demand, self.forward_axis)) + self._braking(velocity)
         right = float(np.dot(demand, self.right_axis))
-        return (_clip(forward + self._braking(velocity)), _clip(right))
+        return _bounded(forward, right)
 
     def _braking(self, velocity):
         """How much to lean back up the slope against the speed it is carrying.
@@ -179,5 +184,14 @@ def _unit(vector):
     return vector / length if length > 1e-12 else vector
 
 
-def _clip(value):
-    return max(-1.0, min(1.0, float(value)))
+def _bounded(forward, right):
+    """The pair scaled to fit in [-1, 1], keeping the direction it asked for.
+
+    Clipping each axis on its own turns a demand of two-forward-one-right into
+    one-forward-one-right -- a different direction, chosen by the clip rather
+    than by the pilot, and the reason it spent well over half a run at the stop.
+    """
+    size = math.hypot(forward, right)
+    if size <= 1.0:
+        return (float(forward), float(right))
+    return (float(forward / size), float(right / size))

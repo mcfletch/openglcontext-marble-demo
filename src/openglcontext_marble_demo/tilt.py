@@ -6,11 +6,23 @@ gravity direction and a board rotation come out.
 
 Three things make the lean what a player feels:
 
-**It is an angle, not an impulse.**  Holding a key moves the board toward the
-lean that key asks for at ``rate`` radians a second, and it stops at ``limit``.
-A tap of thirty milliseconds leans it a little; a hold leans it fully; letting go
-returns it to level at ``recover``.  Every size of input in between exists, which
-is the difference between steering and nudging.
+**It is an angle, not an impulse.**  Holding a key leans the board toward what
+that key asks for, and it stops at ``limit``.  A tap of thirty milliseconds leans
+it a little; a hold leans it fully; letting go returns it to level.  Every size of
+input in between exists, which is the difference between steering and nudging.
+
+**It has weight.**  The lean is a *critically damped* second-order system rather
+than something that moves at a constant rate: it accelerates into a lean and
+eases out of one, which is what a heavy table tilted by hand does and what a
+constant rate cannot imitate.  Critically damped because a table that rang after
+being let go is a table nobody could aim, and because such a system never
+overshoots — so the limit holds without being clamped to.
+
+**The drawn lean is a hint of it.**  A small tilt across a large surface already
+reads as a large tilt: drawn degree for degree, a board thirty-six metres across
+swings a far corner twenty metres and the world heaves around a ball that never
+moves.  ``visual_gain`` is what separates what the physics uses from what the
+eye is given.
 
 **It is expressed as a gradient.**  A tilted plane is described by its slope in
 two horizontal directions, and gravity's pull along that plane is exactly that
@@ -41,11 +53,52 @@ _UP = np.array([0.0, 1.0, 0.0])
 BASE = math.radians(12)
 #: Default limit on the player's own lean, on either axis.
 LIMIT = math.radians(25)
-#: Default radians a second the lean moves toward what is held, and back to
-#: level when nothing is.  Leaning in is the quicker of the two: a board that
-#: snapped flat the instant a key lifted would feel twitchy to let go of.
-RATE = math.radians(160)
-RECOVER = math.radians(110)
+#: How quickly the board answers, as the natural frequency of its lean, in
+#: radians a second.  A critically damped system reaches about 95% of a step in
+#: ``4.75 / frequency`` seconds, so 8 is a little over half a second to full
+#: deflection: an appreciable moment, which is what makes it feel like something
+#: being moved rather than something being switched.
+#:
+#: Settling back to level is the slower of the two, because a board that snapped
+#: flat the instant a key lifted would feel twitchy to let go of.
+STIFFNESS = 8.0
+SETTLE = 5.5
+
+#: How much of the physical lean is drawn.  The whole of it heaves a large board
+#: about; a third of it reads as a tilt without the world swinging past the ball.
+VISUAL_GAIN = 0.32
+
+
+def _clip(value):
+    return max(-1.0, min(1.0, float(value)))
+
+
+def _demand(amount, limit):
+    """The lean ``amount`` in [-1, 1] asks for, as an angle.
+
+    ``amount`` scales the board's **pull** rather than its angle: half a stick is
+    half the sideways gravity, which is the quantity the marble answers to and
+    the one a player is really asking about.  Scaling the angle instead would
+    make a half-and-full diagonal fall in a direction that was neither.
+    """
+    return math.atan(math.tan(limit) * _clip(amount))
+
+
+def _step(value, rate, wanted, frequency, dt):
+    """One semi-implicit step of a critically damped spring toward ``wanted``.
+
+    Semi-implicit -- the rate is moved first and the value follows it -- because
+    it stays stable at the step sizes a slow frame gives, where the explicit
+    form of the same spring grows instead of settling.
+
+    Critical damping is ``2 * frequency``: the quickest approach that does not
+    overshoot, which is what keeps the limit a limit without clamping to it and
+    what keeps a released board from ringing.
+    """
+    rate += (frequency * frequency * (wanted - value)
+             - 2.0 * frequency * rate) * dt
+    value += rate * dt
+    return value, rate
 
 
 def _unit(vector):
@@ -54,12 +107,22 @@ def _unit(vector):
     return vector / length if length > 1e-12 else vector
 
 
-def _approach(value, wanted, step):
-    """Move ``value`` toward ``wanted`` by at most ``step``, without overshooting."""
-    gap = wanted - value
-    if abs(gap) <= step:
-        return wanted
-    return value + math.copysign(step, gap)
+def _bounded(pitch, roll, limit):
+    """``(pitch, roll)`` scaled down together so their combined lean fits.
+
+    The lean a board is *drawn* at, and the one gravity gets, is the two axes
+    together — ``atan`` of the gradient's length.  Bounding each axis on its own
+    lets a full diagonal reach the limit times root two, which is a limit that
+    does not limit: 26 degrees on each axis drew as 35.  Scaling the pair keeps
+    the direction the player asked for and only takes away the excess.
+    """
+    combined = math.hypot(math.tan(pitch), math.tan(roll))
+    ceiling = math.tan(limit)
+    if combined <= ceiling or combined < 1e-12:
+        return pitch, roll
+    scale = ceiling / combined
+    return (math.atan(math.tan(pitch) * scale),
+            math.atan(math.tan(roll) * scale))
 
 
 class TiltRig:
@@ -74,13 +137,14 @@ class TiltRig:
     or exaggerated without changing how the game plays.
     """
 
-    def __init__(self, base=BASE, limit=LIMIT, rate=RATE, recover=RECOVER,
-                 forward_axis=(0.0, 0.0, -1.0), right_axis=(1.0, 0.0, 0.0),
-                 downhill_axis=(0.0, 0.0, 1.0), visual_gain=1.0):
+    def __init__(self, base=BASE, limit=LIMIT, stiffness=STIFFNESS,
+                 settle=SETTLE, forward_axis=(0.0, 0.0, -1.0),
+                 right_axis=(1.0, 0.0, 0.0), downhill_axis=(0.0, 0.0, 1.0),
+                 visual_gain=VISUAL_GAIN):
         self.base = float(base)
         self.limit = float(limit)
-        self.rate = float(rate)
-        self.recover = float(recover)
+        self.stiffness = float(stiffness)
+        self.settle = float(settle)
         self.forward_axis = _unit(forward_axis)
         self.right_axis = _unit(right_axis)
         self.downhill_axis = _unit(downhill_axis)
@@ -90,29 +154,36 @@ class TiltRig:
         self.pitch = 0.0
         #: How far the board is leaning along ``right_axis``, in radians.
         self.roll = 0.0
+        #: How fast each is moving, which is where the weight lives.
+        self.pitch_rate = 0.0
+        self.roll_rate = 0.0
 
     # -- per-frame ------------------------------------------------------
     def update(self, dt, forward=0.0, right=0.0):
-        """Move the lean toward what ``forward``/``right`` in [-1, 1] ask for.
+        """Lean the board toward what ``forward``/``right`` in [-1, 1] ask for.
 
-        Moving toward a lean uses ``rate``; returning to level uses ``recover``,
-        so a board can be pushed quickly and settle slowly.  Pushing the *other*
-        way is a push, not a recovery — the whole move is at ``rate``, so
-        reversing is as sharp as leaning was.
+        A critically damped step toward the demanded lean: the board accelerates
+        into it and eases out, and never passes it.  Pushing toward a lean uses
+        ``stiffness`` and letting go uses ``settle``, so a board can be leaned
+        smartly and come back at its own pace.  Pushing the *other* way is a
+        push, not a settling — reversing is as quick as leaning was.
         """
         if dt <= 0.0:
             return
-        self.pitch = self._axis(self.pitch, forward, dt)
-        self.roll = self._axis(self.roll, right, dt)
-
-    def _axis(self, current, demand, dt):
-        wanted = self.limit * max(-1.0, min(1.0, float(demand)))
-        rate = self.recover if wanted == 0.0 else self.rate
-        return _approach(current, wanted, rate * dt)
+        wanted_pitch = _demand(forward, self.limit)
+        wanted_roll = _demand(right, self.limit)
+        wanted_pitch, wanted_roll = _bounded(wanted_pitch, wanted_roll, self.limit)
+        moving = bool(wanted_pitch or wanted_roll)
+        frequency = self.stiffness if moving else self.settle
+        self.pitch, self.pitch_rate = _step(
+            self.pitch, self.pitch_rate, wanted_pitch, frequency, dt)
+        self.roll, self.roll_rate = _step(
+            self.roll, self.roll_rate, wanted_roll, frequency, dt)
 
     def level(self):
         """Return the board to level at once (a respawn, a new board)."""
         self.pitch = self.roll = 0.0
+        self.pitch_rate = self.roll_rate = 0.0
 
     # -- what the board leans into --------------------------------------
     def gradient(self):
