@@ -121,15 +121,31 @@ class Port:
 
 @dataclass
 class Piece:
-    """One place or one way between places, already positioned."""
+    """One place or one way between places, already positioned.
+
+    ``exits`` is a mapping rather than a single port, because a story needs
+    somewhere for a player who gets it wrong to *go*: ``'ok'`` is the way on and
+    is always there, and a piece may offer others -- ``'missed'`` for a turn-off
+    that was taken too fast -- which lead somewhere slower rather than ending
+    the run.  :attr:`exit` is the ``'ok'`` one, which is what a plain chain uses.
+    """
     name: str
     cells: dict
     entry: Port
-    exit: Port
+    exits: dict = field(default_factory=dict)
     features: list = field(default_factory=list)
     theme: str = 'stone'
     #: What this piece asks of a player, in one line; empty for a place.
     rule: str = ''
+
+    def __post_init__(self):
+        if 'ok' not in self.exits:
+            raise ValueError('%s has no way on: exits needs an "ok"' % self.name)
+
+    @property
+    def exit(self):
+        """The way on, which is what a chain follows."""
+        return self.exits['ok']
 
     def level(self, **named):
         """This piece on its own, as a playable level -- which is how a joiner's
@@ -269,7 +285,7 @@ def plateau(rng, entry, theme='stone', across=None, along=None):
     exit_port = Port(cell=end.cell, facing=entry.facing, height=entry.height,
                      width=LANE)
     ways_out = set(entry.cells()) | set(exit_port.cells())
-    return Piece(name='plateau', cells=cells, entry=entry, exit=exit_port,
+    return Piece(name='plateau', cells=cells, entry=entry, exits={'ok': exit_port},
                  features=_ring(cells, set(cells), gaps=ways_out), theme=theme)
 
 
@@ -288,7 +304,7 @@ def ramp_down(rng, entry, theme='stone', drop=None, length=None):
     slopes: list = []
     end = _slope(cells, slopes, entry, length, drop)
     walls = _rails(cells, entry, len(cells) // entry.width, width=entry.width)
-    return Piece(name='ramp_down', cells=cells, entry=entry, exit=end,
+    return Piece(name='ramp_down', cells=cells, entry=entry, exits={'ok': end},
                  features=slopes + walls, theme=theme)
 
 
@@ -308,7 +324,7 @@ def kicker(rng, entry, theme='stone', depth=None):
     top = _slope(cells, slopes, flat.ahead(1), 3, depth)
     length = max(row for _, row in cells) - min(row for _, row in cells) + 1
     walls = _rails(cells, entry, length + 2)
-    return Piece(name='kicker', cells=cells, entry=entry, exit=top,
+    return Piece(name='kicker', cells=cells, entry=entry, exits={'ok': top},
                  features=slopes + walls, theme=theme,
                  rule='enter fast enough to climb the far side')
 
@@ -328,7 +344,7 @@ def spillway(rng, entry, theme='stone', drop=None):
     end = _lay(cells, bottom.ahead(1), 2, height=bottom.height)
     length = max(row for _, row in cells) - min(row for _, row in cells) + 1
     # Sides only.  The missing wall at the bottom is the whole piece.
-    return Piece(name='spillway', cells=cells, entry=entry, exit=end,
+    return Piece(name='spillway', cells=cells, entry=entry, exits={'ok': end},
                  features=slopes + _rails(cells, entry, length + 2), theme=theme,
                  rule='hold the descent or run off the open end')
 
@@ -352,7 +368,7 @@ def hairpin(rng, entry, theme='stone'):
     walls = _rails(cells, entry, 4, sides=('left', 'right'))
     walls += _rails(cells, corner.ahead(1), 4, sides=('left', 'right'))
     walls = [wall for wall in walls if wall.cell in cells]
-    return Piece(name='hairpin', cells=cells, entry=entry, exit=end,
+    return Piece(name='hairpin', cells=cells, entry=entry, exits={'ok': end},
                  features=walls, theme=theme,
                  rule='brake for the right-angle or be carried past it')
 
@@ -370,8 +386,8 @@ def bridge(rng, entry, theme='stone', length=None):
     narrow = _lay(cells, mouth.ahead(1), length, width=1)
     end = _lay(cells, narrow.ahead(1), 1, width=entry.width)
     return Piece(name='bridge', cells=cells, entry=entry,
-                 exit=Port(cell=end.cell, facing=entry.facing,
-                           height=entry.height, width=entry.width),
+                 exits={'ok': Port(cell=end.cell, facing=entry.facing,
+                                   height=entry.height, width=entry.width)},
                  theme=theme, rule='cross a single cell with nothing beside it')
 
 
@@ -398,8 +414,8 @@ def scatter(rng, entry, theme='rubber', length=None):
                 posts.append(Bumper(cell=cell))
     walls = _rails(cells, entry, length, width=5)
     return Piece(name='scatter', cells=cells, entry=entry,
-                 exit=Port(cell=end.cell, facing=entry.facing,
-                           height=entry.height, width=entry.width),
+                 exits={'ok': Port(cell=end.cell, facing=entry.facing,
+                                   height=entry.height, width=entry.width)},
                  features=walls + posts, theme=theme,
                  rule='get through a field of bumpers that will not have you straight')
 
