@@ -64,11 +64,24 @@ class Channel:
         #: Body indices of the doors listening, in the order they were built.
         self.doors = []
         self._opening = []
+        self._shutting = []
 
-    def add_door(self, body_index, opening):
-        """Register a door: ``opening()`` runs when the channel is thrown."""
+    def add_door(self, body_index, opening, shutting=None):
+        """Register a door: ``opening()`` runs when the channel is thrown.
+
+        ``shutting()`` puts it back where it was, which is what a restarted run
+        needs: a door left open would make the second attempt a different board.
+        """
         self.doors.append(body_index)
         self._opening.append(opening)
+        self._shutting.append(shutting)
+
+    def reset(self, world=None):
+        """Shut every door and let the levers be thrown again."""
+        for shutting in self._shutting:
+            if shutting is not None:
+                shutting()
+        self.thrown = False
 
     def throw(self):
         """Open every door on the channel; True the first time, False after."""
@@ -242,8 +255,15 @@ class Door:
         # A cell's tile is a unit thick, so a leaf whose top sits that far under
         # the surface is below everything the marble can reach.
         sunk = (px, base - 1.0 - self.height / 2.0, pz)
+        shut = tuple(float(value) for value in world.position[leaf])
 
         def open_the_door():
             world.place_body(leaf, position=sunk)
 
-        _channel(result, self.channel).add_door(leaf, open_the_door)
+        def shut_the_door():
+            world.place_body(leaf, position=shut)
+
+        channel = _channel(result, self.channel)
+        channel.add_door(leaf, open_the_door, shut_the_door)
+        if channel not in result.resettable:
+            result.resettable.append(channel)

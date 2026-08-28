@@ -164,6 +164,7 @@ class Water:
             position=(site.x, site.floor + PLUG_REACH / 2.0, site.z), color=PLUG_COLOR)
         result.effects[trigger.index] = plug.release
         result.animators.append(KinematicAnimator(scene.world, body.index, plug.pose))
+        result.resettable.append(plug)
         result.feature_bodies.append(trigger)
         result.feature_bodies.append(body)
 
@@ -246,6 +247,10 @@ class _Plug:
         self.duration = float(duration)
         self.released_at = None
         self._now = 0.0
+
+    def reset(self, world=None):
+        """Shut the flap again, so a restarted run meets the same surprise."""
+        self.released_at = None
 
     def release(self, world, body):
         """Let the flap go, and wake the body that reached it so it feels the drop."""

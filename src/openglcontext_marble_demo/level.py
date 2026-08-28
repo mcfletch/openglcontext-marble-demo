@@ -365,6 +365,12 @@ class BuildResult:
     # Trigger-body-index -> the Gate it belongs to.  The game keeps the set of
     # gates still to be passed and refuses the finish until it is empty.
     gate_bodies: dict = field(default_factory=dict)
+    # Anything holding state a restarted run has to forget: a thrown lever, an
+    # opened plug.  Each answers to ``reset()``, and the game asks all of them.
+    # A board whose levers were still thrown would be a different board from the
+    # one the player started on, so the second attempt would not be a second
+    # attempt at the same thing.
+    resettable: list = field(default_factory=list)
     # Somewhere for mechanisms that have to find each other to do it: a lever
     # and the door it opens, named by a string both carry.  Per build rather
     # than global, so one board's channels are not reachable from another's,

@@ -109,8 +109,12 @@ the wall clock itself replays approximately, and this one replays exactly.
   going over the edge.
 - **Speed.** Ramps boost you; hitting a wall or landing hard from a height scrubs
   your speed; rubber bumpers give it back.
-- **Mechanisms.** Elevators carry you up and down, rotating arms sweep you sideways,
-  spring traps fling you — some always running, some triggered as you pass.
+- **Mechanisms.** Elevators carry you up and down, rotating arms sweep you
+  sideways, spring traps fling you. Sand takes eight times as long to churn
+  through as plain floor, unless you are launched over it. A lever opens its
+  door when struck at 4 m/s or harder — and the blow stops you, so a run at one
+  costs a pass. Water sinks you at a third of the speed of falling, and its plug
+  gives when you reach it, which you cannot know until you have.
 
 ## How the code is organized
 
@@ -197,10 +201,18 @@ python tools/capture.py --seed 7 --difficulty 3 --out shot.png
 
 ### Extending it
 
-- **A new mechanism** is a new dataclass in `level.py` with `owned_cells()` and
-  `build(scene, level, index, result)` — register a trigger effect in
-  `result.effects` or a `KinematicAnimator` in `result.animators`, and the game
-  wires it automatically. The generator lists it like any other feature.
+- **A new mechanism** is a new module in `mechanisms/`, holding a dataclass with
+  `owned_cells()` and `build(scene, level, index, result)` and decorated with
+  `@mechanism('name')`. Registering is also what teaches the file format to read
+  and write it, so there is no way to add one that no board can save. Record a
+  trigger effect in `result.effects`, a `KinematicAnimator` in
+  `result.animators`, anything holding state a restarted run must forget in
+  `result.resettable`, and anything that has to find another mechanism in
+  `result.channels`.
+- **A new story fragment** is a new module in `fragments/`, decorated with
+  `@fragment(name=..., tags=..., variants=...)`. Both packages are found by
+  scanning their own directory, so a new file is a new entry and no shared file
+  records it — which is what lets several be built at once without conflicting.
 - **A new marble/surface** is a row in `materials.MARBLES` / `SURFACES` plus a
   column in the pairwise friction grid.
 - **A new generator style** replaces `generator._carve_path` / `_decorate`; keep the

@@ -203,8 +203,11 @@ class MarbleGame:
         self.controller.fall_count = 0
         self.time_left = self.level.time_limit
         self.state = PLAYING
-        # Every gate shut again: a run started over is started over.
+        # Every gate shut again, and every lever, plug and door put back: a run
+        # started over is started over.
         self.gates = set(self.build.gate_bodies)
+        for holder in self.build.resettable:
+            holder.reset(self.scene.world)
         # A board still leaning from the run just abandoned would start the next
         # one already moving.
         self.tilt.level()

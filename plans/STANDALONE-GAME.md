@@ -1049,9 +1049,9 @@ Tracked here as it is built. Status is one of *planned*, *in progress*, *merged*
 
 | Mechanism | What it does | Status |
 |---|---|---|
-| `lever` + `door` | opens when struck hard enough | agent working |
-| `sand` | hard-edged drag: navigate it or be launched over it | agent working |
-| `water` | sinks the marble; the plug opens when it reaches the bottom | agent working |
+| `lever` + `door` | opens when struck hard enough | **merged** — throws at a 4 m/s blow; the blow also stops you, so a run at one costs a pass |
+| `sand` | hard-edged drag: navigate it or be launched over it | **merged** — 8.30 s to churn two cells against 0.98 s over floor; launching over costs what stone costs |
+| `water` | sinks the marble; the plug opens when it reaches the bottom | **merged** — 2.000 s to sink two metres against 0.667 s in air |
 | `pegs` | plinko, one fast slot among ordinary ones | agent working |
 | `rockfall` | bounceable descent that randomises the way you leave | agent working |
 | `destruction` | the marble can be lost: struck, dropped, crushed, burned | waiting on the slope work, which is in the same file |
@@ -1086,3 +1086,21 @@ floor.
   rather than an error — a generator recombining fragments should not have to
   know which of them can be failed.
 - **Seven fragments** registered with three or four variants each.
+- **`BuildResult.channels`**, where mechanisms that have to find each other do
+  it, and **`BuildResult.resettable`**, which is how a restarted run forgets a
+  thrown lever and an opened plug. A board whose levers were still thrown would
+  be a different board from the one the player started on.
+- **The editor's Story menu**: a chapter from the library appended to the board,
+  one press of undo, then the tile tools.
+
+### Measurements worth keeping
+
+**Friction does nothing to a rolling marble.** A sand material paired against
+every marble at dynamic coefficients of 1.5, 3, 8 and 20 gave 1.43 s across three
+cells every time — identical to stone to the hundredth. Coulomb friction acts
+where surfaces slide, and a rolling ball does not. What slows a marble is
+per-body damping, and the *angular* rate matters as much as the linear one
+because it takes the spin that grip would otherwise turn back into travel.
+
+That is worth remembering before reaching for friction to make anything feel
+different.
