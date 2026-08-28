@@ -10,7 +10,6 @@ land.
 So the properties here are about shape rather than content, and they are what
 separates an assembled board from a sprinkled one.
 """
-import pytest
 
 from openglcontext_marble_demo import fragments, storygen
 
