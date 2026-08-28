@@ -892,3 +892,31 @@ designer built is decoration.
   because a waypoint a designer cannot put down is a waypoint no board has.
 
 Running out of time still loses, whatever the gates say.
+
+---
+
+## 16. Where the branches stand
+
+| Branch | State |
+|---|---|
+| `spike/tilt-feel` | **built** — §13 |
+| `spike/sections` | **built** — §14, with two rules recorded as xfail |
+| `spike/waypoints` | **built** — §15 |
+| `spike/theming` | **partly, inside `spike/sections`** — a piece names a theme, a theme is a floor material, a wall material and a sound name, and four exist. What is not done is the sound: `Theme.sound` names a set and nothing plays it. `omi_audio` is in the workspace and this is where it would hook in — one emitter per contact, chosen by the surface the marble is on. |
+| `spike/stories` | **not started** — `chain()` composes pieces from a list of names, which is the mechanism a story needs; what is missing is the *stories*, the branch a story takes when a player misses a turn-off, and the vocabulary for saying "if they miss this, drop them into that". |
+
+### What the next session should take first
+
+**The two rules that do not bite.** The kicker cannot be climbed and the spillway
+cannot be overrun, and both look like one cause: a slope built of tilted tiles
+costs more speed than a slope should. Measure the speed a marble loses per metre
+of a tilted-tile ramp against the same descent on one flat plane, and the answer
+is either a tuning number or a defect in how a `Ramp` tile meets its neighbour.
+Until that is settled, no joiner whose rule is about *carrying speed* can work,
+which is most of the interesting ones.
+
+**Then stories.** The story in §12.2 needs one thing `chain()` does not have: a
+piece that has **two exits**, so missing the turn-off drops you somewhere rather
+than ending the run. That is the shape of the whole idea — the forest of banking
+mushrooms is where you go when you get the ramp wrong — and it is a change to
+`Port`/`Piece` rather than a new kind of thing.
