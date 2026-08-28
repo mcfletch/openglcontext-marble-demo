@@ -51,6 +51,7 @@ oglc-marble --board spiral.marble
 | **R** | reset the run (marble back to the start, clock refilled) |
 | **N** | next level (a new generated seed) |
 | **M** | cycle the marble material (steel → chrome → glass → rubber → wood → ice) |
+| **D** | let the autopilot play |
 | **Esc** | quit |
 
 Each arrow **press imparts a spin kick**; holding a key re-fires it (key-repeat) for
@@ -59,6 +60,42 @@ sustained steering. The whole board tilts toward the camera, so — like the ori
 momentum*, not driving from a standstill. How much a kick actually moves the marble
 depends on the marble↔surface friction: a rubber marble bites and turns sharply, a
 steel marble on ice barely responds and drifts.
+
+## Watching it, and reading a run back
+
+The game plays itself when asked, records what it draws, and writes a session
+down so a run can be read back and run again.
+
+```bash
+oglc-marble --demo                          # the autopilot plays; D toggles it
+oglc-marble --demo --record run.mp4 --record-seconds 30 --size 1280 720
+oglc-marble --telemetry run.jsonl           # write the session down
+oglc-marble --replay run.jsonl              # run it again, same input, same frames
+python -m OpenGLContext.telemetry run.jsonl # read it
+```
+
+The **autopilot** (`pilot.py`) reads the board, works out a line across it, and
+leans the board along that line — through exactly the controls a player holds,
+bounded to what a held key gives. So a recording of it is a recording of the
+game rather than of an animation, and an attract mode is the game playing.
+
+**Recording** goes straight from the framebuffer to the GPU's H.264 encoder
+(`OpenGLContext[video]`), and installs a clock that advances by exactly one
+frame's worth per frame kept — so a video is smooth however fast the machine
+drew it.
+
+**Telemetry** records every input against the frame that acted on it, and the
+game marks what the engine cannot know: which board loaded, when one was fallen
+off, how a run ended. A replay answers each mark with the one recorded in its
+place and says how the two accounts compared:
+
+```
+replay of run.jsonl: 5 marks, all as recorded
+```
+
+That check is why the run loop reads the engine's clock
+(`OpenGLContext.events.systemtime`) rather than `time.time()`: a game that reads
+the wall clock itself replays approximately, and this one replays exactly.
 
 ## How it plays
 

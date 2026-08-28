@@ -112,4 +112,9 @@ addopts = "-ra"
 timeout = 300
 markers = [
     "needs_gl: opens a real GL window; skipped where there is no display",
+    # The autopilot is judged by whether it finishes boards, which means driving
+    # them: a minute of simulation, and most of what the suite costs. Marked
+    # rather than removed -- what they measure is the point of having a pilot --
+    # so a working loop can be `-m "not slow"` and a full run is the default.
+    "slow: drives whole boards; seconds rather than milliseconds",
 ]

@@ -10,6 +10,16 @@ mechanisms — all live in the game/tilt/controller/level modules and are unit
 tested; this file is the shape a programmer copies to drive OpenGLContext's
 physics + PBR from their own input.
 
+**It plays itself when asked.** ``--demo`` hands the board to
+:class:`~openglcontext_marble_demo.pilot.Autopilot`, which leans it through
+exactly the controls a player holds -- so an attract mode, and a recorded video,
+are the game rather than a scripted animation of it.
+
+**It records.** ``--record run.mp4`` writes the frames straight from the
+framebuffer to the GPU's video encoder, and ``--telemetry run.jsonl`` writes down
+every input against the frame that acted on it, so a run can be read back and run
+again (``--replay run.jsonl``).
+
 **Input is sampled, not reacted to.** The engine's
 :class:`~OpenGLContext.events.inputstate.InputState` already accumulates every key
 transition (``ViewPlatformMixin.ProcessEvent`` feeds it, whatever movement manager
@@ -20,7 +30,6 @@ arriving at whatever rate the platform repeats at.
 import argparse
 import math
 import os
-import time
 from typing import Any
 
 # Core profile + GLFW + the PBR renderer with image-based lighting give reflective
@@ -31,11 +40,13 @@ os.environ.setdefault("OPENGLCONTEXT_IBL", "full")
 
 import numpy as np
 from OpenGLContext import testingcontext
+from OpenGLContext.events.systemtime import systemTime
 from OpenGLContext.move.followcam import FollowCamera
 from OpenGLContext.physics.demo import disable_vsync
 from OpenGLContext.scenegraph import basenodes
+from OpenGLContext.video.recorder import RecordingMixin
 
-from . import generator, levelfile, materials
+from . import generator, levelfile, materials, pilot
 from .game import PLAYING, ROLL_DAMPING, SPIN, TILT, MarbleGame
 from .hud import HUD
 
@@ -98,14 +109,19 @@ ARROW_DIRECTION = {
 
 MARBLE_CYCLE = ["steel", "chrome", "glass", "rubber", "wood", "ice"]
 
+#: How long the demo holds on a finished run before starting the next board.
+#: Long enough to read what happened, short enough that a recording is mostly
+#: play.
+DEMO_PAUSE = 2.0
+
 CONTROLS = """\
 Marble — arrows or WASD lean the board; the marble rolls downhill on its own.
   R  restart the run      N  next board      M  cycle the marble material
-  C  switch between leaning the board and kicking spin       Esc  quit
+  C  lean the board / kick spin     D  let the autopilot play      Esc  quit
 """
 
 
-class MarbleContext(BaseContext):
+class MarbleContext(RecordingMixin, BaseContext):
     """An OpenGLContext window that plays a generated marble level."""
 
     # Class attributes set by main() from the command line.
@@ -116,6 +132,12 @@ class MarbleContext(BaseContext):
     #: it" passes.  N generates the next seed, which is how a player gets back
     #: to the endless boards from an authored one.
     board_path = None
+    #: Let the autopilot play, which is what an attract mode and a recording
+    #: want.  D switches it on and off mid-run.
+    demo = False
+    #: Where to record the run to, and how; None for an ordinary run.
+    record_path = None
+    record_options: dict = {}
     control = TILT
     base_tilt = math.degrees(math.atan(0.22))
     player_tilt = 26.0
@@ -153,8 +175,17 @@ class MarbleContext(BaseContext):
         self.addEventHandler("keypress", name="n", function=self._on_next)
         self.addEventHandler("keypress", name="m", function=self._on_cycle_material)
         self.addEventHandler("keypress", name="c", function=self._on_cycle_control)
+        self.addEventHandler("keypress", name="d", function=self._on_toggle_demo)
         self.keyRepeatDelay = 0.1
-        self._last = time.time()
+        #: How many times the marble had gone over the edge when last looked at,
+        #: so a fall is marked once rather than every frame after it.
+        self._falls = 0
+        #: When the run ended, so the demo can hold on the result before moving
+        #: on; None while one is being played.
+        self._ended_at = None
+        self._last = systemTime()
+        if self.record_path:
+            self.setupRecording(self.record_path, **self.record_options)
         print(CONTROLS)
 
     # -- game/scene -----------------------------------------------------
@@ -172,10 +203,22 @@ class MarbleContext(BaseContext):
         self.camera.target(self.game.scene.world.position[self.game.marble.index])
         self.camera.apply()
 
+        # A pilot for every board, whether or not it is driving: switching the
+        # demo on mid-run should not have to build one first.
+        self.pilot = pilot.Autopilot(level,
+                                     forward_axis=self.game.tilt.forward_axis,
+                                     right_axis=self.game.tilt.right_axis)
+
         sun = basenodes.DirectionalLight(direction=(-0.4, -1, -0.5),
                                          color=(1, 0.98, 0.9), intensity=0.9)
         self.game.scene.advance(0.0)
         self.sg = self.game.scene_graph(extra=[sun])
+        # What the engine cannot know: which board this is.  A mark is the line
+        # a reader looks for first in a journal, and a replay checks each of
+        # them against the one recorded in its place.
+        self.mark('board-loaded', name=level.name, tiles=len(level.cells),
+                  seconds=level.time_limit, control=self.control,
+                  demo=bool(self.demo))
         print(f"Level {self.level_number} ({level.name}): {len(level.cells)} tiles, "
               f"{level.time_limit:.0f}s limit, {self.control} control")
 
@@ -201,11 +244,27 @@ class MarbleContext(BaseContext):
         return (state.axis(FORWARD_KEYS, BACKWARD_KEYS),
                 state.axis(RIGHT_KEYS, LEFT_KEYS))
 
+    def _on_toggle_demo(self, event):
+        """Hand the board to the autopilot, or take it back."""
+        self.demo = not self.demo
+        print('demo: %s' % ('on' if self.demo else 'off'))
+        self.mark('demo', on=bool(self.demo))
+        self.triggerRedraw(1)
+
     def _on_arrow(self, event):
         """One spin kick — the spin model only; the lean is sampled, not evented."""
         if self.game.control == SPIN:
             self.game.kick(*ARROW_DIRECTION[event.name])
             self.triggerRedraw(1)
+
+    def _demand(self):
+        """Who is steering: the autopilot, or whoever is holding the keys."""
+        if not self.demo:
+            return self._lean_demand()
+        world = self.game.scene.world
+        index = self.game.marble.index
+        return self.pilot.lean(world.position[index],
+                               world.linear_velocity[index])
 
     def _on_reset(self, event):
         self.game.reset()
@@ -216,6 +275,7 @@ class MarbleContext(BaseContext):
         self.board_path = None
         self.seed += 1
         self.level_number += 1
+        self._ended_at = None
         self._build_game()
         self.triggerRedraw(1)
 
@@ -240,20 +300,53 @@ class MarbleContext(BaseContext):
         print(f"control: {self.control}")
         self.triggerRedraw(1)
 
+    def presentFrame(self):
+        """Present the frame, and give it to the recording first.
+
+        The back buffer holds the finished frame only until it is swapped away,
+        so a recording takes it here rather than on a clock.
+        """
+        if self.recording:
+            self.tickRecording()
+        return super().presentFrame()
+
     # -- loop -----------------------------------------------------------
     def OnIdle(self, *args):
-        now = time.time()
+        # The engine's clock, not `time.time()`.  It is the same wall clock for
+        # an ordinary run, and it is the *recorded* one under a replay and a
+        # fixed step per frame under a recording -- so a run that is a function
+        # of its input and its clock runs again as it ran, and a video advances
+        # the world by exactly one frame of time per frame it keeps.
+        now = systemTime()
         dt = min(now - self._last, 0.05)
         self._last = now
 
         was_playing = self.game.state == PLAYING
-        self.game.lean(*self._lean_demand())
+        self.game.lean(*self._demand())
         self.game.advance(dt)
         self.camera.advance(dt, self.game.controller.speed)
         self.camera.apply()
         if was_playing and self.game.state != PLAYING:
             print(f"Run {self.game.state}! time left {self.game.time_left:.1f}s, "
                   f"falls {self.game.controller.fall_count}")
+            # Outcome and falls, and deliberately not the clock: a mark is
+            # what a replay is checked against, and a float that accumulates a
+            # hundredth of a second over six hundred frames makes a check that
+            # always fails.  What has to reproduce is what happened.
+            self.mark('run-ended', outcome=self.game.state,
+                      falls=self.game.controller.fall_count)
+            self._ended_at = now
+        falls = self.game.controller.fall_count
+        if falls != self._falls:
+            self._falls = falls
+            self.mark('fell', count=falls)
+        # An attract mode that stopped on the first finish would be a frozen
+        # screen for the rest of the recording, so the demo goes round: a beat
+        # on the result, then the next board.
+        if self.demo and self._ended_at is not None \
+                and now - self._ended_at >= DEMO_PAUSE:
+            self._ended_at = None
+            self._on_next(None)
         self.triggerRedraw(1)      # gravity always acts, so always redraw
         return 1
 
@@ -284,11 +377,49 @@ def build_parser():
                         metavar=("LINEAR", "ANGULAR"),
                         help="how freely the marble rolls, per second; the "
                              "scenegraph manager's own defaults are 0.3 1.5")
+    parser.add_argument("--size", nargs=2, type=int, default=None,
+                        metavar=("WIDTH", "HEIGHT"),
+                        help="the window's size in pixels, which is a "
+                             "recording's size too")
+    parser.add_argument("--demo", action="store_true",
+                        help="let the autopilot play (D switches it mid-run)")
+
+    recording = parser.add_argument_group(
+        "recording", "writing a run down, as video or as a session journal")
+    recording.add_argument("--record", metavar="PATH", dest="record_path",
+                           help="record the run to PATH (an .mp4) and quit when "
+                                "the recording is done")
+    recording.add_argument("--record-seconds", type=float, default=20.0,
+                           metavar="SECONDS", help="how long a recording runs "
+                                                   "for (default: %(default)s)")
+    recording.add_argument("--record-fps", type=int, default=60, metavar="FPS",
+                           help="frames a second in the recording "
+                                "(default: %(default)s)")
+    recording.add_argument("--record-delay", type=float, default=1.0,
+                           metavar="SECONDS",
+                           help="let the scene settle for this long before the "
+                                "recording starts (default: %(default)s)")
+    recording.add_argument("--record-bitrate", type=int, default=0,
+                           metavar="BITS",
+                           help="bits a second; 0 lets the encoder choose from "
+                                "the frame size and rate")
+    recording.add_argument("--telemetry", metavar="PATH",
+                           help="record the session -- every input against the "
+                                "frame that acted on it -- to PATH (a .jsonl)")
+    recording.add_argument("--replay", metavar="PATH",
+                           help="run a recorded session again, with the same "
+                                "input on the same frames")
     return parser
 
 
 def main(argv=None):
     args = build_parser().parse_args(argv)
+    # Telemetry is read from the environment by the context before OnInit, so
+    # the flags are the environment: one way in, whichever the caller used.
+    if args.telemetry:
+        os.environ["OPENGLCONTEXT_TELEMETRY"] = args.telemetry
+    if args.replay:
+        os.environ["OPENGLCONTEXT_TELEMETRY_REPLAY"] = args.replay
     MarbleContext.marble_name = args.marble
     MarbleContext.board_path = args.board_path
     MarbleContext.seed = args.seed
@@ -298,7 +429,17 @@ def main(argv=None):
     MarbleContext.player_tilt = args.player_tilt
     MarbleContext.camera_distance = args.camera_distance
     MarbleContext.damping = tuple(args.damping)
-    MarbleContext.ContextMainLoop()
+    MarbleContext.demo = args.demo
+    MarbleContext.record_path = args.record_path
+    MarbleContext.record_options = {
+        "fps": args.record_fps, "seconds": args.record_seconds,
+        "start_after": args.record_delay,
+        **({"bitrate": args.record_bitrate} if args.record_bitrate else {}),
+    }
+    if args.size:
+        MarbleContext.ContextMainLoop(size=tuple(args.size))
+    else:
+        MarbleContext.ContextMainLoop()
 
 
 if __name__ == "__main__":
