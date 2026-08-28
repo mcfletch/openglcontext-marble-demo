@@ -35,6 +35,10 @@ def hud_lines(game):
     # nobody reads.
     if game.gates_left:
         lines.append(f"GATES {game.gates_left}")
+    # How many marbles this run has cost and what took the last one, named, so
+    # the trap that keeps winning can be recognised and steered around.
+    if game.controller.last_loss:
+        lines.append(f"LOST {game.controller.loss_count} {game.controller.last_loss}")
     return lines
 
 
@@ -43,11 +47,20 @@ def time_is_urgent(game):
 
 
 def banner(game):
-    """A big center message for the end of a run, or ``None`` while playing."""
+    """A big center message: the end of the run, or the marble just lost.
+
+    A trap the player cannot name is a trap they cannot learn, so a destroyed
+    marble puts what took it — and what it cost the clock — in the middle of the
+    screen for the seconds before its replacement arrives.
+    """
     if game.state == WON:
         return "FINISH!  press N for next"
     if game.state == LOST:
+        if game.ended_by:
+            return f"OUT OF TIME — {game.ended_by}  press R to retry"
         return "OUT OF TIME  press R to retry"
+    if game.controller.is_lost:
+        return f"{game.controller.last_loss.upper()}  -{game.loss_penalty:.0f}s"
     return None
 
 

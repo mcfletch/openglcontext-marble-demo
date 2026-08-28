@@ -69,13 +69,24 @@ PLAYER_TILT = math.radians(26)
 #: enough damping is kept that a marble at rest settles rather than creeping.
 ROLL_DAMPING = (0.05, 0.2)
 
+#: Seconds off the clock for a marble lost to a trap, on top of the longer wait
+#: for the replacement.
+#:
+#: The run continues from the last checkpoint rather than ending, because a board
+#: that stops at the first mistake is a board played once.  What the loss costs is
+#: paid in the currency the player is already watching — a fall off the edge costs
+#: the two seconds of its respawn and this costs six times that — so there is one
+#: thing to keep an eye on and no second economy to learn.  A player who cannot
+#: pay ends the run, and the banner says which trap ended it.
+LOSS_PENALTY = 8.0
+
 
 class MarbleGame:
     def __init__(self, level, marble_material="steel", camera=None,
                  radius=MARBLE_RADIUS, debug_flags=0,
                  steer_forward=None, steer_right=None,
                  control=TILT, base_tilt=BASE_TILT, player_tilt=PLAYER_TILT,
-                 damping=ROLL_DAMPING):
+                 damping=ROLL_DAMPING, loss_penalty=LOSS_PENALTY):
         self.level = level
         self.marble_material = marble_material
         self.radius = radius
@@ -112,17 +123,25 @@ class MarbleGame:
             steer["steer_forward"] = steer_forward
         if steer_right is not None:
             steer["steer_right"] = steer_right
+        self.loss_penalty = loss_penalty
         self.controller = MarbleController(
             self.scene.world, self.marble.index, self.build.track,
             marble_radius=radius, marble_material=marble_material, camera=camera,
-            kill_y=level.kill_y, respawn_delay=level.respawn_delay, **steer)
+            kill_y=level.kill_y, respawn_delay=level.respawn_delay,
+            on_lost=self._marble_lost, **steer)
 
         #: The gates still to be passed.  A run cannot be finished while any
         #: remain, which is what makes a board a route rather than a direction.
         self.gates = set(self.build.gate_bodies)
+        # The board's hazards: anything among the animators that can take a
+        # marble by holding it rather than by hitting it, and so has to be asked
+        # rather than measured from the contacts.
+        self.hazards = [a for a in self.build.animators if hasattr(a, 'lost')]
         self._wire_triggers()
         self.time_left = level.time_limit
         self.state = PLAYING
+        #: What ended the run, when a lost marble was what emptied the clock.
+        self.ended_by = None
 
     # -- setup ----------------------------------------------------------
     def _spawn_marble(self):
@@ -186,6 +205,7 @@ class MarbleGame:
             animator.update(dt)
         self.scene.advance(dt)
         self.controller.update(dt)
+        self._check_hazards()
         self._draw_lean()
         # `state` may have flipped to WON inside advance() via the finish trigger.
         if self.state == PLAYING:
@@ -195,14 +215,40 @@ class MarbleGame:
                 self.state = LOST
         return self.state
 
+    # -- losing the marble ----------------------------------------------
+    def _check_hazards(self):
+        """Ask the board's hazards whether any of them has taken the marble.
+
+        A hazard destroys by holding rather than by striking, so there is no
+        contact for the controller to read and the answer has to be asked for.
+        """
+        for hazard in self.hazards:
+            cause = hazard.lost(self.marble.index)
+            if cause is not None:
+                self.controller.destroy(cause)
+
+    def _marble_lost(self, cause):
+        """Charge the run for a destroyed marble; end it if it cannot pay.
+
+        The clock is the only thing a run spends, so this is what a trap costs:
+        :data:`LOSS_PENALTY` seconds, and the run carries on from the last
+        checkpoint.  A player who does not have the seconds is out of time, and
+        ``cause`` is what the banner says took them.
+        """
+        self.time_left = max(0.0, self.time_left - self.loss_penalty)
+        if self.time_left <= 0.0 and self.state == PLAYING:
+            self.state = LOST
+            self.ended_by = cause
+
     def reset(self):
         """Abort the run: marble back to the start, clock full, playing again."""
         self.controller.checkpoint = self.level.start_cell
         self.controller._checkpoint_surface = self.level.cells[self.level.start_cell]
         self.controller._respawn()
-        self.controller.fall_count = 0
+        self.controller.forget_the_run()
         self.time_left = self.level.time_limit
         self.state = PLAYING
+        self.ended_by = None
         # Every gate shut again, and every lever, plug and door put back: a run
         # started over is started over.
         self.gates = set(self.build.gate_bodies)
