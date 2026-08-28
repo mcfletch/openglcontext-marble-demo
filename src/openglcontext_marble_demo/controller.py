@@ -1,11 +1,11 @@
-"""The marble controller: spin-to-steer, grounding, and fall/respawn.
+"""The marble controller: spin-to-steer, grounding, fall/respawn, and destruction.
 
 This is the heart of the game feel.  It owns no rendering and no window — it reads
 and writes a :class:`~omi_physics.world.PhysicsWorld` body and a
 :class:`~openglcontext_marble_demo.track.TrackMap`, so every rule here is unit
 tested against the real physics.
 
-Two responsibilities:
+Three responsibilities:
 
 **Steering.**  Holding an arrow imparts *spin*, not a shove.  A ball rolling in a
 horizontal direction ``d`` spins about the axis ``up × d`` (rolling without
@@ -21,11 +21,43 @@ a track cell, near its surface — this becomes the checkpoint and camera target
 freezes the camera on the last square and, after a penalty delay, respawns the
 marble there at rest.  The delay is deliberate: an instant respawn would let a
 player dump unwanted speed by driving off the edge.
+
+**Destruction.**  A marble can also be *lost*, which is what gives the board's
+traps teeth: hit hard enough (:attr:`~MarbleController.lethal_impact_speed`),
+dropped far enough onto the board (:attr:`~MarbleController.lethal_fall_height`),
+held between two surfaces closer together than it is wide
+(:attr:`~MarbleController.crush_squeeze`), or destroyed by a hazard that calls
+:meth:`destroy` itself.  Falling off the board is the cheap ending; being lost
+costs the longer :attr:`~MarbleController.destroy_delay` and, through
+:class:`~openglcontext_marble_demo.game.MarbleGame`, a chunk of the clock.  What
+it was lost to is kept in :attr:`~MarbleController.last_loss` so the player can
+be told which trap took the marble.
+
+A hazard on the board — a burner, anything spread over cells rather than met at a
+contact — destroys a marble by calling :meth:`destroy` with its own cause.  The
+game finds those hazards among the build's animators: anything answering
+``lost(body)`` with a cause or ``None`` is asked once a frame.
 """
+from typing import NamedTuple
+
 import numpy as np
 
 ACTIVE = "active"
 FALLEN = "fallen"
+DESTROYED = "destroyed"
+
+#: What a marble can be lost to.  These are the words the player is shown: a
+#: trap nobody can name is a trap nobody learns to avoid.
+STRUCK = "struck"
+DROPPED = "dropped"
+CRUSHED = "crushed"
+BURNED = "burned"
+
+#: How far past a right angle two of the marble's contact normals have to point
+#: before it counts as being *between* those surfaces rather than tucked into the
+#: corner where they meet.  A right-angled corner reads 0; two flat faces facing
+#: each other read -1.
+OPPOSED = -0.5
 
 # Steering is expressed in the camera's fixed frame.  The board tilts toward +Z, so
 # the marble rolls +Z downhill *toward the viewer* (the camera sits on the +Z side,
@@ -34,6 +66,27 @@ FALLEN = "fallen"
 FORWARD_AXIS = np.array([0.0, 0.0, -1.0])
 RIGHT_AXIS = np.array([1.0, 0.0, 0.0])
 UP = np.array([0.0, 1.0, 0.0])
+
+
+class Touch(NamedTuple):
+    """One of this step's contacts, read from the marble's point of view.
+
+    The solver's own normal runs from body ``a`` toward body ``b``, so which way
+    it points depends on which of the pair the marble happens to be.  Flipped
+    once here, every rule below can read it as *the way out of the marble*.
+    """
+    #: The body on the other side of the contact.
+    other: int
+    #: Unit normal pointing out of the marble, toward what it is touching.
+    normal: np.ndarray
+    #: How fast the two were closing along that normal when they met, in m/s.
+    #: The solver records this before it resolves anything, which is the only
+    #: moment it can be read.
+    approach: float
+    #: The impulse the solver applied, per unit of the marble's mass.
+    impulse: float
+    #: How far the two overlap, in metres.
+    depth: float
 
 
 class MarbleController:
@@ -45,7 +98,8 @@ class MarbleController:
     LANDING_GRACE = 10
 
     def __init__(self, world, index, track, marble_radius=0.5, marble_material="steel",
-                 camera=None, kill_y=-8.0, respawn_delay=2.0, kick_speed=1.2,
+                 camera=None, kill_y=-8.0, respawn_delay=2.0, destroy_delay=None,
+                 on_lost=None, kick_speed=1.2,
                  linear_fraction=0.6, steer_forward=FORWARD_AXIS, steer_right=RIGHT_AXIS):
         self.world = world
         self.index = index
@@ -55,6 +109,14 @@ class MarbleController:
         self.camera = camera
         self.kill_y = kill_y
         self.respawn_delay = respawn_delay
+        # A lost marble is remade at the checkpoint like a fallen one, but the
+        # wait is twice as long by default: the difference between a slip and a
+        # death has to be felt before the clock comes into it at all.
+        self.destroy_delay = (2.0 * respawn_delay if destroy_delay is None
+                              else destroy_delay)
+        #: Called with the cause the moment a marble is lost, for whoever is
+        #: charging for it -- the game docks the clock and names it on screen.
+        self.on_lost = on_lost
         # Steering frame (ground-plane axes for "forward"/"right").  Set from the
         # camera so steering is screen-relative even when the view is yawed for the
         # isometric angle; defaults to the world -Z / +X axes.
@@ -86,9 +148,39 @@ class MarbleController:
         self.landing_retain = 0.2
         self.elastic_restitution = 0.5
 
+        # Destruction thresholds.  Each is set well clear of what ordinary play
+        # produces, because a rule that fires on a good run is a rule the player
+        # reads as the game breaking rather than as a trap they walked into.
+        #
+        # ``lethal_impact_speed`` is a *closing* speed in m/s -- how fast the two
+        # were coming together when they met, which the solver records before it
+        # resolves anything.  The impulse it then applies is (1 + restitution)
+        # times as large, so a springy bumper books half again what stone books
+        # for the same hit; measuring the closing speed is what stops the softest
+        # thing on the board being the deadliest.  A marble free-rolling down a
+        # leaned board reaches a wall at about 12 m/s and a boost pad caps at 8.
+        self.lethal_impact_speed = 20.0
+        # How far a marble may fall *onto* the board and roll on.  Terraces step
+        # 0.9 m and an elevator travels 3 m, so this is a tower a board has to be
+        # built to have.  Falling off the *edge* is a different thing and stays
+        # cheap: there is nothing out there to hit.
+        self.lethal_fall_height = 8.0
+        # Held between two opposed surfaces closer together than the marble is
+        # wide by this fraction of its diameter, for ``crush_time`` seconds.  A
+        # fraction rather than a distance, so it means the same for any marble.
+        self.crush_squeeze = 0.1
+        self.crush_time = 0.25
+
         self.state = ACTIVE
         self.respawn_timer = 0.0
         self.fall_count = 0
+        #: How many marbles this run has lost, and what the last one was lost
+        #: to -- one of :data:`STRUCK`, :data:`DROPPED`, :data:`CRUSHED`,
+        #: :data:`BURNED`, or whatever cause a hazard passed to :meth:`destroy`.
+        self.loss_count = 0
+        self.last_loss = None
+        # Seconds the marble has been held between two surfaces, so far.
+        self._squeezed_for = 0.0
         # Whether the marble has *fallen*, which is what the hard-landing rule
         # keys on.  Not how hard the floor pushed back: a marble rolling down a
         # slope onto a flatter part pushes back exactly as hard as one that fell
@@ -140,7 +232,7 @@ class MarbleController:
     # -- per-frame update ----------------------------------------------
     def update(self, dt):
         """Advance the track-presence state machine one frame; drive the camera."""
-        if self.state == FALLEN:
+        if self.state != ACTIVE:
             self._update_respawn(dt)
             return self.state
 
@@ -153,16 +245,39 @@ class MarbleController:
             self.checkpoint = cell
             self._checkpoint_surface = self.track.cells[cell]
         surface = self.track.cells[cell] if on_track else self._checkpoint_surface
-        self._watch_the_air(grounded, position[1] - self.radius - surface)
+        landed_from = self._watch_the_air(grounded, position[1] - self.radius - surface)
 
         if self.camera is not None:
             self.camera.target(position)
 
-        self._apply_impact_rules(airborne=self.airborne)
+        # Everything the contacts have to say, read once.  The order is the
+        # order the player would name it in: how far it fell, then how hard it
+        # was hit, then whether something is closing on it.
+        touches = self._touches()
+        if landed_from >= self.lethal_fall_height:
+            return self.destroy(DROPPED)
+        if max((touch.approach for touch in touches), default=0.0) \
+                >= self.lethal_impact_speed:
+            return self.destroy(STRUCK)
+        if self._held_too_long(touches, dt):
+            return self.destroy(CRUSHED)
+
+        self._apply_impact_rules(touches, airborne=self.airborne)
 
         if self._has_fallen(position, on_track):
             self._begin_fall()
         return self.state
+
+    def _touches(self):
+        """This step's contacts on the marble, as :class:`Touch` records."""
+        world, i = self.world, self.index
+        mass = max(float(world.mass[i]), 1e-6)
+        return [Touch(contact.b if contact.a == i else contact.a,
+                      contact.normal if contact.a == i else -contact.normal,
+                      float(contact.approach),
+                      float(contact.normal_impulse) / mass,
+                      float(contact.depth))
+                for contact in world.contacts if i in (contact.a, contact.b)]
 
     def _watch_the_air(self, grounded, clearance):
         """Remember how far above the surface the marble has been, and when.
@@ -170,15 +285,21 @@ class MarbleController:
         The height is latched on the way *down* -- the frame the marble is back
         on the ground -- and left alone after that, so a second grounded frame
         does not wipe what the first one recorded.
+
+        Returns that height on the one frame the marble lands, and zero on every
+        other frame, which is what tells the drop that destroys a marble from
+        the same drop still being remembered a moment later.
         """
         if not grounded:
             self._peak_clearance = max(self._peak_clearance, float(clearance))
             self._since_air = 0
-            return
-        if self._peak_clearance:
-            self._fell_from = self._peak_clearance
-            self._peak_clearance = 0.0
+            return 0.0
         self._since_air += 1
+        if not self._peak_clearance:
+            return 0.0
+        self._fell_from = self._peak_clearance
+        self._peak_clearance = 0.0
+        return self._fell_from
 
     @property
     def airborne(self):
@@ -188,37 +309,59 @@ class MarbleController:
                 and max(self._fell_from, self._peak_clearance) >= self.FALL_HEIGHT)
 
     # -- impact speed kills ---------------------------------------------
-    def _apply_impact_rules(self, airborne=True):
+    def _apply_impact_rules(self, touches, airborne=True):
         """Scrub speed on a hard wall hit or landing (non-elastic surfaces only).
 
-        Reads this step's contacts: a large normal impulse per unit mass is an
-        effective approach speed, and the contact normal's verticality tells a
-        floor landing from a wall.  Resting contacts carry only the tiny
-        weight-support impulse, well below the thresholds, so a marble simply
-        sitting or rolling is never affected.
+        A large normal impulse per unit mass is an effective approach speed, and
+        the contact normal's verticality tells a floor landing from a wall.
+        Resting contacts carry only the tiny weight-support impulse, well below
+        the thresholds, so a marble simply sitting or rolling is never affected.
 
         ``airborne`` says whether the marble had left the ground.  A landing is
         only a landing if it fell: rolling fast down a slope onto a flatter part
         pushes the floor exactly as hard, and scrubbing that makes a dip
         impossible to carry speed through.  A wall is a wall either way.
         """
-        world, i = self.world, self.index
-        mass = max(world.mass[i], 1e-6)
-        for contact in world.contacts:
-            if i not in (contact.a, contact.b):
+        world = self.world
+        for touch in touches:
+            if touch.impulse < self.wall_impact_speed:
                 continue
-            other = contact.b if contact.a == i else contact.a
-            impact_speed = contact.normal_impulse / mass
-            if impact_speed < self.wall_impact_speed:
-                continue
-            if world.material_for(world.collider_material[other]).restitution \
+            if world.material_for(world.collider_material[touch.other]).restitution \
                     >= self.elastic_restitution:
                 continue                         # springy surface: let physics keep it
-            if abs(contact.normal[1]) > 0.7:     # floor/ceiling contact
-                if airborne and impact_speed >= self.hard_landing_speed:
+            if abs(touch.normal[1]) > 0.7:       # floor/ceiling contact
+                if airborne and touch.impulse >= self.hard_landing_speed:
                     self._scale_horizontal_speed(self.landing_retain)
             else:                                # wall contact
                 self._scale_horizontal_speed(self.wall_retain)
+
+    # -- being crushed ---------------------------------------------------
+    def _held_too_long(self, touches, dt):
+        """Whether the marble has been squeezed past bearing, for long enough.
+
+        The press has to be *held*.  A gap that shuts on the marble and opens
+        again is a scare rather than a death, which is what ``crush_time`` buys
+        the player -- and what keeps a marble bouncing off a ceiling on its way
+        through a tunnel out of it.
+        """
+        if self._squeeze(touches) < self.crush_squeeze * 2.0 * self.radius:
+            self._squeezed_for = 0.0
+            return False
+        self._squeezed_for += dt
+        return self._squeezed_for >= self.crush_time
+
+    @staticmethod
+    def _squeeze(touches):
+        """How far below its diameter the marble is being held, in metres.
+
+        Two contacts whose outward normals oppose one another are the two sides
+        of a grip, and the depths they overlap by sum to exactly how far the pair
+        of surfaces has closed past the marble's width.
+        """
+        return max((first.depth + second.depth
+                    for n, first in enumerate(touches) for second in touches[n + 1:]
+                    if float(np.dot(first.normal, second.normal)) <= OPPOSED),
+                   default=0.0)
 
     def _scale_horizontal_speed(self, retain):
         # Scrub the horizontal velocity *and* the spin — otherwise the spin the
@@ -240,37 +383,90 @@ class MarbleController:
         return (not on_track
                 and position[1] < self._checkpoint_surface - self.fall_margin)
 
-    # -- fall / respawn -------------------------------------------------
+    # -- fall / destruction / respawn -----------------------------------
+    def destroy(self, cause):
+        """Lose the marble to ``cause``; a new one arrives at the last checkpoint.
+
+        Public because the board reaches in through it: three of the four ways to
+        lose a marble are measured here from the contacts, and a hazard spread
+        over cells — a burner, anything with a dwell rather than an impact —
+        calls this with its own cause instead.
+
+        Losing an already-lost marble is nothing, so a second cause arriving in
+        the same moment cannot overwrite the one the player is being shown.
+        """
+        if self.state == DESTROYED:
+            return self.state
+        self.state = DESTROYED
+        self.respawn_timer = 0.0
+        self._squeezed_for = 0.0
+        self.last_loss = cause
+        self.loss_count += 1
+        self._hold_camera()
+        if self.on_lost is not None:
+            self.on_lost(cause)
+        return self.state
+
+    def forget_the_run(self):
+        """Clear what the marble has been through, for a run started over."""
+        self.fall_count = 0
+        self.loss_count = 0
+        self.last_loss = None
+
     def _begin_fall(self):
         self.state = FALLEN
         self.respawn_timer = 0.0
-        if self.camera is not None:
-            center_x, center_z = self.track.cell_center(*self.checkpoint)
-            self.camera.target((center_x, self._checkpoint_surface, center_z))
-            self.camera.hold()
+        self._hold_camera()
+
+    def _hold_camera(self):
+        """Freeze the view on the square the marble was last safely on."""
+        if self.camera is None:
+            return
+        center_x, center_z = self.track.cell_center(*self.checkpoint)
+        self.camera.target((center_x, self._checkpoint_surface, center_z))
+        self.camera.hold()
+
+    @property
+    def wait_to_return(self):
+        """Seconds before the marble comes back, which is longer for a loss."""
+        return self.destroy_delay if self.state == DESTROYED else self.respawn_delay
 
     def _update_respawn(self, dt):
         self.respawn_timer += dt
-        if self.respawn_timer >= self.respawn_delay:
+        if self.respawn_timer >= self.wait_to_return:
             self._respawn()
 
     def _respawn(self):
+        was_lost = self.state == DESTROYED
         center_x, center_z = self.track.cell_center(*self.checkpoint)
         rest_y = self._checkpoint_surface + self.radius + 0.05
         self.world.position[self.index] = (center_x, rest_y, center_z)
         self.world.linear_velocity[self.index] = (0.0, 0.0, 0.0)
         self.world.angular_velocity[self.index] = (0.0, 0.0, 0.0)
         self.world.wake(self.index)
+        # A marble set down at a checkpoint has not fallen there.  Without this
+        # the drop it just took is still on the books, and the first frame back
+        # on the ground reads as a landing from the bottom of the void.
+        self._peak_clearance = 0.0
+        self._fell_from = 0.0
+        self._since_air = self.LANDING_GRACE + 1
+        self._squeezed_for = 0.0
         self.state = ACTIVE
         self.respawn_timer = 0.0
-        self.fall_count += 1
+        if not was_lost:
+            self.fall_count += 1
         if self.camera is not None:
             self.camera.release()
 
     # -- convenience ----------------------------------------------------
     @property
     def is_respawning(self):
-        return self.state == FALLEN
+        return self.state in (FALLEN, DESTROYED)
+
+    @property
+    def is_lost(self):
+        """Whether a destroyed marble is still waiting to be replaced."""
+        return self.state == DESTROYED
 
     @property
     def speed(self):

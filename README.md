@@ -104,6 +104,17 @@ the wall clock itself replays approximately, and this one replays exactly.
 - **Falling off.** Leave the track and you drop into the void; the camera holds on
   the last square while a short **respawn penalty** elapses, then you restart there.
   The delay is deliberate — you can't dump unwanted speed by driving off the edge.
+- **Losing the marble.** Four things destroy it outright rather than dropping it
+  off the board: a blow at **20 m/s** or more of closing speed (well past the 12
+  a free-rolling marble reaches, and measured the same on a rubber bumper as on
+  stone), a fall of **8 m** or more *onto* the board, being held between two
+  surfaces **a tenth of a diameter** closer together than the marble is wide for
+  a quarter second, and dwelling in a burner. A loss costs **8 seconds of the
+  clock** and twice the wait of a fall, and the run goes on from the last
+  checkpoint — unless the clock cannot pay, which ends it. The HUD names what
+  took the marble, in the middle of the screen while the replacement is on its
+  way and in the `LOST` line after that, because a trap you cannot name is a trap
+  you cannot learn.
 - **Jumps.** Hit a launch ramp fast and the marble sails in a real ballistic arc
   over the tiles ahead. That is *not* a fall — the game tells a jump apart from
   going over the edge.
@@ -114,7 +125,10 @@ the wall clock itself replays approximately, and this one replays exactly.
   through as plain floor, unless you are launched over it. A lever opens its
   door when struck at 4 m/s or harder — and the blow stops you, so a run at one
   costs a pass. Water sinks you at a third of the speed of falling, and its plug
-  gives when you reach it, which you cannot know until you have.
+  gives when you reach it, which you cannot know until you have. A burner is a
+  hot plate that destroys after **1.2 s** in it rather than on contact, so it is
+  a trap you can run through: about 7 m/s clears two cells of it, and the heat
+  comes back off at the same rate once you are out.
 
 ## How the code is organized
 
@@ -123,7 +137,7 @@ marble-demo/
   src/openglcontext_marble_demo/
     run.py          # the window: context, follow camera, input, per-frame loop
     game.py         # MarbleGame: ties level + physics + controller + clock + win/lose
-    controller.py   # MarbleController: spin-to-steer, grounding, fall/respawn
+    controller.py   # MarbleController: spin-to-steer, grounding, fall/respawn, destruction
     generator.py    # procedural level generator (seeded)
     level.py        # Level data + features (Floor/Ramp/Wall/Bumper/Spring/Elevator/Arm/Finish)
     track.py        # TrackMap: the grid of occupied cells the controller reasons about
