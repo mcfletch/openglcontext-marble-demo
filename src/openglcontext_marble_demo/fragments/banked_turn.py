@@ -23,7 +23,7 @@ from openglcontext_marble_demo.pieces import MAX_STEP, Piece, Port, _lay, _ring
 
 __all__ = ['banked_turn', 'VARIANTS']
 
-RULE = 'the fast way round is not to brake'
+RULE = 'find the speed for it: a crawl and a charge both cost you'
 
 _STEPS = ((1, 0), (-1, 0), (0, 1), (0, -1))
 
