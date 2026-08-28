@@ -138,8 +138,23 @@ def _feature_to_json(feature):
     return document
 
 
+def _load_mechanisms():
+    """Import the mechanisms package, which is what registers what it holds.
+
+    Registering happens on import, and a process that only reads a board file
+    has imported nothing: without this, loading a board with a peg board on it
+    says the game has no such mechanism, in a game that does.  Imported here
+    rather than at the top of the module because ``mechanisms`` imports this one
+    to register into it.
+    """
+    from . import mechanisms
+    mechanisms.registry()
+
+
 def _feature_from_json(entry):
     kind = entry.get('kind')
+    if kind not in FEATURES:
+        _load_mechanisms()
     factory = FEATURES.get(kind)
     if factory is None:
         raise ValueError('this board wants a %r, which this game has no '

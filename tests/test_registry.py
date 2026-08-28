@@ -148,3 +148,42 @@ def _signature(piece):
     return (piece.theme,
             tuple(sorted(piece.cells.items())),
             tuple(sorted(repr(f) for f in piece.features)))
+
+
+# -- a saved board loads in a fresh process -------------------------------------
+
+def test_a_board_with_a_mechanism_loads_without_anything_importing_it_first():
+    """The bug this guards: registering happens on import, and a fresh process
+    that only reads a file has imported nothing.
+
+    Run in a subprocess, because by the time this suite has collected, every
+    mechanism module is already imported and the failure cannot happen.
+    """
+    import subprocess
+    import sys
+    import tempfile
+    import textwrap
+
+    with tempfile.TemporaryDirectory() as room:
+        path = '%s/board.marble' % room
+        code = textwrap.dedent('''
+            from openglcontext_marble_demo import levelfile
+            from openglcontext_marble_demo.level import Finish, Level
+            from openglcontext_marble_demo.mechanisms.pegs import PegBoard
+            cells = {(c, r): 0.0 for c in (-1, 0, 1) for r in range(6)}
+            board = Level(name='saved', cells=cells, start_cell=(0, 0),
+                          finish_cell=(0, 5), time_limit=60.0,
+                          features=[PegBoard(cell=(0, 2)), Finish((0, 5))])
+            levelfile.save(board, %r)
+        ''' % path)
+        written = subprocess.run([sys.executable, '-c', code], capture_output=True,
+                                 text=True)
+        assert written.returncode == 0, written.stderr
+
+        reading = subprocess.run(
+            [sys.executable, '-c',
+             'from openglcontext_marble_demo import levelfile;'
+             'print(len(levelfile.load(%r).features))' % path],
+            capture_output=True, text=True)
+        assert reading.returncode == 0, reading.stderr
+        assert reading.stdout.strip() == '2'
