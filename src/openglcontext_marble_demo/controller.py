@@ -37,6 +37,13 @@ UP = np.array([0.0, 1.0, 0.0])
 
 
 class MarbleController:
+    #: How far above the surface the marble has to have been for the contact
+    #: that follows to be a landing rather than a roll.  Comfortably more than
+    #: a terrace step, which a marble crossing at speed hops off every time.
+    FALL_HEIGHT = 1.5
+    #: Frames after leaving the air during which a floor contact is that landing.
+    LANDING_GRACE = 10
+
     def __init__(self, world, index, track, marble_radius=0.5, marble_material="steel",
                  camera=None, kill_y=-8.0, respawn_delay=2.0, kick_speed=1.2,
                  linear_fraction=0.6, steer_forward=FORWARD_AXIS, steer_right=RIGHT_AXIS):
@@ -82,6 +89,22 @@ class MarbleController:
         self.state = ACTIVE
         self.respawn_timer = 0.0
         self.fall_count = 0
+        # Whether the marble has *fallen*, which is what the hard-landing rule
+        # keys on.  Not how hard the floor pushed back: a marble rolling down a
+        # slope onto a flatter part pushes back exactly as hard as one that fell
+        # there, and scrubbing it makes a dip impossible to carry speed through,
+        # which is the whole of what a kicker asks of a player.
+        #
+        # What is remembered is *how far it fell*, which is what the rule has
+        # always said in words: landing hard from a height costs you.  Two
+        # things had to be got right to measure that.  A marble crossing a
+        # terrace at speed hops off every lip, so being off the ground is not
+        # enough -- it has to have been high.  And one falling fast crosses the
+        # grounded tolerance a frame or two before it touches, so the height has
+        # to be remembered for a moment after it is back down.
+        self._peak_clearance = 0.0
+        self._fell_from = 0.0
+        self._since_air = self.LANDING_GRACE + 1
         start_cell = track.cell_of(world.position[index][0], world.position[index][2])
         self.checkpoint = start_cell
         self._checkpoint_surface = track.cells.get(start_cell, 0.0)
@@ -125,21 +148,47 @@ class MarbleController:
         cell = self.track.cell_of(position[0], position[2])
         on_track = cell in self.track.cells
 
-        if on_track and self._is_grounded(position, self.track.cells[cell]):
+        grounded = on_track and self._is_grounded(position, self.track.cells[cell])
+        if grounded:
             self.checkpoint = cell
             self._checkpoint_surface = self.track.cells[cell]
+        surface = self.track.cells[cell] if on_track else self._checkpoint_surface
+        self._watch_the_air(grounded, position[1] - self.radius - surface)
 
         if self.camera is not None:
             self.camera.target(position)
 
-        self._apply_impact_rules()
+        self._apply_impact_rules(airborne=self.airborne)
 
         if self._has_fallen(position, on_track):
             self._begin_fall()
         return self.state
 
+    def _watch_the_air(self, grounded, clearance):
+        """Remember how far above the surface the marble has been, and when.
+
+        The height is latched on the way *down* -- the frame the marble is back
+        on the ground -- and left alone after that, so a second grounded frame
+        does not wipe what the first one recorded.
+        """
+        if not grounded:
+            self._peak_clearance = max(self._peak_clearance, float(clearance))
+            self._since_air = 0
+            return
+        if self._peak_clearance:
+            self._fell_from = self._peak_clearance
+            self._peak_clearance = 0.0
+        self._since_air += 1
+
+    @property
+    def airborne(self):
+        """Whether the marble fell far enough, recently enough, that a floor
+        contact now is a landing rather than a roll."""
+        return (self._since_air <= self.LANDING_GRACE
+                and max(self._fell_from, self._peak_clearance) >= self.FALL_HEIGHT)
+
     # -- impact speed kills ---------------------------------------------
-    def _apply_impact_rules(self):
+    def _apply_impact_rules(self, airborne=True):
         """Scrub speed on a hard wall hit or landing (non-elastic surfaces only).
 
         Reads this step's contacts: a large normal impulse per unit mass is an
@@ -147,6 +196,11 @@ class MarbleController:
         floor landing from a wall.  Resting contacts carry only the tiny
         weight-support impulse, well below the thresholds, so a marble simply
         sitting or rolling is never affected.
+
+        ``airborne`` says whether the marble had left the ground.  A landing is
+        only a landing if it fell: rolling fast down a slope onto a flatter part
+        pushes the floor exactly as hard, and scrubbing that makes a dip
+        impossible to carry speed through.  A wall is a wall either way.
         """
         world, i = self.world, self.index
         mass = max(world.mass[i], 1e-6)
@@ -161,7 +215,7 @@ class MarbleController:
                     >= self.elastic_restitution:
                 continue                         # springy surface: let physics keep it
             if abs(contact.normal[1]) > 0.7:     # floor/ceiling contact
-                if impact_speed >= self.hard_landing_speed:
+                if airborne and impact_speed >= self.hard_landing_speed:
                     self._scale_horizontal_speed(self.landing_retain)
             else:                                # wall contact
                 self._scale_horizontal_speed(self.wall_retain)

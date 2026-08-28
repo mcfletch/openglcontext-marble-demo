@@ -814,3 +814,61 @@ it to 3% while finishing the same boards with fewer falls.
 
 Every one of those is a number in a dataclass with a test on it, so the feel can
 be argued about by changing them.
+
+---
+
+## 14. `spike/sections`, built
+
+`pieces.py`: a board is a chain of **pieces**, each of which knows where it is
+entered and where it is left — a cell, a facing, a height and a width — and
+places its own cells, walls and mechanisms relative to the first. Because a piece
+is a function of its entry, the same kicker is the third thing on one board and
+the first on another.
+
+Seven pieces: `plateau` (a place, walled, asks nothing), `ramp_down` (the plain
+connector), and five joiners that each impose a rule — `kicker`, `spillway`,
+`hairpin`, `bridge`, `scatter`. Each carries the one line it asks of a player,
+and a theme.
+
+![A chain: stone plateau, ramp down, foundry plateau, hairpin, ice plateau,
+rubber scatter, plateau, bridge, plateau.](images/chain.png)
+
+**Themes work.** A piece names one, and a theme says what its floors and walls
+are made of — a look and a feel, since the material is the grip. Four so far:
+stone, ice, foundry, rubber. `Theme.sound` names the set a floor would be heard
+through; nothing plays it yet.
+
+### Two defects this turned up, both fixed
+
+**Rolling was being treated as landing.** The hard-landing speed-kill fired on
+any floor contact above the threshold, and a marble running down into a dip
+pushes the floor exactly as hard as one that fell there — so it was scrubbed to a
+fifth of its speed and no dip could ever be carried through, which is the whole
+of what a kicker asks. The rule now keys on **how far the marble fell**, which is
+what it always said in words. Getting that measured took two goes: a marble
+crossing a terrace at speed hops off every lip, so being off the ground is not
+enough; and one falling fast crosses the grounded tolerance a frame or two before
+it touches, so the height has to be remembered for a moment after it is back
+down. A marble now carries 70% of 18 m/s the whole way through a dip, and one
+dropped from eight metres still loses everything.
+
+**A stepped slope is a staircase.** Cells at stepped heights can be rolled *down*
+and cannot be climbed at all: each riser is a wall in front of the marble. Every
+step of a slope now carries a `Ramp`, which tilts the tile so its far edge meets
+the next — a surface rather than a step.
+
+### Two rules that do not yet bite
+
+Recorded as strict `xfail`s rather than quietly dropped, with the measurements:
+
+- **The kicker's far side is not climbable at any speed.** A marble reaches 0.60
+  of the way at 8 m/s and the same at 20, so the dip takes everything it arrives
+  with. The ramps that made the descent rollable are not enough for the climb.
+- **Nothing gets off the spillway's open end.** 18 m/s in reaches 0.92 of the way
+  and stops, so the descent is not carrying speed into the run-out.
+
+Both are the same suspicion — a slope built of tilted tiles still costs more
+speed than a slope should — and both want the next session rather than a guess.
+
+The **hairpin** does bite: entered at 3 m/s a marble stays on and gets 0.57 of
+the way round; at 12 m/s it is carried straight off the piece.

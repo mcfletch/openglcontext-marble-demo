@@ -91,3 +91,50 @@ def test_gentle_roll_is_not_treated_as_an_impact():
     _run(world, ctrl, frames=30)
     # No wall, no fall — a normal roll keeps most of its speed (friction only).
     assert ctrl.speed > 1.5
+
+
+# -- rolling is not landing ----------------------------------------------------
+
+def test_rolling_down_a_slope_and_up_again_keeps_its_speed():
+    """A marble that never left the ground has not landed on it.
+
+    The speed-kill exists so a drop from a height costs something. Applied to a
+    marble merely rolling downhill it also makes a dip impossible to carry
+    through, which is the whole of what a kicker asks -- so what it keys on is
+    whether the marble was in the air, not how hard the floor pushed back.
+    """
+    import random
+
+    from openglcontext_marble_demo import pieces
+    from openglcontext_marble_demo.game import MarbleGame
+
+    piece = pieces.kicker(random.Random(3),
+                          pieces.Port(cell=(0, 0), facing=(0, 1), height=0.0,
+                                      width=3), depth=3.6)
+    game = MarbleGame(piece.level(time_limit=600.0))
+    world, index = game.scene.world, game.marble.index
+    world.linear_velocity[index] = (0.0, 0.0, 18.0)
+    world.wake(index)
+    # Through the dip and up the far side, which is a second of rolling; what
+    # happens after that is whether it *climbs* out, which is another question.
+    through = []
+    for step in range(int(1.0 / (1 / 120.0))):
+        game.advance(1 / 120.0)
+        if step % 30 == 0:
+            through.append(game.controller.speed)
+    # Carrying most of what it arrived with the whole way, rather than the fifth
+    # a hard landing leaves.
+    assert min(through) > 18.0 * 0.7, 'the dip scrubbed a rolling marble: %r' % (
+        [round(speed, 1) for speed in through],)
+
+
+def test_a_marble_dropped_from_a_height_still_loses_its_speed():
+    """The rule it is keyed on still has to fire when it should: the existing
+    hard-landing test above is a real drop, and this says the two are told
+    apart rather than both being let through."""
+    world, index = _world()
+    dropped = _marble(world, index, velocity=(6.0, -9.0, 0), position=(0, 8.0, 0))
+    ctrl = _controller(world, dropped)
+    _run(world, ctrl, frames=120)
+    assert ctrl.speed < 1.5
+    assert not ctrl.airborne          # it is on the ground again, and knows it
