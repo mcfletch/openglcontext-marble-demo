@@ -1,20 +1,32 @@
-"""Procedural level generator: a seed becomes a track.
+"""Procedural boards: a seed becomes somewhere to play.
 
-The generator carves a **connected path** of cells from a start to a finish with a
-seeded random walk, biased to make forward progress while wandering left/right, and
-steps the surface height downward within a slope budget so the track has the
-descending, terraced Marble-Madness feel.  Because each new cell is placed adjacent
-to the previous one, the path is connected by construction — there is always a way
-from start to finish (asserted in the tests).
+The *shape* of a board — where the route goes, how wide it is, which ways round
+there are, how it terraces down — is :mod:`~openglcontext_marble_demo.boards`.
+This module decorates that shape and turns it into a
+:class:`~openglcontext_marble_demo.level.Level`: ramps, rails, mechanisms,
+surface patches, a finish and a clock.
 
-Everything derives from ``random.Random((seed, difficulty))``, so a ``(seed,
-difficulty)`` pair is a shareable, reproducible level.  This is intentionally the
-simplest generator that gives varied, solvable tracks (grid random-walk, per the
-plan's resolved decision); richer shaping (branches, gaps, decoration) layers on in
-later phases.
+Decoration is done **by strand**, which is what makes the choice of route a
+choice worth making:
+
+* the **shortcut** strands — the ways round that save cells — are where the
+  hazards go, so the quick line is the one that asks something of the player;
+* the **scenic** strands and the spine stay largely clear, so there is always a
+  way through for a player who would rather arrive than gamble;
+* and every hazard placed is checked against the board: a hazard that would
+  leave no clean route from start to finish is not placed at all. Barriers
+  block some passages, never all of them.
+
+Everything derives from ``random.Random`` seeded from ``(seed, difficulty)``, so
+a pair is a shareable, reproducible board.
+
+    >>> board = generate(seed=3, difficulty=2)
+    >>> board.start_cell in board.cells and board.finish_cell in board.cells
+    True
 """
 import random
 
+from . import boards
 from .level import (
     CELL_SIZE,
     Bumper,
@@ -30,150 +42,189 @@ from .level import (
 
 _SIDE_OF = {(0, -1): "N", (0, 1): "S", (1, 0): "E", (-1, 0): "W"}
 
-# Largest single-step height change between adjacent path cells.
-MAX_STEP = 1.4
+#: Largest single-step height change between adjacent cells.  The terracing
+#: never spends more than this, so the board is always rollable.
+MAX_STEP = boards.TERRACE_STEP
 
-# Candidate steps for each new cell: mostly flat (so the track is terraced into flat,
-# grouted runs) with the occasional bigger drop, which then gets a connecting ramp.
-_HEIGHT_STEPS = (0.0, 0.0, 0.0, 0.0, -0.8, -1.4)
+#: How long a board's spine is, and how often it opens into a plaza, per
+#: difficulty.  Boards get *shorter* as they get harder rather than longer: what
+#: makes a board hard is the decisions in it, and a long easy board is only a
+#: long one.  What tightens is the room -- plazas thin out.
+SPINE_LENGTH = (16, 15, 14, 13, 12)
+PLAZA_EVERY = (3, 4, 5, 6, 7)
 
-# Grid moves as (dcol, drow).  "Forward" is +row (away from the camera/start).
-_FORWARD = (0, 1)
-_LEFT = (-1, 0)
-_RIGHT = (1, 0)
+#: Seconds of clock per cell of the route, plus a constant.  A run is meant to
+#: be short enough that another go is cheap.
+SECONDS_PER_CELL = 1.15
+SECONDS_SPARE = 8.0
+
+#: Mechanisms that a marble cannot simply roll across.  What makes them fair is
+#: that one is never placed where it would leave no clean way through.
+_HAZARDS = (Bumper, SpringTrap, RotatingArm)
+
+#: Surfaces used for the occasional patch.
+_PATCH_SURFACES = ("ice_sheet", "metal", "rubber_pad")
+
+
+def _tier(difficulty, ladder):
+    return ladder[max(0, min(int(difficulty) - 1, len(ladder) - 1))]
 
 
 def generate(seed=0, difficulty=1, cell_size=CELL_SIZE):
     """Return a reproducible :class:`~openglcontext_marble_demo.level.Level`."""
-    # Fold both knobs into one integer seed so (seed, difficulty) is reproducible.
     rng = random.Random(seed * 1000 + difficulty)
-    target_length = 10 + 5 * difficulty
+    board = boards.build(rng, length=_tier(difficulty, SPINE_LENGTH),
+                         plaza_every=_tier(difficulty, PLAZA_EVERY),
+                         difficulty=difficulty)
 
-    cells, path = _carve_path(rng, target_length)
-    start_cell = path[0]
-    finish_cell = path[-1]
+    features = _decorate(rng, board, difficulty)
+    features.append(Finish(board.finish))
+    surfaces = _surface_patches(rng, board, difficulty)
 
-    # Connect height offsets between consecutive cells with ramps, then decorate the
-    # remaining (flat) cells with boost ramps / mechanisms.
-    transitions = _transition_ramps(cells, path)
-    features = list(transitions.values())
-    features += _decorate(rng, cells, path, difficulty, skip=set(transitions))
-    features.append(Finish(finish_cell))
-    cell_surfaces = _surface_patches(rng, path, difficulty)
-
-    # Roughly a second and a bit of budget per cell, scaled so easy levels are
-    # forgiving; enough to reward a clean line without being trivial.
-    time_limit = round(len(cells) * (2.4 - 0.15 * difficulty) + 15.0, 1)
+    # The clock is set by how far the marble has to travel, not by how many
+    # tiles were laid: a wide board is not a longer one.
+    route = boards.distances(board.cells, board.start)[board.finish]
+    time_limit = round(route * SECONDS_PER_CELL + SECONDS_SPARE, 1)
 
     return Level(
         name=f"seed-{seed}-d{difficulty}",
-        cells=cells,
-        start_cell=start_cell,
-        finish_cell=finish_cell,
+        cells=dict(board.heights),
+        start_cell=board.start,
+        finish_cell=board.finish,
         time_limit=time_limit,
         features=features,
-        cell_surfaces=cell_surfaces,
+        cell_surfaces=surfaces,
         cell_size=cell_size,
         seed=seed,
         difficulty=difficulty,
     )
 
 
-# Surfaces used for the occasional patch, and how likely a patch is to start.
-_PATCH_SURFACES = ("ice_sheet", "metal", "rubber_pad")
+# -- decoration ----------------------------------------------------------
 
-
-def _surface_patches(rng, path, difficulty):
-    """Assign short runs of a different surface along the path, for variety.
-
-    Interior cells (never the start/finish) occasionally begin a 2–4 cell patch of
-    ice/metal/rubber, which changes both the look and the grip.  Deterministic from
-    the same RNG stream, so a seed reproduces the whole level.
-    """
-    surfaces = {}
-    patch_chance = 0.12 + 0.03 * difficulty
-    i = 2
-    while i < len(path) - 3:
-        if rng.random() < patch_chance:
-            surface = rng.choice(_PATCH_SURFACES)
-            length = rng.randint(2, 4)
-            for cell in path[i:i + length]:
-                surfaces[cell] = surface
-            i += length + 1
-        else:
-            i += 1
-    return surfaces
-
-
-def _transition_ramps(cells, path):
-    """A ramp on every interior cell whose next cell is at a different height.
-
-    Rolling from one level to the next, the marble takes a real slope instead of a
-    hard step: the tile is tilted so its far edge (toward the next cell) meets that
-    cell's height.  A down-step becomes a ramp down, an up-step a ramp up.  The
-    tilted box is both the render surface and the physics collider, so the marble
-    physically rolls the slope.
-    """
-    ramps = {}
-    for i in range(1, len(path) - 1):        # never the start or the finish cell
-        cell, nxt = path[i], path[i + 1]
-        rise = cells[nxt] - cells[cell]
-        if abs(rise) > 0.05:
-            ramps[cell] = Ramp(cell=cell, direction=_step(cell, nxt),
-                               rise=rise, boost_speed=5.0, launch=False)
-    return ramps
-
-
-def _decorate(rng, cells, path, difficulty, skip=frozenset()):
-    """Sprinkle speed ramps (some launch ramps) on straights, plus a few rails.
-
-    Ramps sit only on straight *flat* runs (in-direction == out-direction, and not
-    already a transition-ramp cell) so they point where the marble is going, spaced
-    out with a cooldown.  Because every cell stays in ``cells``, the track remains
-    contiguous and solvable — a launch ramp just sends the marble over the next tiles
-    in an arc rather than a gap.
-    """
+def _decorate(rng, board, difficulty):
+    """Ramps and mechanisms, placed strand by strand and checked as they go."""
     features = []
-    ramp_chance = 0.14 + 0.03 * difficulty
-    mech_chance = 0.08 + 0.03 * difficulty
-    cooldown = 0
-    for i in range(1, len(path) - 2):
-        cell = path[i]
-        if cell in skip:
-            continue
-        in_dir = _step(path[i - 1], path[i])
-        out_dir = _step(path[i], path[i + 1])
-        straight = in_dir == out_dir
-        if cooldown == 0 and straight and rng.random() < ramp_chance:
-            launch = rng.random() < 0.30
-            features.append(Ramp(cell=cell, direction=out_dir, launch=launch,
-                                 rise=1.0 if launch else 0.45,
-                                 boost_speed=7.0 if launch else 9.0))
-            cooldown = 3
-        elif cooldown == 0 and rng.random() < mech_chance:
-            features.append(_mechanism(rng, cell, out_dir, difficulty))
-            cooldown = 2
-        elif rng.random() < 0.06:
-            side = _void_side(cell, cells, rng)
-            if side is not None:
-                features.append(Wall(cell=cell, side=side))
-        cooldown = max(0, cooldown - 1)
+    blocked = set()
+    spared = {board.start, board.finish}
+    # The cells next to the start and the finish are spared too: a hazard the
+    # marble meets before it is moving, or on the pad, is not a decision.
+    for cell in (board.start, board.finish):
+        spared.update((cell[0] + dc, cell[1] + dr)
+                      for dc, dr in boards.NEIGHBOURS)
+
+    for strand in board.strands:
+        density = _density(strand, difficulty)
+        cooldown = 0
+        for index in range(1, len(strand.cells) - 1):
+            cell = strand.cells[index]
+            if cell in spared or cell not in board.cells:
+                continue
+            heading = _step(cell, strand.cells[index + 1])
+            if cooldown:
+                cooldown -= 1
+            elif rng.random() < density.hazard:
+                mechanism = _mechanism(rng, cell, heading, difficulty)
+                if _keeps_a_clean_line(board, blocked, cell):
+                    blocked.add(cell)
+                    features.append(mechanism)
+                    cooldown = _breathing_room(difficulty)
+            elif rng.random() < density.ramp:
+                features.append(_ramp(rng, board, cell, heading, difficulty))
+                cooldown = 2
+        features.extend(_rails(rng, board, strand))
     return features
 
 
-def _mechanism(rng, cell, out_dir, difficulty):
-    """Pick a mechanism for ``cell``, weighted toward the gentler ones."""
-    kind = rng.choices(
-        ("bumper", "spring", "arm", "elevator"), weights=(3, 2, 2, 1))[0]
+class _Density:
+    """How thickly a strand is decorated: hazards, and speed ramps."""
+
+    def __init__(self, hazard, ramp):
+        self.hazard = hazard
+        self.ramp = ramp
+
+
+def _density(strand, difficulty):
+    """A shortcut earns its saving with hazards; everything else stays passable.
+
+    This is the whole risk/reward statement, and it is one line: the strand that
+    saves cells is the strand that costs something to take.
+    """
+    if strand.kind == boards.SHORTCUT:
+        return _Density(hazard=0.28 + 0.08 * difficulty, ramp=0.20)
+    if strand.kind == boards.SCENIC:
+        return _Density(hazard=0.0, ramp=0.16)
+    return _Density(hazard=0.02 + 0.10 * difficulty, ramp=0.12 + 0.02 * difficulty)
+
+
+def _breathing_room(difficulty):
+    """Cells left alone after a hazard, so an easy board is not a gauntlet."""
+    return max(1, 4 - difficulty // 2)
+
+
+def _keeps_a_clean_line(board, blocked, cell):
+    """Whether blocking ``cell`` too still leaves a hazard-free way through."""
+    return board.route_exists(blocked | {cell})
+
+
+def _ramp(rng, board, cell, heading, difficulty):
+    """A speed ramp, or a launch ramp where there is board ahead to land on."""
+    ahead = (cell[0] + heading[0] * 2, cell[1] + heading[1] * 2)
+    launch = ahead in board.cells and rng.random() < 0.25 + 0.03 * difficulty
+    return Ramp(cell=cell, direction=heading, launch=launch,
+                rise=1.0 if launch else 0.45,
+                boost_speed=7.0 if launch else 9.0)
+
+
+def _mechanism(rng, cell, heading, difficulty):
+    """Pick a mechanism, weighted toward the ones there is room to dodge."""
+    kind = rng.choices(("bumper", "spring", "arm", "elevator"),
+                       weights=(3, 2, 2, 1))[0]
     if kind == "bumper":
         return Bumper(cell=cell)
     if kind == "spring":
-        wdir = _world_direction(out_dir)
-        impulse = (wdir[0] * 4.0, 8.0, wdir[2] * 4.0)   # a forward-and-up hop
-        return SpringTrap(cell=cell, impulse=impulse)
+        wdir = _world_direction(heading)
+        return SpringTrap(cell=cell,
+                          impulse=(wdir[0] * 4.0, 8.0, wdir[2] * 4.0))
     if kind == "arm":
         return RotatingArm(cell=cell, rpm=15 + 5 * difficulty)
     return Elevator(cell=cell, travel=2.0 + 0.3 * difficulty, period=3.0)
+
+
+def _rails(rng, board, strand):
+    """Low walls along the odd cell edge that faces the void.
+
+    A rail is not an obstacle: it faces outward, so it keeps a marble on the
+    board rather than standing in its way — which is why these are placed
+    without asking whether a clean line survives.
+    """
+    rails = []
+    for cell in strand.cells:
+        if rng.random() >= 0.12:
+            continue
+        side = _void_side(cell, board.cells, rng)
+        if side is not None:
+            rails.append(Wall(cell=cell, side=side))
+    return rails
+
+
+def _surface_patches(rng, board, difficulty):
+    """Short runs of ice/metal/rubber along the strands, for grip and for looks."""
+    surfaces = {}
+    chance = 0.10 + 0.03 * difficulty
+    for strand in board.strands:
+        index = 2
+        while index < len(strand.cells) - 3:
+            if rng.random() < chance:
+                surface = rng.choice(_PATCH_SURFACES)
+                length = rng.randint(2, 4)
+                for cell in strand.cells[index:index + length]:
+                    if cell not in (board.start, board.finish):
+                        surfaces[cell] = surface
+                index += length + 1
+            else:
+                index += 1
+    return surfaces
 
 
 def _step(a, b):
@@ -181,50 +232,7 @@ def _step(a, b):
 
 
 def _void_side(cell, cells, rng):
-    """A cardinal side of ``cell`` that faces the void, or ``None`` if fully walled in."""
+    """A cardinal side of ``cell`` facing the void, or ``None`` if fully enclosed."""
     col, row = cell
     sides = [d for d in _SIDE_OF if (col + d[0], row + d[1]) not in cells]
     return _SIDE_OF[rng.choice(sides)] if sides else None
-
-
-def _carve_path(rng, target_length):
-    """Random-walk a connected, mostly-forward, descending path of cells."""
-    col, row, height = 0, 0, 0.0
-    cells = {(col, row): height}
-    path = [(col, row)]
-    last_side = None
-
-    attempts = 0
-    max_attempts = target_length * 20
-    while len(path) < target_length and attempts < max_attempts:
-        attempts += 1
-        dcol, drow = _choose_step(rng, last_side)
-        nxt = (col + dcol, row + drow)
-        if nxt in cells:                       # don't cross ourselves; try again
-            continue
-        height = max(height + rng.choice(_HEIGHT_STEPS), -difficulty_floor(target_length))
-        cells[nxt] = height
-        path.append(nxt)
-        col, row = nxt
-        last_side = (dcol, drow) if (dcol, drow) in (_LEFT, _RIGHT) else None
-    return cells, path
-
-
-def _choose_step(rng, last_side):
-    """Pick the next grid move: usually forward, sometimes a turn.
-
-    Forward is weighted twice as heavily as either side so the track advances but
-    still winds.  We never step backward (would fold the path onto itself), and we
-    avoid reversing the previous sideways move (no immediate zig-zag jitter).
-    """
-    choices = [_FORWARD, _FORWARD, _LEFT, _RIGHT]
-    if last_side == _LEFT:
-        choices = [c for c in choices if c != _RIGHT]
-    elif last_side == _RIGHT:
-        choices = [c for c in choices if c != _LEFT]
-    return rng.choice(choices)
-
-
-def difficulty_floor(target_length):
-    """Lowest the track is allowed to descend to — scales with its length."""
-    return target_length * MAX_STEP

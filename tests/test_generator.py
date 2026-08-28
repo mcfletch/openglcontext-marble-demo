@@ -58,11 +58,39 @@ def test_start_and_finish_are_distinct():
     assert level.start_cell != level.finish_cell
 
 
-def test_higher_difficulty_makes_a_longer_track_and_more_time():
-    easy = generator.generate(seed=5, difficulty=1)
-    hard = generator.generate(seed=5, difficulty=4)
-    assert len(hard.cells) > len(easy.cells)
-    assert hard.time_limit > easy.time_limit
+def test_higher_difficulty_makes_a_tighter_board_rather_than_a_longer_one():
+    """What makes a board hard is the decisions in it.
+
+    A long easy board is only a long one, so difficulty *shortens* the route and
+    takes away room -- the plazas thin out -- rather than adding tiles.  The
+    clock follows the route, so a shorter board gets less of it.
+    """
+    def route(level):
+        from openglcontext_marble_demo import boards
+        return boards.distances(set(level.cells), level.start_cell)[level.finish_cell]
+
+    easy = [generator.generate(seed=s, difficulty=1) for s in range(12)]
+    hard = [generator.generate(seed=s, difficulty=5) for s in range(12)]
+    assert sum(map(route, hard)) < sum(map(route, easy))
+    assert sum(l.time_limit for l in hard) < sum(l.time_limit for l in easy)
+
+
+def test_harder_boards_carry_more_hazards():
+    from openglcontext_marble_demo.level import Bumper, RotatingArm, SpringTrap
+
+    def hazards(difficulty):
+        return sum(sum(isinstance(f, (Bumper, RotatingArm, SpringTrap))
+                       for f in generator.generate(s, difficulty).features)
+                   for s in range(16))
+    assert hazards(5) > hazards(1)
+
+
+def test_a_run_is_short_enough_that_another_go_is_cheap():
+    """A fast game is one you can retry without thinking about it."""
+    for seed in range(12):
+        for difficulty in (1, 3, 5):
+            level = generator.generate(seed=seed, difficulty=difficulty)
+            assert 15.0 <= level.time_limit <= 45.0
 
 
 def test_track_descends_within_a_slope_budget():
