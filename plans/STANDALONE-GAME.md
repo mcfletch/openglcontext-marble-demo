@@ -920,3 +920,133 @@ piece that has **two exits**, so missing the turn-off drops you somewhere rather
 than ending the run. That is the shape of the whole idea — the forest of banking
 mushrooms is where you go when you get the ramp wrong — and it is a change to
 `Port`/`Piece` rather than a new kind of thing.
+
+---
+
+## 17. The story library
+
+A board should be **assembled**, not sprinkled: a chain of fragments out of a
+library big enough that two boards are different boards, each fragment with
+variants so the same idea reads differently twice, and the editor able to add a
+chapter to a level as easily as it moves a tile.
+
+The target is **32 fragments**. That number is chosen to be more than a
+vocabulary and less than a catalogue: enough that a generated board of eight
+chapters is not the same eight every time, and few enough that each can be
+genuinely playtested rather than declared.
+
+### 17.1 What a fragment is
+
+A fragment is one chapter of a board: a piece (or a small chain of pieces) with
+an entry, one or more exits, a rule, a theme, and a set of **variants**. It lives
+in **its own module** under `fragments/`, with **its own test module**, and it
+registers itself. Nothing outside its own file has to change for it to exist.
+
+That is not tidiness. It is what lets a dozen of them be built at once and
+merged without a queue: two fragments never touch the same file, so they never
+conflict, and the registry is discovered rather than maintained.
+
+```python
+# fragments/kicker.py
+@fragment(name='kicker', tags=('speed', 'gate'))
+def kicker(rng, entry, variant=None, **named) -> Piece: ...
+
+VARIANTS = {'shallow': ..., 'deep': ..., 'icy': ...}
+```
+
+**A fragment is not finished until it is playable**, which means a test that puts
+a marble on it and shows the rule biting: slow fails, fast succeeds, with a
+margin. A fragment whose rule cannot be demonstrated is scenery, and scenery goes
+in as scenery or not at all.
+
+### 17.2 Variants
+
+Three axes, and every fragment declares what it offers on each:
+
+- **Material** — the theme, which is grip as much as colour.
+- **Layout** — the shape: wider, longer, deeper, mirrored, a different number of
+  lanes.
+- **Effect** — what it does to a marble that gets it wrong, and how hard.
+
+A variant is a named bundle of those, so a story can ask for `kicker/deep` and a
+generator can ask for "a speed fragment, any variant".
+
+### 17.3 Two exits, and what makes a story
+
+The story in §12.2 needs one thing `chain()` has not got: a fragment with a
+**failure exit**. Missing the turn-off drops you into the forest of banking
+mushrooms; it does not end the run. So:
+
+- `Piece.exits` is a mapping — `{'ok': Port, 'missed': Port}` — with `'ok'`
+  required and everything else optional.
+- A **story** is a graph rather than a list: fragments joined by which exit leads
+  where, so a board has a main line and the places you end up when you get it
+  wrong, and those rejoin.
+- The long way round is *passable and slow*: a player who fails is behind, not
+  dead.
+
+### 17.4 New mechanics these need
+
+Each is a mechanism in its own module under `mechanisms/`, registered the same
+way, so adding one does not edit `level.py`:
+
+| Mechanic | What it does |
+|---|---|
+| **Lever and door** | A lever that opens a door when struck hard enough; below the threshold it does not move. The door is a wall that goes away. |
+| **Sand** | A region with hard edges and heavy drag: careful navigation, or be launched across it and churn slowly out of the far end. |
+| **Water** | Sinks the marble. The plug at the bottom opens when the marble reaches it — which you cannot see until it does. |
+| **Pegs** | A plinko board: one slot is a fast run, the rest are ordinary. |
+| **Rockfall** | A shattered slope that can be bounced down and randomises the way you leave it. |
+| **Destruction** | The marble can be lost: struck too hard, fallen too far, crushed, burned. Traps that fire on a timer rather than on perfect timing. |
+
+**Destruction is a rule change, not a mechanism**, and it lands first and alone:
+it gives every other trap a consequence. Until a marble can be lost, "hit too
+hard" means nothing.
+
+### 17.5 How the parallel work merges
+
+Everything below is arranged so that work can be done by several agents at once
+and merged without a queue.
+
+**The rule: one fragment, one file, one test file, no shared edits.** An agent
+that needs to change `level.py`, `game.py` or `pieces.py` is doing integration
+work, and integration work is done one at a time on the integration branch.
+
+- Integration branch: `story-library`. Every agent branches from it and merges
+  back into it.
+- A fragment agent touches only `fragments/<name>.py` and
+  `tests/fragments/test_<name>.py`. Nothing else. If it finds it needs more, it
+  says so and stops rather than editing a shared file.
+- A mechanism agent touches only `mechanisms/<name>.py` and
+  `tests/mechanisms/test_<name>.py`, plus one line in the registry if the
+  registry cannot discover it.
+- The **registry is discovered, not maintained**: `fragments/__init__.py` imports
+  every module in its own directory, so a new file is a new fragment and no
+  shared file records the fact.
+- Merge order is by dependency, not by who finished: rules the mechanics need
+  (destruction) before the mechanics, mechanics before the fragments that use
+  them, fragments in any order at all.
+
+**What a merged fragment has to have**: its module, its tests, every test in the
+repository still passing, `ruff` and `mypy` clean, and a line in §17.6 saying
+what it is and what it asks.
+
+### 17.6 The library, and where each one is
+
+Tracked here as it is built. Status is one of *planned*, *in progress*, *merged*.
+
+| # | Fragment | Asks | Status |
+|---|---|---|---|
+| 1 | `plateau` | nothing — a place to be | merged (as a piece) |
+| 2 | `ramp_down` | nothing — the plain connector | merged (as a piece) |
+| 3 | `kicker` | enter fast enough to climb the far side | in progress |
+| 4 | `spillway` | hold the descent or run off the open end | in progress |
+| 5 | `hairpin` | brake for the right-angle | merged (as a piece) |
+| 6 | `bridge` | cross one cell with nothing beside it | merged (as a piece) |
+| 7 | `scatter` | get through bumpers that will not have you straight | merged (as a piece) |
+| 8–32 | — | see §17.4 and the ideas below | planned |
+
+Ideas not yet assigned a number: the sand trap, the lever and door, the water
+trap, the peg board, the rockfall, a chicane, a pair of parallel routes at
+different speeds, a drop with a landing you have to hit, a conveyor, a rotating
+table, a funnel, a switchback stair, a wind tunnel, a magnet.
