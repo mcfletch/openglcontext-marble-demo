@@ -34,11 +34,15 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# Recording to video (``--record``).  Optional because the encoder is the one in
+# the graphics driver and not every machine has one the bindings know; without
+# it everything runs as before and asking to record says what is missing.
+video = ["OpenGLContext[video]"]
 # Pillow is the render smoke test's only extra need: it reads back the captured
 # frame. That test skips where there is no GL display, so the extra installs
 # and the suite runs on a CI runner with neither.
 test = ["pytest>=7", "pytest-timeout", "pillow"]
-dev = ["openglcontext-marble-demo[test]", "ruff", "mypy"]
+dev = ["openglcontext-marble-demo[test,video]", "ruff", "mypy"]
 
 [project.urls]
 Homepage = "http://pyopengl.sourceforge.net/context/"
