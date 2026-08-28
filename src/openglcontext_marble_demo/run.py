@@ -35,7 +35,7 @@ from OpenGLContext.move.followcam import FollowCamera
 from OpenGLContext.physics.demo import disable_vsync
 from OpenGLContext.scenegraph import basenodes
 
-from . import generator, materials
+from . import generator, levelfile, materials
 from .game import PLAYING, ROLL_DAMPING, SPIN, TILT, MarbleGame
 from .hud import HUD
 
@@ -112,6 +112,10 @@ class MarbleContext(BaseContext):
     marble_name = "steel"
     seed = 1
     difficulty = 2
+    #: A board file to play instead of a generated one, as the editor's "Play
+    #: it" passes.  N generates the next seed, which is how a player gets back
+    #: to the endless boards from an authored one.
+    board_path = None
     control = TILT
     base_tilt = math.degrees(math.atan(0.22))
     player_tilt = 26.0
@@ -155,7 +159,7 @@ class MarbleContext(BaseContext):
 
     # -- game/scene -----------------------------------------------------
     def _build_game(self):
-        level = generator.generate(seed=self.seed, difficulty=self.difficulty)
+        level = self._level()
         forward, right = steering_frame(self.view_offset)
         self.game = MarbleGame(level, marble_material=self.marble_name,
                                camera=self.camera, control=self.control,
@@ -174,6 +178,12 @@ class MarbleContext(BaseContext):
         self.sg = self.game.scene_graph(extra=[sun])
         print(f"Level {self.level_number} ({level.name}): {len(level.cells)} tiles, "
               f"{level.time_limit:.0f}s limit, {self.control} control")
+
+    def _level(self):
+        """The board to play: the file that was named, else a generated one."""
+        if self.board_path:
+            return levelfile.load(self.board_path)
+        return generator.generate(seed=self.seed, difficulty=self.difficulty)
 
     # -- overlay hook (called by the FlatPass after the scene draws) ----
     def renderShaderOverlay(self, flatpass):
@@ -202,7 +212,8 @@ class MarbleContext(BaseContext):
         self.triggerRedraw(1)
 
     def _on_next(self, event):
-        """Advance to the next generated level."""
+        """Advance to the next generated level, leaving any named board behind."""
+        self.board_path = None
         self.seed += 1
         self.level_number += 1
         self._build_game()
@@ -251,6 +262,10 @@ def build_parser():
     parser = argparse.ArgumentParser(description="Marble Madness demo for OpenGLContext")
     parser.add_argument("--marble", default="steel", choices=sorted(materials.MARBLES),
                         help="marble material to start with")
+    parser.add_argument("--board", default=None, dest="board_path",
+                        metavar="FILE",
+                        help="play a board file (see oglc-marble-editor) "
+                             "rather than a generated one")
     parser.add_argument("--seed", type=int, default=1, help="level seed")
     parser.add_argument("--difficulty", type=int, default=2,
                         help="level difficulty (longer, steeper tracks)")
@@ -275,6 +290,7 @@ def build_parser():
 def main(argv=None):
     args = build_parser().parse_args(argv)
     MarbleContext.marble_name = args.marble
+    MarbleContext.board_path = args.board_path
     MarbleContext.seed = args.seed
     MarbleContext.difficulty = args.difficulty
     MarbleContext.control = args.control

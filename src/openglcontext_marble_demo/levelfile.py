@@ -5,6 +5,11 @@ small enough that a person can read it and fix it by hand, and versioned so a
 game that meets a newer file says so rather than half-loading a level it does
 not understand.
 
+A board is laid out **a cell to a line and a mechanism to a line**, because the
+promise that a person can read it is only kept if they can: a hundred cells
+spread over five lines each is five hundred lines of column, and nobody reads
+that or corrects a height in it.
+
 Two things make it cheap to extend. A **feature writes itself**: every mechanism
 in :mod:`~openglcontext_marble_demo.level` is a dataclass, so its fields are the
 document, and adding a mechanism means adding one name to :data:`FEATURES`
@@ -27,7 +32,7 @@ import typing
 from .level import Bumper, Elevator, Finish, Level, Ramp, RotatingArm, SpringTrap, Wall
 
 __all__ = ['VERSION', 'GENERATOR', 'FEATURES', 'SUFFIX',
-           'to_json', 'from_json', 'save', 'load']
+           'to_json', 'from_json', 'dumps', 'save', 'load']
 
 #: The format's version.  Raise it when a change would stop an older reader
 #: understanding a file; :func:`from_json` refuses anything above what it knows.
@@ -152,6 +157,41 @@ def _feature_from_json(entry):
 
 # -- files ---------------------------------------------------------------
 
+#: The keys written before the two long lists, in the order they read best.
+_HEAD = ('generator', 'version', 'name', 'time_limit', 'cell_size', 'kill_y',
+         'respawn_delay', 'surface', 'seed', 'difficulty', 'start_cell',
+         'finish_cell')
+
+
+def dumps(document):
+    """``document`` as text, with each cell and each mechanism on one line.
+
+    Assembled rather than handed to ``json.dumps(indent=2)``, which puts every
+    number of every cell on a line of its own.  Every piece still goes through
+    ``json.dumps``, so the escaping and the number formatting are the library's
+    rather than this module's guesses about them.
+    """
+    def one(value):
+        return json.dumps(value, ensure_ascii=False)
+
+    lines = ['{']
+    for key in _HEAD:
+        if key in document:
+            lines.append('  %s: %s,' % (one(key), one(document[key])))
+    for key in ('cells', 'features'):
+        entries = document.get(key, [])
+        if not entries:
+            lines.append('  %s: [],' % one(key))
+            continue
+        lines.append('  %s: [' % one(key))
+        lines.extend('    %s,' % one(entry) for entry in entries)
+        lines[-1] = lines[-1][:-1]              # no comma after the last entry
+        lines.append('  ],')
+    lines[-1] = lines[-1][:-1]                  # nor after the last key
+    lines.append('}')
+    return '\n'.join(lines) + '\n'
+
+
 def save(level, path):
     """Write ``level`` to ``path``; return the path.
 
@@ -161,7 +201,7 @@ def save(level, path):
     way through.  ``os.replace`` is atomic on every platform this runs on, so
     the file is either the old board or the new one.
     """
-    document = json.dumps(to_json(level), indent=2, ensure_ascii=False) + '\n'
+    document = dumps(to_json(level))
     beside = os.path.dirname(os.path.abspath(path))
     handle, temporary = tempfile.mkstemp(dir=beside, suffix='.marble-new')
     try:

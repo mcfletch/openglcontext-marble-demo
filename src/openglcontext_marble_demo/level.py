@@ -48,7 +48,9 @@ def _spawn_kinematic_box(scene, size, position, color, material_index):
     """
     shape_idx = scene.world.add_shape(model.Shape.box(size))
     geometry = basenodes.Box(size=size)
-    appearance = basenodes.Appearance(material=basenodes.Material(diffuseColor=color))
+    # A PBR appearance like every other body in the game: this was the one
+    # place a VRML Material was left, in a scene that is otherwise all PBR.
+    appearance = render.color_appearance(color, metallic=0.1, roughness=0.5)
     transform = Transform(translation=tuple(position),
                           children=[basenodes.Shape(geometry=geometry,
                                                     appearance=appearance)])
