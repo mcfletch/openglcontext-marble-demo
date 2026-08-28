@@ -872,3 +872,23 @@ speed than a slope should — and both want the next session rather than a guess
 
 The **hairpin** does bite: entered at 3 m/s a marble stays on and gets 0.57 of
 the way round; at 12 m/s it is carried straight off the piece.
+
+---
+
+## 15. `spike/waypoints`, built
+
+A `Gate` is a sensor like the finish, and **the finish refuses until every gate
+has been passed**. That one sentence is what turns a board from a direction into
+a route: without it every way across is as good as every other, and the shape a
+designer built is decoration.
+
+- `order` is what a *story* means by the gates, not a rule the board enforces —
+  a player who finds the second one first has found it. What it is for is telling
+  a designer which is which.
+- Resetting a run shuts them again.
+- The HUD says how many are left, and leaves the line out entirely on a board
+  with none: a read-out that always says zero is one nobody reads.
+- Gates save and load like every other mechanism, and the editor can place them,
+  because a waypoint a designer cannot put down is a waypoint no board has.
+
+Running out of time still loses, whatever the gates say.

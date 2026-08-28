@@ -117,6 +117,9 @@ class MarbleGame:
             marble_radius=radius, marble_material=marble_material, camera=camera,
             kill_y=level.kill_y, respawn_delay=level.respawn_delay, **steer)
 
+        #: The gates still to be passed.  A run cannot be finished while any
+        #: remain, which is what makes a board a route rather than a direction.
+        self.gates = set(self.build.gate_bodies)
         self._wire_triggers()
         self.time_left = level.time_limit
         self.state = PLAYING
@@ -146,7 +149,9 @@ class MarbleGame:
         def on_trigger(event_type, trigger_body, other_body):
             if other_body != marble_index or event_type == "exit":
                 return
-            if trigger_body == finish_index and self.state == PLAYING:
+            self.gates.discard(trigger_body)
+            if trigger_body == finish_index and self.state == PLAYING \
+                    and not self.gates:
                 self.state = WON
             effect = effects.get(trigger_body)
             if effect is not None and self.state == PLAYING:
@@ -198,11 +203,18 @@ class MarbleGame:
         self.controller.fall_count = 0
         self.time_left = self.level.time_limit
         self.state = PLAYING
+        # Every gate shut again: a run started over is started over.
+        self.gates = set(self.build.gate_bodies)
         # A board still leaning from the run just abandoned would start the next
         # one already moving.
         self.tilt.level()
         self._demand = (0.0, 0.0)
         self._draw_lean()
+
+    @property
+    def gates_left(self):
+        """How many waypoints are still to be reached."""
+        return len(self.gates)
 
     # -- live material change ------------------------------------------
     def set_marble_material(self, name):

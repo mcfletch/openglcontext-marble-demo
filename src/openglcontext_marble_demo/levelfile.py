@@ -29,7 +29,7 @@ import os
 import tempfile
 import typing
 
-from .level import Bumper, Elevator, Finish, Level, Ramp, RotatingArm, SpringTrap, Wall
+from .level import Bumper, Elevator, Finish, Gate, Level, Ramp, RotatingArm, SpringTrap, Wall
 
 __all__ = ['VERSION', 'GENERATOR', 'FEATURES', 'SUFFIX',
            'to_json', 'from_json', 'dumps', 'save', 'load']
@@ -49,6 +49,7 @@ SUFFIX = '.marble'
 #: than trusting anyone to remember.
 FEATURES = {
     'finish': Finish,
+    'gate': Gate,
     'ramp': Ramp,
     'wall': Wall,
     'bumper': Bumper,

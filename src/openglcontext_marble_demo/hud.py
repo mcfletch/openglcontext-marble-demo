@@ -24,13 +24,18 @@ def hud_lines(game):
     rather than inferred from how the marble moves.
     """
     lean = math.degrees(math.hypot(game.tilt.pitch, game.tilt.roll))
-    return [
+    lines = [
         f"TIME {game.time_left:4.1f}",
         f"SPEED {game.controller.speed:4.1f}",
         f"MARBLE {game.marble_material}",
         f"FALLS {game.controller.fall_count}",
         f"LEAN {lean:4.1f} {game.control}",
     ]
+    # Only where a board has them: a read-out that always says zero is one
+    # nobody reads.
+    if game.gates_left:
+        lines.append(f"GATES {game.gates_left}")
+    return lines
 
 
 def time_is_urgent(game):

@@ -94,6 +94,42 @@ class Finish:
 
 
 @dataclass
+class Gate:
+    """A waypoint the finish waits for: somewhere you have to have been.
+
+    A board whose finish takes anyone who reaches it has no route in it -- every
+    way across is as good as every other, and the shape a designer built is
+    decoration.  A gate is a sensor like the finish, and the game will not end a
+    run until every one of them has been passed.
+
+    ``order`` is what a story means by them, and not a rule the board enforces: a
+    player who finds the second one first has found it.  What it is for is
+    telling a designer which is which, and drawing them in the order they were
+    meant to be met.
+    """
+    cell: tuple[int, int]
+    order: int = 0
+
+    def owned_cells(self):
+        return set()
+
+    def build(self, scene, level, index, result):
+        x, z = level.cell_center(self.cell)
+        surface = level.cells[self.cell]
+        colour = (0.95, 0.75, 0.15)
+        pad = scene.add_box(size=(level.cell_size * 0.9, 0.08, level.cell_size * 0.9),
+                            position=(x, surface + 0.05, z), color=colour,
+                            dynamic=False, material=index[level.surface])
+        pad.transform.children[0].appearance = render.color_appearance(
+            colour, metallic=0.4, roughness=0.35)
+        body = scene.add_trigger_box(
+            size=(level.cell_size * 0.9, 2.0, level.cell_size * 0.9),
+            position=(x, surface + 1.0, z), color=colour)
+        result.gate_bodies[body.index] = self
+        result.feature_bodies.append(body)
+
+
+@dataclass
 class Ramp:
     """A sloped tile that speeds the marble up (and can launch it into a jump).
 
@@ -326,6 +362,9 @@ class BuildResult:
     # KinematicAnimators for always-running mechanisms (elevators, arms); the game
     # calls each one's update(dt) before stepping the world.
     animators: list = field(default_factory=list)
+    # Trigger-body-index -> the Gate it belongs to.  The game keeps the set of
+    # gates still to be passed and refuses the finish until it is empty.
+    gate_bodies: dict = field(default_factory=dict)
 
 
 @dataclass
