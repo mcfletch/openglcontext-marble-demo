@@ -1296,7 +1296,7 @@ makes speed, `chimney` spends it, `one_way` makes a chapter final.
 **Mechanisms merged:** `sand`, `lever`, `door`, `water`, `pegs`, `rockfall`,
 `burner`, plus marble destruction as a rule of the game.
 
-### Twelve findings the fragments turned up
+### Thirteen findings the fragments turned up
 
 **A driven marble settles at about 5 m/s on a descent, however far it has
 fallen** — 5.08 m/s on a switchback's first fall and 5.15 on its second, and
@@ -1448,6 +1448,28 @@ So it is out. What it establishes is that being held is not what the three
 boards are suffering from — or not only that — and the next attempt should start
 by measuring what the marble is actually in contact with when it stops, rather
 than by giving the pilot another thing to try.
+
+**`scree` had no wall down either side of its slope, and that is where seed 1's
+falls were.** Asking what the marble was actually in contact with when it stopped
+— which is what the entry above says to do instead of giving the pilot another
+thing to try — found a defect in a fragment rather than in the pilot.
+`pieces._rails` skips a cell that is not on the board, so rails asked for at the
+landing's width fall outside the slope's own narrower cells and emit nothing
+there. Every descending row of every variant was open on both sides: eight of
+them on `plain`, fourteen on `long`. A rockfall's whole purpose is knocking a
+marble sideways, and a marble knocked sideways off an unwalled slope is off the
+board.
+
+Fixed by railing at both of the widths the piece is, with
+`tests/fragments/test_scree.py` stating it as geometry rather than by driving —
+a wall either stands between a cell and the void beside it or it does not, and a
+test that drove the slope would measure the pilot as much as the piece.
+
+**It did not move the acceptance number**, which stays at three of six: seed 5
+now finishes and seed 0 now does not, the same trade the rocking made and by an
+unrelated route. The hole in the fence was worth closing on its own merits, and
+what is left is still to be found by asking the same question of `plinko` and
+`lodestone`, the pieces seeds 3 and 5 stop on.
 
 ### What is built and merged
 

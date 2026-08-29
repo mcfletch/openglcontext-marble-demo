@@ -75,7 +75,16 @@ def scree(rng, entry, variant='plain', theme=None, length=None, width=None,
     landing = Port(cell=(entry.cell[0], rows + 1), facing=entry.facing,
                    height=bottom, width=width + 2)
     _lay(cells, landing, 3, height=bottom, width=width + 2)
-    features.extend(_rails(cells, entry, length + 8, width=width + 2))
+    # Twice, at the two widths the piece is: `_rails` skips a cell that is not
+    # on the board, so rails asked for at the landing's width fall outside the
+    # slope's own cells and leave the descent open on both sides.  Which is the
+    # one place on the piece it must not be -- a rockfall's whole purpose is
+    # knocking a marble sideways, and a marble knocked sideways off an unwalled
+    # slope is off the board.
+    features.extend(_rails(cells, entry, rows + 1, width=width))
+    features.extend(_rails(cells, Port(cell=landing.cell, facing=entry.facing,
+                                       height=bottom, width=width + 2),
+                           3, width=width + 2))
     return Piece(name='scree', cells=cells, entry=entry,
                  exits={'ok': Port(cell=landing.ahead(2).cell,
                                    facing=entry.facing, height=bottom,
