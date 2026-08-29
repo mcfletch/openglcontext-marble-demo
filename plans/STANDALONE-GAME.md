@@ -1142,8 +1142,17 @@ Tracked here as it is built. Status is one of *planned*, *in progress*, *merged*
 | 13 | `drop` | 4 | 7 | leave the lip fast enough to reach the landing, and not so fast you clear it |
 | 14 | `switchback` | 4 | 6 | take the corners slowly enough to turn |
 | 15 | `gauntlet` | 4 | 5 | go through when the arms lie along the lane |
-| 16–20 | `sand_pit`, `locked_room`, `cistern`, `plinko`, `scree` | — | — | agent working: the chapters that make the mechanisms reachable from a generated board |
-| 21–32 | — | — | — | planned: a conveyor, a rotating table, a wind tunnel, a magnet, a see-saw, a lift you wait for, a one-way gate, a collapsing floor, a chimney, a spiral, a weighbridge, a cannon |
+| 16 | `sand_pit` | 4 | 7 | thread the hard edge, or take the ramp and clear it |
+| 17 | `locked_room` | 4 | 6 | hit the lever hard enough, which takes a run at it |
+| 18 | `cistern` | 4 | 3 | sink through, and wait to find out the floor gives |
+| 19 | `plinko` | 4 | 4 | aim for the fast slot; the pegs will argue about it |
+| 20 | `scree` | 4 | 5 | commit to the broken slope and deal with where it leaves you |
+| 21–32 | — | — | — | planned: conveyor, seesaw, lift, one_way, chimney, weighbridge, crusher, furnace, cannon, magnet, collapse, spiral. Three agents had these in hand and were stopped mid-work by a session API limit. |
+
+**Twenty of thirty-two.** The five above close the gap that mattered most: seven
+mechanisms were merged and none could appear on a generated board, because no
+fragment in the library used one. They can now, and a test asserts it over
+twenty generated boards.
 
 **Mechanisms merged:** `sand`, `lever`, `door`, `water`, `pegs`, `rockfall`,
 `burner`, plus marble destruction as a rule of the game.
