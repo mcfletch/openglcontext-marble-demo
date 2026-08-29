@@ -1123,7 +1123,7 @@ Tracked here as it is built. Status is one of *planned*, *in progress*, *merged*
 | `rockfall` | bounceable descent that randomises the way you leave | **merged** — exit headings spread 7–12°, against 0.00° for the same slope with the rock taken off; 90% get through |
 | `destruction` | the marble can be lost: struck, dropped, crushed, burned | agent working — `controller.py` freed by the ramp fix |
 
-### The library as it stands: 15 fragments, 7 mechanisms
+### The library as it stands: 23 fragments, 7 mechanisms
 
 | # | Fragment | Variants | Cost | Asks |
 |---|---|---|---|---|
@@ -1147,17 +1147,30 @@ Tracked here as it is built. Status is one of *planned*, *in progress*, *merged*
 | 18 | `cistern` | 4 | 3 | sink through, and wait to find out the floor gives |
 | 19 | `plinko` | 4 | 4 | aim for the fast slot; the pegs will argue about it |
 | 20 | `scree` | 4 | 5 | commit to the broken slope and deal with where it leaves you |
-| 21–32 | — | — | — | planned: conveyor, seesaw, lift, one_way, chimney, weighbridge, crusher, furnace, cannon, magnet, collapse, spiral. Three agents had these in hand and were stopped mid-work by a session API limit. |
+| 21 | `conveyor` | 4 | 4 | nothing — it *gives*: the belt sets the speed you leave at |
+| 22 | `one_way` | 4 | 1 | commit: over the lip there is no going back |
+| 23 | `chimney` | 4 | 6 | arrive fast enough to climb it, or roll back and try again |
+| 24–32 | — | — | — | planned: seesaw, lift, crusher, furnace, cannon, magnet, collapse. Two more were designed, measured and cut — see the findings below. |
 
-**Twenty of thirty-two.** The five above close the gap that mattered most: seven
-mechanisms were merged and none could appear on a generated board, because no
-fragment in the library used one. They can now, and a test asserts it over
-twenty generated boards.
+**The generator learned a rule from them.** A fragment tagged `gate` asks to be
+arrived at fast, and a piece cannot manufacture speed for the piece after it — so
+`storygen` now deals a `run-up` fragment immediately in front of every gate on
+the main line, and never puts a gate on the way round something. That crossed the
+alternation rule (places and questions alternate; a run-up and a gate are two
+joiners in a row), and the resolution is that **a run-up is not a question**: its
+rule says what the chapter gives rather than what it asks, and nothing about it
+can be got wrong. `tests/test_storygen.py` holds all three.
+
+**Twenty-three of thirty-two.** Fragments 16–20 closed the gap that mattered
+most: seven mechanisms were merged and none could appear on a generated board,
+because no fragment in the library used one. They can now, and a test asserts it
+over twenty generated boards. Fragments 21–23 are the run-up trio: `conveyor`
+makes speed, `chimney` spends it, `one_way` makes a chapter final.
 
 **Mechanisms merged:** `sand`, `lever`, `door`, `water`, `pegs`, `rockfall`,
 `burner`, plus marble destruction as a rule of the game.
 
-### Three findings the fragments turned up
+### Six findings the fragments turned up
 
 **A driven marble settles at about 5 m/s on a descent, however far it has
 fallen** — 5.08 m/s on a switchback's first fall and 5.15 on its second, and
@@ -1178,6 +1191,34 @@ that a hairpin loses is laying the corner square whole and walling it. The
 `banked_turn` fragment keeps the reward and its rule string says what it
 actually is — a corner with an optimum, where 6 m/s comes round in 7.41 s
 against 7.97 for a crawl and 8.32 for a charge.
+
+**`Ramp.boost_speed` is a velocity clamp, not a force, so a belt cannot be
+opposed.** It brings the marble *up to* its speed along its direction every
+frame it is over the tile. Pointed along the lane that is a speed source and
+exactly what `conveyor` wants. Pointed *against* the lane it sets the marble's
+backward speed unconditionally, at every entry speed measured from 6 to 30 m/s —
+a wall wearing a belt's clothes rather than something to beat. Any fragment whose
+rule is "beat the belt, the current, the wind" needs a force-based effect that
+does not exist; the `conveyor` variants that tried it were cut. Adding one is an
+engine-side job, and the place for it is a new `level` feature rather than a
+sixth field on `Ramp`.
+
+**A one-cell trough is not a speed gate.** The `weighbridge` fragment — cross it
+quickly and clear the trough, slowly and drop in — was built, measured and cut.
+A cell is 2.7 m and the deepest trough the slope budget allows is 0.9 m, which is
+a flight nothing on a board reliably makes; and the result is not even monotonic,
+one variant flying the trough at 4 m/s, dropping in from 8 to 16, and flying it
+again at 20. `launch` ramps fire unconditionally, so pure ballistics is the only
+gate available and one cell is too short for it. A speed gate wants either a
+`lever` (which is speed-triggered, and is what `locked_room` uses) or a gap of
+several cells (which is what `drop` and `stepping_stones` already are).
+
+**A single-layer cell grid cannot hold a helix.** A board is `cell -> height`,
+one height per cell, so a `spiral` fragment's fourth quarter-turn lands on the
+cells its first one used and overwrites them — 10.8 m of step between neighbours
+that were meant to be a floor apart. Descending in place needs a second storey,
+which is a change to what a board *is* and not a fragment. Straight descents and
+`switchback` are what the grid affords.
 
 ### What is built and merged
 

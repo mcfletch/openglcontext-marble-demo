@@ -62,7 +62,49 @@ def test_a_board_alternates_places_and_things_that_ask_something():
     for seed in range(6):
         kinds = _kinds(_story(seed, chapters=8))
         for before, after in zip(kinds, kinds[1:], strict=False):
-            assert not (before == 'joiner' and after == 'joiner'), seed
+            assert not (before == 'joiner' and after == 'joiner'), \
+                '%d: %s' % (seed, ' '.join(kinds))
+
+
+def test_every_gate_is_arrived_at_off_a_run_up():
+    """A piece cannot manufacture speed for the piece after it, so a gate --
+    anything that asks to be arrived at fast -- is a wall unless the chapter
+    before it is somewhere the speed comes from."""
+    library = fragments.library()
+    seen = 0
+    for seed in range(8):
+        story = _story(seed, chapters=8, difficulty=5)
+        line, at = [], story.start
+        while at is not None:
+            line.append(story.chapters[at].fragment)
+            at = story.chapters[at].exits.get('ok')
+        for index, name in enumerate(line):
+            if storygen.GATE_TAG not in library[name].tags:
+                continue
+            seen += 1
+            assert index and storygen.RUN_UP_TAG in library[line[index - 1]].tags, \
+                'seed %d: %r is arrived at off %r — %s' \
+                % (seed, name, line[index - 1] if index else 'the start',
+                   ' '.join(line))
+    assert seen, 'no board in eight had a gate on it to check'
+
+
+def test_a_run_up_is_never_the_way_round_something():
+    """A way round is the forgiving route, and one that asked to be arrived at
+    fast would be a second challenge for a player who has just arrived slowly
+    from getting the first one wrong."""
+    library = fragments.library()
+    for seed in range(8):
+        story = _story(seed, chapters=8, difficulty=5)
+        line, at = set(), story.start
+        while at is not None:
+            line.add(at)
+            at = story.chapters[at].exits.get('ok')
+        for chapter in story.chapters.values():
+            if chapter.id in line:
+                continue
+            assert storygen.GATE_TAG not in library[chapter.fragment].tags, \
+                'seed %d: the way round is %r' % (seed, chapter.fragment)
 
 
 def test_a_board_begins_somewhere_safe():
@@ -165,7 +207,14 @@ def test_every_composed_board_lays_out_without_running_out_of_room():
 # -- helpers ----------------------------------------------------------------------
 
 def _kinds(story):
-    """Whether each chapter of the main line is a place or asks a question.
+    """What each chapter of the main line is: a place, a run-up, or a question.
+
+    A run-up is neither of the other two.  It has a rule, so it is not somewhere
+    to gather yourself, but the rule describes what the chapter *gives* rather
+    than what it asks — a belt sets the speed you leave it at however you
+    arrived — and nothing about it can be got wrong.  It is the one thing that
+    may stand between a place and a question, because a gate has to be arrived
+    at fast and a place in between would spend the speed.
 
     The main line rather than every chapter: a way round something is written
     into the story after the line it hangs off, so reading the mapping in order
@@ -175,7 +224,8 @@ def _kinds(story):
     kinds = []
     at = story.start
     while at is not None:
-        kinds.append('place' if not library[story.chapters[at].fragment].rule
-                     else 'joiner')
+        entry = library[story.chapters[at].fragment]
+        kinds.append('run-up' if storygen.RUN_UP_TAG in entry.tags
+                     else ('place' if not entry.rule else 'joiner'))
         at = story.chapters[at].exits.get('ok')
     return kinds

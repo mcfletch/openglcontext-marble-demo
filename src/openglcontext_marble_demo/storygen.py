@@ -24,6 +24,13 @@ cost less than what they meet last, and ``difficulty`` moves the whole board.
 it is wired to a slower way that rejoins — which is the whole point of a story
 being a graph, and the difference between getting it wrong and being finished.
 
+**A gate gets a run-up.** A piece cannot manufacture speed for the piece after
+it: a marble driven down a descent settles at about five metres a second however
+far it has fallen, because steering across the board's lean spends the pull. So
+a fragment tagged :data:`GATE_TAG`, which asks to be arrived at fast, has a
+:data:`RUN_UP_TAG` fragment dealt in front of it. Without one it is a wall that
+happens to be shaped like a challenge.
+
     >>> story = compose(3, chapters=8)
     >>> board = story.build(3)
     >>> bool(board.cells)
@@ -39,10 +46,15 @@ import random
 from . import fragments
 from .stories import Chapter, Story
 
-__all__ = ['compose', 'PLACE_TAG', 'DIFFICULTY']
+__all__ = ['compose', 'PLACE_TAG', 'GATE_TAG', 'RUN_UP_TAG', 'DIFFICULTY']
 
 #: The tag that marks somewhere to be rather than something to get past.
 PLACE_TAG = 'place'
+
+#: The tag on a fragment that asks to be arrived at fast, and the tag on one that
+#: is somewhere the speed can come from.
+GATE_TAG = 'gate'
+RUN_UP_TAG = 'run-up'
 
 #: How much of the library's cost range a board is allowed, per difficulty from
 #: 1 to 5.  A difficulty is a *ceiling* rather than a target: an easy board is
@@ -67,6 +79,7 @@ def compose(seed=0, chapters=8, difficulty=3, themes=None):
         raise ValueError('the library has nowhere to be: no fragment tagged %r'
                          % (PLACE_TAG,))
     line = _main_line(rng, library, places, joiners, chapters)
+    line = _give_the_gates_a_run_up(library, line)
     story = Story(name='seed-%d-c%d-d%d' % (seed, chapters, difficulty),
                   start=line[0][0], chapters={})
     _write(story, line, rng, themes)
@@ -131,6 +144,29 @@ def _pick_joiners(rng, library, joiners, count):
     return _unrepeat(chosen)
 
 
+def _give_the_gates_a_run_up(library, line):
+    """Deal a run-up in front of every gate that has not got one.
+
+    The run-up goes *immediately* before the gate, displacing nothing: a place
+    between the two would spend the speed the run-up exists to give.  A gate
+    that already follows a run-up is left as it is, and if the library holds no
+    run-up at all the line comes back unchanged -- a generator that refused to
+    compose because one fragment was missing would be no use to anybody adding
+    fragments one at a time.
+    """
+    run_ups = sorted(name for name, entry in library.items()
+                     if RUN_UP_TAG in entry.tags)
+    if not run_ups:
+        return line
+    out = []
+    for index, (chapter, fragment) in enumerate(line):
+        if (GATE_TAG in library[fragment].tags
+                and not (out and RUN_UP_TAG in library[out[-1][1]].tags)):
+            out.append(('runup%d' % index, run_ups[index % len(run_ups)]))
+        out.append((chapter, fragment))
+    return out
+
+
 def _unrepeat(names):
     """Break up any pair the cost sort put next to each other."""
     for index in range(1, len(names)):
@@ -176,7 +212,12 @@ def _add_a_way_round(story, line, library, rng, themes, places, joiners):
         return
     at = rng.choice(candidates)
     missed_id, rejoin_id = 'round%d' % at, line[at + 2][0]
-    detour = rng.choice(joiners or places)
+    # Never a gate: a way round is the forgiving route, and one that asked to be
+    # arrived at fast would be a second challenge for a player who has just
+    # arrived slowly from getting the first one wrong.
+    offered = [name for name in (joiners or places)
+               if GATE_TAG not in library[name].tags] or places
+    detour = rng.choice(offered)
     story.chapters[missed_id] = Chapter(
         id=missed_id, fragment=detour,
         variant=rng.choice(library[detour].variants),
