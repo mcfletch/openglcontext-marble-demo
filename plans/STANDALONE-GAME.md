@@ -1123,7 +1123,7 @@ Tracked here as it is built. Status is one of *planned*, *in progress*, *merged*
 | `rockfall` | bounceable descent that randomises the way you leave | **merged** — exit headings spread 7–12°, against 0.00° for the same slope with the rock taken off; 90% get through |
 | `destruction` | the marble can be lost: struck, dropped, crushed, burned | agent working — `controller.py` freed by the ramp fix |
 
-### The library as it stands: 28 fragments, 10 mechanisms
+### The library as it stands: 29 fragments, 11 mechanisms
 
 | # | Fragment | Variants | Cost | Asks |
 |---|---|---|---|---|
@@ -1158,7 +1158,7 @@ Tracked here as it is built. Status is one of *planned*, *in progress*, *merged*
 | 29 | `cannon` | 4 | — | **merged** — pick the lane before the launcher fires; the lane decides how far you go. The best lane clears the worst by 4.4 to 7.8 m, and the gap holds at 3, 6 and 9 m/s entry |
 | 30 | `collapse` | — | — | **in hand** — the floor goes after you cross it; there is no going back for anything |
 | 31 | `turntable` | — | — | **in hand** — a disc that turns; the heading you leave with is the moment you arrived |
-| 32 | `updraft` | — | — | **in hand** — a column of lift over a gap, crossable only while moving |
+| 32 | `updraft` | 4 | 8 | **merged** — carry speed across the gap; ease off and the draft only slows the sink. 14 m/s reaches the far side of a 16 m gap, 5 m/s does not, and with the draft turned off 14 m/s does not either |
 
 Two more were designed, measured and cut — see the findings below.
 
