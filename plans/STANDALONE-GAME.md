@@ -1123,7 +1123,7 @@ Tracked here as it is built. Status is one of *planned*, *in progress*, *merged*
 | `rockfall` | bounceable descent that randomises the way you leave | **merged** — exit headings spread 7–12°, against 0.00° for the same slope with the rock taken off; 90% get through |
 | `destruction` | the marble can be lost: struck, dropped, crushed, burned | agent working — `controller.py` freed by the ramp fix |
 
-### The library as it stands: 31 fragments, 12 mechanisms
+### The library as it stands: 32 fragments, 13 mechanisms
 
 | # | Fragment | Variants | Cost | Asks |
 |---|---|---|---|---|
@@ -1156,7 +1156,7 @@ Tracked here as it is built. Status is one of *planned*, *in progress*, *merged*
 | 27 | `lift` | 4 | — | **merged** — step off while a platform is level with somewhere; wait longer and you go higher. The ridden exit takes 7.2 to 10.5 s depending on when you arrived, the walk-past lane the same time whatever you do |
 | 28 | `crusher` | 4 | 6 | **merged** — go under the press between blows; stopping there is what it catches. A stationary marble is CRUSHED at 0.375 s; driven across at 3 m/s, five of six phases of the cycle get through untouched and one is lost |
 | 29 | `cannon` | 4 | — | **merged** — pick the lane before the launcher fires; the lane decides how far you go. The best lane clears the worst by 4.4 to 7.8 m, and the gap holds at 3, 6 and 9 m/s entry |
-| 30 | `collapse` | — | — | **in hand** — the floor goes after you cross it; there is no going back for anything |
+| 30 | `collapse` | 4 | — | **merged** — cross it moving; stop on it and the floor is gone for good. 12 m/s puts 0.77 s of weight on a 0.9 s panel and crosses it; 0.3 m/s puts 1.07 s on it and goes through, to the `missed` exit rather than to a loss |
 | 31 | `turntable` | 4 | 4 | **merged** — read the turn and time your moment, or take whichever way is passing. Over a 48-sample sweep of a full rotation every phase resolves to a named exit within 23.3 s, and `reverse` mirrors `plain` exit for exit |
 | 32 | `updraft` | 4 | 8 | **merged** — carry speed across the gap; ease off and the draft only slows the sink. 14 m/s reaches the far side of a 16 m gap, 5 m/s does not, and with the draft turned off 14 m/s does not either |
 
@@ -1197,6 +1197,16 @@ piece that had to be rebuilt or thrown away.
   `result.resettable`, mechanisms that must find each other via
   `result.channels`. `controller` already names `STRUCK`, `DROPPED`, `CRUSHED`
   and `BURNED`.
+
+#### A body flung across a gap clips a ramp's edge rather than landing on it
+
+From building `collapse`. A `Ramp` is a thin tilted slab, so a marble thrown
+across a gap at speed meets its leading *edge* the way a skipped stone meets
+water, and carries on rather than landing. A stepped descent of plain cells
+catches one properly — and a marble rolls down a step and cannot roll back up it,
+which is the behaviour `one_way` is built from. Related: a deep safety floor
+under a shallow descent leaves less than a marble's diameter between the two and
+wedges it solid.
 
 #### Three shapes that trap a marble, all found by simulation
 
