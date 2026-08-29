@@ -1123,7 +1123,7 @@ Tracked here as it is built. Status is one of *planned*, *in progress*, *merged*
 | `rockfall` | bounceable descent that randomises the way you leave | **merged** — exit headings spread 7–12°, against 0.00° for the same slope with the rock taken off; 90% get through |
 | `destruction` | the marble can be lost: struck, dropped, crushed, burned | agent working — `controller.py` freed by the ramp fix |
 
-### The library as it stands: 25 fragments, 8 mechanisms
+### The library as it stands: 26 fragments, 9 mechanisms
 
 | # | Fragment | Variants | Cost | Asks |
 |---|---|---|---|---|
@@ -1154,7 +1154,7 @@ Tracked here as it is built. Status is one of *planned*, *in progress*, *merged*
 | 25 | `lodestone` | 4 | 5 | lean away from the posts, or be walked into the wall |
 | 26 | `seesaw` | — | — | **in hand** — a platform that tips under the marble; where it drops you is where you crossed it |
 | 27 | `lift` | — | — | **in hand** — ride the platform, and step off while it is level with somewhere |
-| 28 | `crusher` | — | — | **in hand** — a press on a cycle; go under it between blows |
+| 28 | `crusher` | 4 | 6 | **merged** — go under the press between blows; stopping there is what it catches. A stationary marble is CRUSHED at 0.375 s; driven across at 3 m/s, five of six phases of the cycle get through untouched and one is lost |
 | 29 | `cannon` | — | — | **in hand** — pick the lane, and the lane picks the landing |
 | 30 | `collapse` | — | — | **in hand** — the floor goes after you cross it; there is no going back for anything |
 | 31 | `turntable` | — | — | **in hand** — a disc that turns; the heading you leave with is the moment you arrived |
@@ -1197,6 +1197,15 @@ piece that had to be rebuilt or thrown away.
   `result.resettable`, mechanisms that must find each other via
   `result.channels`. `controller` already names `STRUCK`, `DROPPED`, `CRUSHED`
   and `BURNED`.
+
+#### A worktree tests the wrong code without `PYTHONPATH=src`
+
+The venv's editable install of `openglcontext_marble_demo` points at
+`/workspaces/OpenGL-dev/marble-demo/src` — the main checkout. `pytest` run inside
+an agent's worktree without `PYTHONPATH=src` therefore imports the *other*
+checkout and never exercises the new files at all, and reports green for it. Every
+verification in a worktree needs the prefix, and every merged fragment is
+re-verified in the main checkout before it counts.
 
 #### The merge protocol
 
