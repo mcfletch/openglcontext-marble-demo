@@ -47,8 +47,7 @@ from OpenGLContext.scenegraph import basenodes
 from OpenGLContext.video.recorder import RecordingMixin
 
 from . import generator, levelfile, materials, pilot
-from .game import (BASE_TILT, PLAYER_TILT, PLAYING, ROLL_DAMPING, SPIN,
-                   TILT, MarbleGame)
+from .game import BASE_TILT, PLAYER_TILT, PLAYING, ROLL_DAMPING, SPIN, TILT, MarbleGame
 from .hud import HUD
 
 # Annotated Any: the base class is chosen at runtime by the backend the

@@ -153,13 +153,13 @@ def test_a_rail_makes_a_cell_somewhere_to_come_back_to():
     """What a checkpoint needs is that the marble cannot leave by that side, and
     a rail is the board saying so."""
     world, i, track, ctrl = _world_with_marble(start=(0.0, 0.6, 0.0))
-    track.rails = frozenset(((cell, step)
+    track.rails = frozenset((cell, step)
                              for cell in ((1, 0), (2, 0))
-                             for step in ((0, 1), (0, -1))))
+                             for step in ((0, 1), (0, -1)))
     world.position[i] = (8.0, 0.6, 0.0)       # cell (2,0), railed both sides
     ctrl.update(1 / 60.0)
     assert ctrl.checkpoint == (2, 0), \
-        'a railed cell is not being counted as somewhere to come back to' 
+        'a railed cell is not being counted as somewhere to come back to'
 
 
 # -- fall vs jump --------------------------------------------------------
