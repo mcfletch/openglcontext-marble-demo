@@ -1172,7 +1172,7 @@ makes speed, `chimney` spends it, `one_way` makes a chapter final.
 **Mechanisms merged:** `sand`, `lever`, `door`, `water`, `pegs`, `rockfall`,
 `burner`, plus marble destruction as a rule of the game.
 
-### Ten findings the fragments turned up
+### Eleven findings the fragments turned up
 
 **A driven marble settles at about 5 m/s on a descent, however far it has
 fallen** — 5.08 m/s on a switchback's first fall and 5.15 on its second, and
@@ -1270,6 +1270,33 @@ either side of it look. Both are the pilot being wrong about the board rather
 than the board being wrong, which is where the fix belongs: the pilot is the
 game's own acceptance gauge, and a gauge that fails on a board a player can walk
 is measuring itself.
+
+**The pilot is beaten by the pieces that push the marble around, and it is not
+the route.** After the aim fix the pilot finishes three of six generated boards
+where the acceptance test wants four. Each of the three that fail stops at a
+single cell and stays there: seed 1 in `scree` (64 falls, 62 of them from one
+cell), seed 3 in `plinko` (42 falls), seed 5 in `lodestone` (1 fall, 141 seconds
+of a 180-second run spent on one cell). Given 420 seconds instead of 180 none of
+them finishes, so they are stuck rather than slow.
+
+The obvious suspect was the route, which ran down the *outside* column of every
+lane — a shortest path over a grid takes whichever equally short line the search
+reached first, and that is as likely to be the edge as the middle. It is not the
+cause. Scoring routes by `(steps, exposure)` so that ties break toward open floor
+cut the exposure of a story board's route from about 180 to about 60 with every
+route exactly as long as before, **and changed the falls not at all**: still 3 of
+6, seed 1 still 64 falls, seed 3 still 42. The marble is carried to the edge by
+the piece rather than steered there by the pilot. Charging cells for open floor
+rather than breaking ties by it is worse again — it lengthened three of the
+generator's eight routes and put seed 7 into 37 falls — so neither form is worth
+having, and the weighting was taken back out.
+
+What the three pieces have in common is that they move the marble on their own:
+broken rock, pegs, a magnet. `pilot.HAZARDS` names the three mechanisms a route
+steers around (bumper, spring trap, rotating arm), and these cannot be steered
+around because they *are* the piece. So this is a pilot capability rather than a
+board defect: it needs something for being held — a player rocks the board — and
+that is the next piece of work on it.
 
 ### What is built and merged
 
