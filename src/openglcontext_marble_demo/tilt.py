@@ -34,9 +34,11 @@ is a true unit gravity vector for a board leaning that far.
 are ground-plane directions the caller computes from where the camera sits, so
 "right" is right on the screen under a yawed view rather than world +X.
 
-On top of the player's lean sits ``base``, a constant lean along
-``downhill_axis``, which is what makes the marble roll toward the finish when
-nobody touches anything.
+``base`` is a constant lean along ``downhill_axis`` that sits under the player's
+own.  The game leaves it at zero: a board that leans by itself can be added to
+but never cancelled, so a line going wrong keeps going wrong and the edge is
+always downstream.  It stays available because it is what the model is, and a
+level or an experiment may want it.
 
 Nothing here reads a clock, opens a window or touches the physics: it is handed
 its own time step, so how the controls respond is a question a test can ask.
@@ -49,7 +51,8 @@ __all__ = ['TiltRig']
 
 _UP = np.array([0.0, 1.0, 0.0])
 
-#: Default lean toward the finish, in radians -- what makes the marble roll.
+#: Default lean under the player's own, in radians.  The game passes zero; this
+#: is what a rig built without an opinion gets.
 BASE = math.radians(12)
 #: Default limit on the player's own lean, on either axis.
 LIMIT = math.radians(25)

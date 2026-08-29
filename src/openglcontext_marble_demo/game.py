@@ -18,8 +18,8 @@ felt back to back rather than argued about:
     gravity follows; the marble is never pushed directly.
 ``SPIN``
     Each arrow press imparts a spin kick through
-    :class:`~openglcontext_marble_demo.controller.MarbleController`, and the board
-    keeps its constant lean.
+    :class:`~openglcontext_marble_demo.controller.MarbleController`, and the
+    board does not lean at all.
 
 Both run on one gravity path: the game owns a
 :class:`~openglcontext_marble_demo.tilt.TiltRig` either way, and ``SPIN`` is
@@ -48,26 +48,36 @@ SPIN = "spin"
 MARBLE_RADIUS = 0.5
 BACKGROUND = (0.16, 0.18, 0.23)
 
-# The whole board leans toward +Z (the finish direction), so — exactly like the
-# original Marble Madness — the marble rolls forward on its own if the player does
-# nothing, and playing is about directing that momentum rather than creating it.
+# Gravity is straight down and the board starts level: what moves the marble is
+# the slope the level was built with, or the player leaning the board, and
+# nothing else.
 GRAVITY = 9.81
-#: How far the board leans downhill, in radians.
+#: How far the board leans downhill of its own accord, in radians.  **None.**
 #:
-#: The pair of numbers below is the game's whole steering feel, and it was set by
-#: one measurement: **how far the marble travels forward while it moves one cell
-#: sideways.** A ratio near 1 means a lane change costs a lane, which threads a
-#: three-wide lane; much above that and a player is aiming at something they have
-#: already passed.
+#: The board is level until somebody leans it, so every metre the marble travels
+#: is either a slope the level was built with or a lean the player asked for.
 #:
-#: At the old 12.4° of board lean and 26° of player lean the ratio was **2.77**,
-#: so every fragment about aim was being asked of a control that could not aim.
-#: A gentler board and a wider lean bring it to 1.3, at a cruising speed of
-#: 3.2 m/s. The board's lean is what was traded: it is pace against being able
-#: to put the marble anywhere, and pace is worth nothing if the marble goes
-#: where it likes.
-BASE_TILT = math.radians(8.0)
-#: How far the player may lean it on top of that, on either axis.
+#: It used to lean 8 degrees, and 12.4 before that, on the reasoning that a board
+#: which carries the marble along gives the game its pace.  What a constant lean
+#: actually costs is the ability to undo anything: the player can add to the pull
+#: but never cancel it, so a line that is going wrong keeps going wrong and the
+#: edge of the board is always downstream.  Measured at 12.4 degrees of lean and
+#: 26 of player tilt, a marble moved 20.5 m sideways in the four seconds it took
+#: to drift 18.8 m downhill -- nearly half of every correction spent on not going
+#: down the hill.
+#:
+#: The pace comes from the levels instead.  A generated board descends about
+#: 11 degrees along its route, which is more than the lean it has given up, so
+#: slopes still roll the marble and only the flat places wait for the player.
+#: The autopilot finishes the same boards it did with the lean, taking 53 seconds
+#: where it took 47.
+BASE_TILT = 0.0
+#: How far the player may lean the board, on either axis.
+#:
+#: The whole of the steering now, so it is measured on its own: from a standstill
+#: a marble takes 1.04 s to move half a cell sideways at 40 degrees, 0.91 s at 55
+#: and 0.79 s at 70.  Damping is not the dial it looks like -- cutting it to a
+#: quarter changes 1.04 s to 1.02.
 PLAYER_TILT = math.radians(40)
 
 #: Linear and angular damping, per second, for everything in the game's world.

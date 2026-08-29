@@ -22,13 +22,20 @@ same as a cell the marble can reach from here. Round a right angle in a one-cell
 corridor the cell two along is diagonally past a corner, and a pilot that aims at
 it leans the marble into the wall and holds it there until the clock runs out.
 
+**It drives and it steers, and they are two different things.** The lean is built
+from two parts and added: a *throttle* along the route, which holds a cruising
+speed, and a *steering* term across it, which closes the gap to the line. The
+board is level until somebody leans it, so nothing else is going to move the
+marble — a pilot that only corrected sideways would sit where it was put.
+
 **It steers at the error and at the drift.** Leaning only toward where it should
 be makes a pilot that crosses the line and comes back, for ever. Leaning against
 how fast it is already returning is what makes it settle.
 
-**It brakes with the board.** A marble has no brakes, but a board has an up-hill:
-running at the line too fast, the pilot leans back against its own travel, which
-is the same thing a player does at the top of a drop.
+**It slows for corners.** The throttle asks for less where the route turns inside
+the next few cells, because arriving at a right angle at full speed is how a
+marble ends up in the wall on the outside of it. Braking is the same term with
+its sign turned round: over the cruise it leans back, under it leans on.
 
     >>> from openglcontext_marble_demo import generator
     >>> board = generator.generate(seed=1, difficulty=2)
@@ -64,20 +71,32 @@ LOOK_AHEAD = 1.6
 STEER_GAIN = 0.75
 DAMPING = 0.45
 
-#: Above this speed toward the aim, the pilot starts leaning back against its own
-#: travel, and by this much per metre a second over.
+#: The speed the pilot holds along its route, and how hard it leans to hold it.
 #:
-#: These numbers are worth their measurements.  Over twelve boards at difficulty
-#: 2: a look-ahead of 2.2 with light braking finishes 10 boards and falls off 18
-#: times; aiming nearer and braking earlier finishes 11 and falls off 3.
+#: The board does not lean by itself, so this is where the marble's motion comes
+#: from: below the cruise the pilot leans on, above it the same term leans back,
+#: and braking is not a separate rule.
 #:
+#: Six metres a second because that is about what a marble settles at down a
+#: built slope, so the pilot is asking the board for the pace the board already
+#: has rather than fighting it on the descents and crawling on the flats.
+CRUISE_SPEED = 6.0
+THROTTLE_GAIN = 0.35
+
+#: How much of the cruise is left where the route turns a right angle inside the
+#: look-ahead, and how far ahead to look for the turn, in cells.
+#:
+#: Arriving at a corner at full speed is how a marble ends up in the wall on the
+#: outside of it.  The scale is linear in the heading change, so a gentle bend
+#: costs a little and a hairpin costs the most of it.
+CORNER_SPEED = 0.45
+CORNER_LOOK = 3
+
 #: The steering gain is set by how often the pilot ends up asking for everything
 #: the board has.  At 1.5 it is at the stop for well over half the run, which is
 #: a demo of the extremes rather than of the game; at 0.75 it is there for 3% of
 #: it, and finishes the same boards with fewer falls.  A pilot should reach the
 #: stop when it is in trouble, not as a matter of course.
-BRAKE_SPEED = 4.5
-BRAKE_GAIN = 0.28
 
 
 def hazard_cells(level):
@@ -156,15 +175,18 @@ class Autopilot:
     def __init__(self, level, forward_axis=(0.0, 0.0, -1.0),
                  right_axis=(1.0, 0.0, 0.0), look_ahead=LOOK_AHEAD,
                  steer_gain=STEER_GAIN, damping=DAMPING,
-                 brake_speed=BRAKE_SPEED, brake_gain=BRAKE_GAIN):
+                 cruise_speed=CRUISE_SPEED, throttle_gain=THROTTLE_GAIN,
+                 corner_speed=CORNER_SPEED, corner_look=CORNER_LOOK):
         self.level = level
         self.forward_axis = _unit(forward_axis)
         self.right_axis = _unit(right_axis)
         self.look_ahead = float(look_ahead)
         self.steer_gain = float(steer_gain)
         self.damping = float(damping)
-        self.brake_speed = float(brake_speed)
-        self.brake_gain = float(brake_gain)
+        self.cruise_speed = float(cruise_speed)
+        self.throttle_gain = float(throttle_gain)
+        self.corner_speed = float(corner_speed)
+        self.corner_look = int(corner_look)
         #: The line it means to take: the clean way through where there is one,
         #: and the way through there is where there is not.  Better to roll over
         #: a bumper than to stop.
@@ -208,24 +230,87 @@ class Autopilot:
             return (0.0, 0.0)
         position = np.asarray(position, dtype='d')
         velocity = np.asarray(velocity, dtype='d')
-        error = (self.target(position) - position) / self.level.cell_size
-        # Steer at where it should be, less how fast it is already getting
-        # there: the damping is what turns a weave into a line.
-        demand = error * self.steer_gain - velocity * self.damping
-        forward = float(np.dot(demand, self.forward_axis)) + self._braking(velocity)
-        right = float(np.dot(demand, self.right_axis))
-        return _bounded(forward, right)
+        to_aim = self.target(position) - position
+        along = _flat_unit(to_aim)
+        if along is None:                       # standing on the aim itself
+            return (0.0, 0.0)
+        across = np.array([-along[2], 0.0, along[0]])
 
-    def _braking(self, velocity):
-        """How much to lean back up the slope against the speed it is carrying.
+        # The throttle is clipped before the two are added, so that a marble well
+        # under the cruise cannot ask for more lean than the board has and have
+        # the steering scaled away with it: falling off costs more than being
+        # slow, so the throttle is what gives way.
+        #
+        # A guard rather than a measured gain.  It engages on 12% of frames and
+        # changes no outcome at all -- the same boards, the same falls to the
+        # digit -- because a marble far below the cruise is usually one that has
+        # just been put back on the line, so the two conditions it arbitrates
+        # between rarely happen at once.  It is here for when they do.
+        drive = max(-1.0, min(1.0, self.throttle(position, velocity)))
+        demand = along * drive + across * self.steering(to_aim, velocity, across)
+        return _bounded(float(np.dot(demand, self.forward_axis)),
+                        float(np.dot(demand, self.right_axis)))
 
-        A marble has no brakes; a board has an up-hill.  Leaning into it is what
-        a player does at the top of a drop, and what keeps the pilot from
-        arriving at a corner too fast to turn.
+    def throttle(self, position, velocity):
+        """How hard to lean along the route: positive leans on, negative brakes.
+
+        One term for both, because they are one thing -- the board is level, so
+        going faster and slowing down are the same lever pushed either way.
         """
-        downhill = -float(np.dot(velocity, self.forward_axis))
-        over = downhill - self.brake_speed
-        return max(0.0, over) * self.brake_gain
+        along = _flat_unit(self.target(position) - position)
+        if along is None:
+            return 0.0
+        speed = float(np.dot(velocity, along))
+        return (self.cruise_for(position) - speed) * self.throttle_gain
+
+    def steering(self, to_aim, velocity, across):
+        """How hard to lean across it: at the offset, less how fast it is closing.
+
+        The damping is what turns a weave into a line.
+        """
+        offset = float(np.dot(to_aim, across)) / self.level.cell_size
+        drift = float(np.dot(velocity, across))
+        return offset * self.steer_gain - drift * self.damping
+
+    def cruise_for(self, position):
+        """The speed to hold here: less of it where the route turns ahead.
+
+        Measured over the next :attr:`corner_look` cells of route, as the angle
+        between where it is going now and where it goes then.  A straight run
+        keeps the whole cruise; a right angle keeps :attr:`corner_speed` of it.
+        """
+        if len(self.route) < 3:
+            return self.cruise_speed
+        here = np.array([position[0], position[2]], dtype='d')
+        nearest = int(np.argmin(np.linalg.norm(self._points - here, axis=1)))
+        turn = self._turn_after(nearest)
+        eased = 1.0 - (1.0 - self.corner_speed) * min(turn / (math.pi / 2.0), 1.0)
+        return self.cruise_speed * eased
+
+    def _turn_after(self, nearest):
+        """How far the route turns between here and ``corner_look`` cells on."""
+        last = len(self._points) - 1
+        first, mid, far = (min(nearest, last - 2),
+                           min(nearest + 1, last - 1),
+                           min(nearest + self.corner_look, last))
+        before = _flat2(self._points[mid] - self._points[first])
+        after = _flat2(self._points[far] - self._points[mid])
+        if before is None or after is None:
+            return 0.0
+        return float(math.acos(max(-1.0, min(1.0, float(np.dot(before, after))))))
+
+
+def _flat_unit(vector):
+    """``vector`` flattened onto the ground and normalised, or None if it is nothing."""
+    flat = np.array([vector[0], 0.0, vector[2]], dtype='d')
+    length = float(np.linalg.norm(flat))
+    return flat / length if length > 1e-9 else None
+
+
+def _flat2(vector):
+    """A 2D route step normalised, or None if the two points coincide."""
+    length = float(np.linalg.norm(vector))
+    return np.asarray(vector, dtype='d') / length if length > 1e-9 else None
 
 
 def _unit(vector):

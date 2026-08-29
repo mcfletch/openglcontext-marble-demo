@@ -203,7 +203,15 @@ def test_a_demand_too_big_to_hold_keeps_the_direction_it_asked_for():
 
 def test_it_reaches_the_stop_when_it_is_in_trouble_and_not_otherwise():
     """A pilot that asks for everything the board has as a matter of course is a
-    demo of the extremes rather than of the game."""
+    demo of the extremes rather than of the game.
+
+    A fifth of the run rather than the seventh it used to be, because the board
+    no longer leans by itself: every metre the marble travels is now lean the
+    pilot asked for, where before half of it was the board's own pull and the
+    pilot only had to correct.  Measured at 21% over this board; the number is
+    what a pilot *driving* looks like, and the old 15% was what one being
+    carried looked like.
+    """
     level = generator.generate(seed=1, difficulty=2)
     game = MarbleGame(level)
     driver = _pilot(level, forward_axis=game.tilt.forward_axis,
@@ -218,7 +226,8 @@ def test_it_reaches_the_stop_when_it_is_in_trouble_and_not_otherwise():
         game.lean(*demand)
         if game.advance(1 / 120.0) != 'playing':
             break
-    assert at_stop / frames < 0.15
+    assert at_stop / frames < 0.30, \
+        'at the stop for %.0f%% of the run' % (100.0 * at_stop / frames)
 
 
 def test_the_demand_never_exceeds_what_a_player_could_hold():
