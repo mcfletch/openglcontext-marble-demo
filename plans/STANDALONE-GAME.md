@@ -1123,7 +1123,7 @@ Tracked here as it is built. Status is one of *planned*, *in progress*, *merged*
 | `rockfall` | bounceable descent that randomises the way you leave | **merged** — exit headings spread 7–12°, against 0.00° for the same slope with the rock taken off; 90% get through |
 | `destruction` | the marble can be lost: struck, dropped, crushed, burned | agent working — `controller.py` freed by the ramp fix |
 
-### The library as it stands: 30 fragments, 11 mechanisms
+### The library as it stands: 31 fragments, 12 mechanisms
 
 | # | Fragment | Variants | Cost | Asks |
 |---|---|---|---|---|
@@ -1157,7 +1157,7 @@ Tracked here as it is built. Status is one of *planned*, *in progress*, *merged*
 | 28 | `crusher` | 4 | 6 | **merged** — go under the press between blows; stopping there is what it catches. A stationary marble is CRUSHED at 0.375 s; driven across at 3 m/s, five of six phases of the cycle get through untouched and one is lost |
 | 29 | `cannon` | 4 | — | **merged** — pick the lane before the launcher fires; the lane decides how far you go. The best lane clears the worst by 4.4 to 7.8 m, and the gap holds at 3, 6 and 9 m/s entry |
 | 30 | `collapse` | — | — | **in hand** — the floor goes after you cross it; there is no going back for anything |
-| 31 | `turntable` | — | — | **in hand** — a disc that turns; the heading you leave with is the moment you arrived |
+| 31 | `turntable` | 4 | 4 | **merged** — read the turn and time your moment, or take whichever way is passing. Over a 48-sample sweep of a full rotation every phase resolves to a named exit within 23.3 s, and `reverse` mirrors `plain` exit for exit |
 | 32 | `updraft` | 4 | 8 | **merged** — carry speed across the gap; ease off and the draft only slows the sink. 14 m/s reaches the far side of a 16 m gap, 5 m/s does not, and with the draft turned off 14 m/s does not either |
 
 Two more were designed, measured and cut — see the findings below.
@@ -1197,6 +1197,24 @@ piece that had to be rebuilt or thrown away.
   `result.resettable`, mechanisms that must find each other via
   `result.channels`. `controller` already names `STRUCK`, `DROPPED`, `CRUSHED`
   and `BURNED`.
+
+#### Three shapes that trap a marble, all found by simulation
+
+From building the `turntable`, and general to anything with a moving part in a
+room rather than a lane:
+
+- **A sweeping bar whose reach extends back into the lane it is entered from.**
+  A marble waiting at exactly the bar's far reach meets it edge-on rather than
+  broadside, and the contact occasionally injected enough energy to send the
+  marble to hundreds of metres a second in one frame. A plain lead-in, so the
+  reach never passes the mouths, is the fix.
+- **A filled square hub.** Its corners are places neither the sweeping bar nor
+  the board's lean can reach, so a mistimed marble settles into one for good.
+  Built as a cross instead, every cell of the hub is somewhere something can
+  move it out of.
+- **A hub twice the radius.** A mistimed marble is carried round the rim
+  indefinitely instead of being let into a mouth. The parameter is real and
+  exposed; every shipped variant keeps it at one, and this is why.
 
 #### Phasing a kinematic body in a test needs its position moved too
 
