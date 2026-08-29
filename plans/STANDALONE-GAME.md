@@ -1123,7 +1123,7 @@ Tracked here as it is built. Status is one of *planned*, *in progress*, *merged*
 | `rockfall` | bounceable descent that randomises the way you leave | **merged** — exit headings spread 7–12°, against 0.00° for the same slope with the rock taken off; 90% get through |
 | `destruction` | the marble can be lost: struck, dropped, crushed, burned | agent working — `controller.py` freed by the ramp fix |
 
-### The library as it stands: 27 fragments, 10 mechanisms
+### The library as it stands: 28 fragments, 10 mechanisms
 
 | # | Fragment | Variants | Cost | Asks |
 |---|---|---|---|---|
@@ -1155,7 +1155,7 @@ Tracked here as it is built. Status is one of *planned*, *in progress*, *merged*
 | 26 | `seesaw` | 4 | — | **merged** — cross before the plank finds you; dawdle and your own weight digs the climb you carry yourself over. 1 m/s costs 3.28 s over bare floor against 0.12 s at 14 m/s |
 | 27 | `lift` | — | — | **in hand** — ride the platform, and step off while it is level with somewhere |
 | 28 | `crusher` | 4 | 6 | **merged** — go under the press between blows; stopping there is what it catches. A stationary marble is CRUSHED at 0.375 s; driven across at 3 m/s, five of six phases of the cycle get through untouched and one is lost |
-| 29 | `cannon` | — | — | **in hand** — pick the lane, and the lane picks the landing |
+| 29 | `cannon` | 4 | — | **merged** — pick the lane before the launcher fires; the lane decides how far you go. The best lane clears the worst by 4.4 to 7.8 m, and the gap holds at 3, 6 and 9 m/s entry |
 | 30 | `collapse` | — | — | **in hand** — the floor goes after you cross it; there is no going back for anything |
 | 31 | `turntable` | — | — | **in hand** — a disc that turns; the heading you leave with is the moment you arrived |
 | 32 | `updraft` | — | — | **in hand** — a column of lift over a gap, crossable only while moving |
@@ -1197,6 +1197,21 @@ piece that had to be rebuilt or thrown away.
   `result.resettable`, mechanisms that must find each other via
   `result.channels`. `controller` already names `STRUCK`, `DROPPED`, `CRUSHED`
   and `BURNED`.
+
+#### Known engine defect: `Ramp.launch` fires per frame, not per crossing
+
+`Ramp.build` puts a trigger box over the tile and `_boost_effect` runs on every
+physics frame a body overlaps it, so a `launch` ramp's upward impulse is applied
+once per frame of dwell rather than once per crossing. A marble's total kick
+therefore scales with how long it spends inside the roughly 3.6 m trigger
+footprint, which means `launch_up` is not a muzzle velocity and a slow marble is
+thrown *harder* than a fast one.
+
+It is deterministic, and `drop`, `sand_pit` and `cannon` are all tuned around it
+as it stands. Firing once on entry instead would make launch distances
+predictable and is the right shape for the engine, but it changes every launch
+ramp already measured, so it is a separate piece of work with its own re-tuning
+rather than something to slip in beside a fragment.
 
 #### A worktree tests the wrong code without `PYTHONPATH=src`
 
