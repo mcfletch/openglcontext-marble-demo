@@ -27,8 +27,17 @@ def test_a_composed_story_is_a_story_that_lays_out():
 
 
 def test_a_story_has_the_number_of_chapters_it_was_asked_for():
+    """About that many, and not a third more.
+
+    A caller asking for eight is sizing a board -- how long it takes to play,
+    how far the pilot has to get -- so the rules that shape the line (a place to
+    end on, a run-up in front of a gate, a way round something) come out of the
+    budget rather than on top of it.  Two over is the ending and the detour.
+    """
     for wanted in (4, 6, 10):
-        assert len(_story(chapters=wanted).chapters) >= wanted
+        got = len(_story(chapters=wanted).chapters)
+        assert wanted <= got <= wanted + 2, \
+            'asked for %d chapters and got %d' % (wanted, got)
 
 
 def test_a_composed_story_is_the_same_story_for_the_same_seed():

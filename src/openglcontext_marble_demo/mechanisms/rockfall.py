@@ -62,14 +62,19 @@ THICKNESS = (0.7, 1.4)
 #: corner stands above the surface, in metres.
 #:
 #: The stand decides whether the field is something to ride over or a wall to
-#: meet: a marble of the game's radius rides half a metre, and not much more.
+#: meet, and what carries a marble over a slab is the board's lean.  Half a
+#: metre is the marble's own radius and sounds like the limit, but at the game's
+#: 8 degrees of lean a slab standing that proud is one a marble meets rather
+#: than rides: held to 0.40, 46 descents of 52 reach the bottom, against 26 at
+#: 0.55.  Lowering it costs nothing in what the field is for -- the exit
+#: headings still spread by 12.4 degrees and the widest two are 41.9 apart.
 #: The lean is gentle against it because a slab is sunk to its stand and the
 #: rest of it is under the slope -- lean it far and only the high corner is
 #: above ground, an obstacle a hand's width across that most lines miss.  Held
 #: under 16 degrees, a slab's whole face is out and it is as wide an obstacle as
 #: it looks.
 TILT = (0.10, 0.28)
-STAND = (0.20, 0.55)
+STAND = (0.15, 0.40)
 
 #: How far up or down its own row a slab may be set, as a fraction of a cell,
 #: and how far it may wander from the middle of its lane across the run, as a

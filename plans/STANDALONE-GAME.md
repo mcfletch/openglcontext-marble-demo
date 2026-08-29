@@ -1123,7 +1123,7 @@ Tracked here as it is built. Status is one of *planned*, *in progress*, *merged*
 | `rockfall` | bounceable descent that randomises the way you leave | **merged** — exit headings spread 7–12°, against 0.00° for the same slope with the rock taken off; 90% get through |
 | `destruction` | the marble can be lost: struck, dropped, crushed, burned | agent working — `controller.py` freed by the ramp fix |
 
-### The library as it stands: 23 fragments, 7 mechanisms
+### The library as it stands: 25 fragments, 8 mechanisms
 
 | # | Fragment | Variants | Cost | Asks |
 |---|---|---|---|---|
@@ -1150,7 +1150,9 @@ Tracked here as it is built. Status is one of *planned*, *in progress*, *merged*
 | 21 | `conveyor` | 4 | 4 | nothing — it *gives*: the belt sets the speed you leave at |
 | 22 | `one_way` | 4 | 1 | commit: over the lip there is no going back |
 | 23 | `chimney` | 4 | 6 | arrive fast enough to climb it, or roll back and try again |
-| 24–32 | — | — | — | planned: seesaw, lift, crusher, furnace, cannon, magnet, collapse. Two more were designed, measured and cut — see the findings below. |
+| 24 | `furnace` | 4 | 8 | island to island, and never stop on the fire |
+| 25 | `lodestone` | 4 | 5 | lean away from the posts, or be walked into the wall |
+| 26–32 | — | — | — | planned: seesaw, lift, crusher, cannon, collapse. Two more were designed, measured and cut — see the findings below. |
 
 **The generator learned a rule from them.** A fragment tagged `gate` asks to be
 arrived at fast, and a piece cannot manufacture speed for the piece after it — so
@@ -1161,7 +1163,7 @@ joiners in a row), and the resolution is that **a run-up is not a question**: it
 rule says what the chapter gives rather than what it asks, and nothing about it
 can be got wrong. `tests/test_storygen.py` holds all three.
 
-**Twenty-three of thirty-two.** Fragments 16–20 closed the gap that mattered
+**Twenty-five of thirty-two.** Fragments 16–20 closed the gap that mattered
 most: seven mechanisms were merged and none could appear on a generated board,
 because no fragment in the library used one. They can now, and a test asserts it
 over twenty generated boards. Fragments 21–23 are the run-up trio: `conveyor`
@@ -1170,7 +1172,7 @@ makes speed, `chimney` spends it, `one_way` makes a chapter final.
 **Mechanisms merged:** `sand`, `lever`, `door`, `water`, `pegs`, `rockfall`,
 `burner`, plus marble destruction as a rule of the game.
 
-### Six findings the fragments turned up
+### Ten findings the fragments turned up
 
 **A driven marble settles at about 5 m/s on a descent, however far it has
 fallen** — 5.08 m/s on a switchback's first fall and 5.15 on its second, and
@@ -1220,6 +1222,55 @@ that were meant to be a floor apart. Descending in place needs a second storey,
 which is a change to what a board *is* and not a fragment. Straight descents and
 `switchback` are what the grid affords.
 
+**The gentler board changed what a rockfall is.** Dropping `BASE_TILT` from
+12.4 degrees to 8 to make the game aimable took away the push that carried a
+marble over a slab, and a field that used to be crossed became one that held it:
+26 descents of 52 reached the bottom, against the 39 the rule asks for. The fix
+is `STAND`, how far a slab's high corner stands above the slope — held to 0.40
+rather than 0.55, 46 of 52 get through and the field still spreads exit headings
+by 12.4 degrees with the widest two 41.9 apart. Restitution is not the lever:
+0.55, 0.70 and 0.82 give 0.64, 0.65 and 0.67 of the entry speed, because what
+the rock costs is the longer, turned path rather than the bounce. The speed
+assertion is now measured against the bare slope, which hands a marble 1.29
+times what it entered with, so the claim is "a rockfall costs a descent's worth
+of speed and a wall costs all of it" rather than a bare number calibrated to one
+board lean.
+
+**A pull towards a point is a trap; a pull along an axis is a corner.** The
+magnet's first form drew the marble towards the post in both directions, which
+is a well: whatever fell in stopped there, and three of the four `lodestone`
+variants became pieces a marble never got out of. A magnet now carries the
+`axis` its force acts along and pulls the marble only towards its own position on
+that axis, so the marble keeps every bit of the speed it arrived with and only
+its heading changes. That is what "bends the line" has to mean if the line is
+still to arrive somewhere.
+
+**The autopilot cancels a steady sideways force completely.** Driven down a
+`lodestone` corridor the marble takes 12.89 s whether the posts are there or not
+— the pilot has no reaction time, so it corrects as fast as the force arrives.
+What it cannot cancel is having been *moved*, and that is what the piece is
+measured on: how far off the line the marble strays, driven and undriven. The
+same family as the aimable-board findings above — a measurement that goes through
+the pilot measures the pilot as much as the piece.
+
+**A cell on the route is not a cell the marble can be steered to.** The pilot
+aimed a fixed 1.6 cells along its route, and where the route turns a right angle
+in a one-cell corridor the cell two along is diagonally past a corner — between
+two voids. The pilot leaned at it, the marble pressed into the inside of the
+corner, and the demand never changed because the thing it was steering at never
+got closer: on seed 2 it sat at one cell for sixty seconds, then fell off
+twenty-seven times. Given 420 seconds instead of 180 it still did not finish, so
+it was stuck rather than slow. Every generated board had between five and twelve
+route cells with this in them.
+
+The aim is now walked back until the straight line to it stays on the board and
+crosses only open faces (`pilot.steerable`), and the route itself refuses a step
+up of more than `MAX_STEP`, which a marble cannot roll up however open the cells
+either side of it look. Both are the pilot being wrong about the board rather
+than the board being wrong, which is where the fix belongs: the pilot is the
+game's own acceptance gauge, and a gauge that fails on a board a player can walk
+is measuring itself.
+
 ### What is built and merged
 
 - **The registries** (§17.1): `fragments/` and `mechanisms/`, both discovered by
@@ -1236,6 +1287,12 @@ which is a change to what a board *is* and not a fragment. Straight descents and
   it, and **`BuildResult.resettable`**, which is how a restarted run forgets a
   thrown lever and an opened plug. A board whose levers were still thrown would
   be a different board from the one the player started on.
+- **The editor's pieces palette**, which now reads the game's mechanism registry
+  rather than a list of its own: every mechanism that stands on a single cell —
+  door, lever, magnet, peg board, rockfall, water — is offered without the editor
+  being touched, which is the same directory-discovery property the fragment and
+  mechanism packages have. Field mechanisms (sand, a burner) are not offered:
+  placing one is a gesture that paints an area, and that tool is not written.
 - **The editor's Story menu**: a chapter from the library appended to the board,
   one press of undo, then the tile tools.
 - **`storygen.compose`**: a whole board out of the library, with a rhythm to it

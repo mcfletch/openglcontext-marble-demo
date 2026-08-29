@@ -37,6 +37,50 @@ def _pilot(level, **named):
     return pilot.Autopilot(level, **named)
 
 
+def _corner(arm=5):
+    """A one-cell-wide corridor with a right angle in it.
+
+    The shape a story lays whenever two pieces meet at ninety degrees, and the
+    one that catches a pilot out: two cells along the route from the corner is a
+    cell the marble cannot get to in a straight line.
+    """
+    from openglcontext_marble_demo.level import Finish
+    cells = {(col, 0): 0.0 for col in range(arm)}
+    cells.update({(arm - 1, row): 0.0 for row in range(arm)})
+    finish = (arm - 1, arm - 1)
+    return Level(name='corner', cells=cells, start_cell=(0, 0),
+                 finish_cell=finish, time_limit=90.0, features=[Finish(finish)])
+
+
+def _crossed(level, here, there, step=0.05):
+    """The cells the straight line from ``here`` to ``there`` passes over."""
+    here = np.array([here[0], here[2]], dtype='d')
+    there = np.array([there[0], there[2]], dtype='d')
+    span = there - here
+    run = []
+    for at in range(int(1.0 / step) + 1):
+        point = here + span * (at * step)
+        cell = (int(round(point[0] / level.cell_size)),
+                int(round(point[1] / level.cell_size)))
+        if not run or cell != run[-1]:
+            run.append(cell)
+    return run
+
+
+def _walkable(level, here, there):
+    """Can a marble be steered straight from ``here`` to ``there``?
+
+    Every cell the line crosses has to be floor, *and* each has to share a face
+    with the one before it: a line that leaves one cell by its corner passes
+    between two voids, which is a fall rather than a route.
+    """
+    run = _crossed(level, here, there)
+    if any(cell not in level.cells for cell in run):
+        return False
+    return all(abs(after[0] - before[0]) + abs(after[1] - before[1]) == 1
+               for before, after in zip(run, run[1:], strict=False))
+
+
 # -- the line it means to take -------------------------------------------------
 
 def test_the_route_runs_from_the_start_to_the_finish():
@@ -82,6 +126,46 @@ def test_the_aim_moves_up_the_route_as_the_marble_does():
     early = driver.target(np.array([0.0, 0.0, 0.0]))
     later = driver.target(np.array([0.0, 0.0, 6 * level.cell_size]))
     assert later[2] > early[2]
+
+
+def test_it_never_aims_across_a_place_the_marble_cannot_go():
+    """A point on the route is not the same as a point it can be steered to.
+
+    Round a right angle in a one-cell corridor, the cell two along the route is
+    diagonally through the wall, and a pilot that aims at it leans the marble
+    into that wall and holds it there.
+    """
+    level = _corner()
+    driver = _pilot(level)
+    for cell in driver.route:
+        centre = level.cell_center(cell)
+        position = np.array([centre[0], 0.6, centre[1]])
+        target = driver.target(position)
+        assert _walkable(level, position, target), \
+            'from %r the pilot aims at %r, which is across the void' \
+            % (cell, (round(float(target[0]), 1), round(float(target[2]), 1)))
+
+
+def test_a_route_never_climbs_a_step_a_marble_cannot_roll_up():
+    """The board is a grid of heights, and a step taller than the slope budget
+    is a wall however open the cells either side of it look."""
+    from openglcontext_marble_demo import pieces
+    from openglcontext_marble_demo.level import Finish
+    # A straight run with a cliff across it, and a way round one cell wide.
+    cells = {(col, row): 0.0 for col in range(3) for row in range(6)}
+    for col in range(2):                        # the cliff, four metres up
+        cells[(col, 3)] = 4.0
+        cells[(col, 4)] = 4.0
+        cells[(col, 5)] = 4.0
+    finish = (2, 5)
+    level = Level(name='cliff', cells=cells, start_cell=(0, 0),
+                  finish_cell=finish, time_limit=90.0, features=[Finish(finish)])
+    route = _pilot(level).route
+    assert route, 'no route at all over a board that has one'
+    climbs = [(a, b, round(cells[b] - cells[a], 2))
+              for a, b in zip(route, route[1:], strict=False)
+              if cells[b] - cells[a] > pieces.MAX_STEP + 1e-9]
+    assert not climbs, 'the route climbs %r' % (climbs,)
 
 
 def test_it_aims_at_the_finish_once_there_is_nothing_further_on():

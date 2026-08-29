@@ -16,7 +16,11 @@ Three things make it drive rather than weave:
 
 **It aims down the route, not at the finish.** A pilot aiming at the goal cuts
 every corner, including the ones with nothing under them. The aim is a point a
-few cells along the line from wherever the marble is.
+few cells along the line from wherever the marble is — and only as far along as
+it can be steered to in a straight line, because a cell *on* the route is not the
+same as a cell the marble can reach from here. Round a right angle in a one-cell
+corridor the cell two along is diagonally past a corner, and a pilot that aims at
+it leans the marble into the wall and holds it there until the clock runs out.
 
 **It steers at the error and at the drift.** Leaning only toward where it should
 be makes a pilot that crosses the line and comes back, for ever. Leaning against
@@ -38,8 +42,9 @@ from collections import deque
 import numpy as np
 
 from .level import Bumper, RotatingArm, SpringTrap
+from .pieces import MAX_STEP
 
-__all__ = ['Autopilot', 'hazard_cells', 'route_over']
+__all__ = ['Autopilot', 'hazard_cells', 'route_over', 'steerable']
 
 NEIGHBOURS = ((1, 0), (-1, 0), (0, 1), (0, -1))
 
@@ -81,8 +86,44 @@ def hazard_cells(level):
             if isinstance(feature, HAZARDS) and feature.cell in level.cells}
 
 
+def steerable(level, here, there, step=0.05):
+    """Can a marble be steered in a straight line from ``here`` to ``there``?
+
+    Both are ``(x, z)`` in world metres.  Every cell the line crosses has to be
+    floor, and each has to share a *face* with the one before it: a line that
+    leaves a cell by its corner passes between two voids, which is a fall rather
+    than a route.
+
+    Sampled rather than solved.  A grid traversal would answer the same question
+    exactly, and this is called a handful of times a frame on a line two cells
+    long, where twenty samples cost less than the setup would.
+    """
+    cells = level.cells
+    size = level.cell_size
+    span = (there[0] - here[0], there[1] - here[1])
+    previous = None
+    at = 0.0
+    while at <= 1.0 + 1e-9:
+        cell = (int(round((here[0] + span[0] * at) / size)),
+                int(round((here[1] + span[1] * at) / size)))
+        if cell != previous:
+            if cell not in cells:
+                return False
+            if previous is not None and (abs(cell[0] - previous[0])
+                                         + abs(cell[1] - previous[1])) != 1:
+                return False
+            previous = cell
+        at += step
+    return True
+
+
 def route_over(level, blocked=frozenset()):
     """The shortest run of cells from start to finish, avoiding ``blocked``.
+
+    A step up of more than :data:`~openglcontext_marble_demo.pieces.MAX_STEP` is
+    not a step at all: a marble rolls down one and cannot roll up one, so a
+    route that climbed it would be a line the pilot leans at for the rest of the
+    run.  Down is unbounded, because falling is something a marble does well.
 
     Empty when there is no way through, which is a board the pilot can only sit
     on — and sitting still is a better answer than driving into the void.
@@ -102,7 +143,8 @@ def route_over(level, blocked=frozenset()):
             return run[::-1]
         for dcol, drow in NEIGHBOURS:
             nxt = (cell[0] + dcol, cell[1] + drow)
-            if nxt in level.cells and nxt not in previous and nxt not in blocked:
+            if nxt in level.cells and nxt not in previous and nxt not in blocked \
+                    and level.cells[nxt] - level.cells[cell] <= MAX_STEP + 1e-9:
                 previous[nxt] = cell
                 queue.append(nxt)
     return []
@@ -138,12 +180,20 @@ class Autopilot:
 
         The nearest point of the line, plus a look-ahead along it — so the aim
         runs up the route as the marble does, and never leaves it.
+
+        The look-ahead is shortened where the board will not carry it.  Aiming
+        at a cell the marble cannot reach in a straight line is how a pilot ends
+        a run pressed into the inside of a corner: the demand never changes,
+        because the thing it is steering at never gets closer.
         """
         if not self.route:
             return np.asarray(position, dtype='d')
         here = np.array([position[0], position[2]], dtype='d')
         nearest = int(np.argmin(np.linalg.norm(self._points - here, axis=1)))
         ahead = min(nearest + int(round(self.look_ahead)), len(self.route) - 1)
+        while ahead > nearest and not steerable(self.level, here,
+                                                self._points[ahead]):
+            ahead -= 1
         point = self._points[ahead]
         return np.array([point[0], position[1], point[1]], dtype='d')
 

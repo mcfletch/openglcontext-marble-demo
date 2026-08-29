@@ -222,11 +222,17 @@ python tools/capture.py --seed 7 --difficulty 3 --out shot.png
   trigger effect in `result.effects`, a `KinematicAnimator` in
   `result.animators`, anything holding state a restarted run must forget in
   `result.resettable`, and anything that has to find another mechanism in
-  `result.channels`.
+  `result.channels`. Give it a `cell` field and the board editor offers it in
+  the pieces palette without being changed, since that palette is discovered from
+  this registry too.
 - **A new story fragment** is a new module in `fragments/`, decorated with
   `@fragment(name=..., tags=..., variants=...)`. Both packages are found by
   scanning their own directory, so a new file is a new entry and no shared file
   records it — which is what lets several be built at once without conflicting.
+  Two tags carry meaning to the generator: `gate` says the fragment asks to be
+  arrived at fast, and `run-up` says it is somewhere that speed can come from.
+  `storygen` deals a run-up in front of every gate, because a piece cannot
+  manufacture speed for the piece after it.
 - **A new marble/surface** is a row in `materials.MARBLES` / `SURFACES` plus a
   column in the pairwise friction grid.
 - **A new generator style** replaces `generator._carve_path` / `_decorate`; keep the

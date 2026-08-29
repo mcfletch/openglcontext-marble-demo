@@ -79,7 +79,6 @@ def compose(seed=0, chapters=8, difficulty=3, themes=None):
         raise ValueError('the library has nowhere to be: no fragment tagged %r'
                          % (PLACE_TAG,))
     line = _main_line(rng, library, places, joiners, chapters)
-    line = _give_the_gates_a_run_up(library, line)
     story = Story(name='seed-%d-c%d-d%d' % (seed, chapters, difficulty),
                   start=line[0][0], chapters={})
     _write(story, line, rng, themes)
@@ -110,15 +109,35 @@ def _main_line(rng, library, places, joiners, chapters):
     """
     wanted = max(3, int(chapters))
     picks = _pick_joiners(rng, library, joiners, wanted // 2)
-    line = []
-    for index in range(wanted):
-        if index % 2 == 0 or not picks:
-            line.append(('c%d' % index, _unlike(rng, places, line)))
-        else:
-            line.append(('c%d' % index, picks.pop(0)))
-    if library[line[-1][1]].rule:            # a board ends somewhere safe
+
+    # The run-ups come out of the chapter budget rather than on top of it.  A
+    # caller asking for eight chapters is sizing a board -- how long it takes to
+    # play, how far the pilot has to get -- and one that grew by a third because
+    # of a rule the caller cannot see is one they cannot size.
+    #
+    # Which is why the joiners that will not fit are dropped here rather than
+    # the line being trimmed afterwards: they are dealt cheap-first so that a
+    # board gets harder as it goes, and cutting the tail off the line would cut
+    # exactly the hard end of it.  Dropping from the middle leaves both ends.
+    while len(picks) > 1 and _length_with_run_ups(library, picks) > wanted:
+        picks.pop(len(picks) // 2)
+
+    line: list = []
+    for pick in picks:
         line.append(('c%d' % len(line), _unlike(rng, places, line)))
-    return line
+        line.append(('c%d' % len(line), pick))
+    line.append(('c%d' % len(line), _unlike(rng, places, line)))
+    return _give_the_gates_a_run_up(library, line)
+
+
+def _length_with_run_ups(library, picks):
+    """How many chapters ``picks`` becomes, once places and run-ups are in.
+
+    A place before each joiner and one to end on, plus a run-up for every joiner
+    that asks to be arrived at fast.
+    """
+    gates = sum(1 for name in picks if GATE_TAG in library[name].tags)
+    return 2 * len(picks) + 1 + gates
 
 
 def _pick_joiners(rng, library, joiners, count):
