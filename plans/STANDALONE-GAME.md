@@ -1152,7 +1152,67 @@ Tracked here as it is built. Status is one of *planned*, *in progress*, *merged*
 | 23 | `chimney` | 4 | 6 | arrive fast enough to climb it, or roll back and try again |
 | 24 | `furnace` | 4 | 8 | island to island, and never stop on the fire |
 | 25 | `lodestone` | 4 | 5 | lean away from the posts, or be walked into the wall |
-| 26–32 | — | — | — | planned: seesaw, lift, crusher, cannon, collapse. Two more were designed, measured and cut — see the findings below. |
+| 26 | `seesaw` | — | — | **in hand** — a platform that tips under the marble; where it drops you is where you crossed it |
+| 27 | `lift` | — | — | **in hand** — ride the platform, and step off while it is level with somewhere |
+| 28 | `crusher` | — | — | **in hand** — a press on a cycle; go under it between blows |
+| 29 | `cannon` | — | — | **in hand** — pick the lane, and the lane picks the landing |
+| 30 | `collapse` | — | — | **in hand** — the floor goes after you cross it; there is no going back for anything |
+| 31 | `turntable` | — | — | **in hand** — a disc that turns; the heading you leave with is the moment you arrived |
+| 32 | `updraft` | — | — | **in hand** — a column of lift over a gap, crossable only while moving |
+
+Two more were designed, measured and cut — see the findings below.
+
+#### The brief every fragment agent works to
+
+Written here rather than repeated into each brief, because it is the accumulated
+cost of the twenty-five that came before and every one of these was paid for by a
+piece that had to be rebuilt or thrown away.
+
+- **A board is `cell -> height`, one height per cell.** No second storey, no
+  helix, nothing that reuses a cell at another level. `spiral` died of this.
+- **`MAX_STEP` (0.9 m) between neighbouring cells**, enforced by
+  `tests/test_registry.py::test_every_fragment_holds_the_slope_budget`. A slope
+  is built of tilted `Ramp` tiles; a bare step is a wall a marble cannot climb,
+  which is exactly what `one_way` is made of.
+- **A cell is 4 m.** A lane is 3 cells. Distances that sound small are not.
+- **`Ramp.boost_speed` is a velocity clamp, not a force.** It can only *give*
+  speed along its own direction, and cannot be opposed at any entry speed.
+  `Ramp.launch` fires unconditionally — it is not a speed gate.
+- **Friction does nothing to a rolling marble.** Per-body `linear_damping` and
+  `angular_damping` are what slow one; see `mechanisms/sand.py`.
+- **A piece cannot manufacture speed for the piece after it.** A driven marble
+  settles at about 5 m/s on a descent however far it has fallen. If the rule
+  needs speed, tag the fragment `gate` and `storygen` will deal a `run-up` in
+  front of it.
+- **A marble that can be aimed can be aimed through narrow walls.** Rules of the
+  form "too fast and the walls have you" do not bite on the 8-degree board; four
+  fragments carry strict xfails saying so. Build a rule about *where* or *when*,
+  not about *not crashing*.
+- **Every piece must be passable.** Getting it wrong costs seconds, or sends the
+  player the long way round, and never ends the run — except where a destruction
+  mechanic is the declared point of the piece, and then only with a way past it
+  that does not need perfect timing.
+- **Kinematic parts follow `level.Elevator` and `level.RotatingArm`**: a
+  `KinematicAnimator` in `result.animators`, state to forget in
+  `result.resettable`, mechanisms that must find each other via
+  `result.channels`. `controller` already names `STRUCK`, `DROPPED`, `CRUSHED`
+  and `BURNED`.
+
+#### The merge protocol
+
+The property that lets these be built at once: `fragments/` and `mechanisms/` are
+found by **scanning their own directory**, so a new fragment is one new file and
+no shared file records it. Each agent therefore touches only:
+
+    src/openglcontext_marble_demo/fragments/<name>.py
+    src/openglcontext_marble_demo/mechanisms/<name>.py   (only if it needs one)
+    tests/fragments/test_<name>.py
+    tests/mechanisms/test_<name>.py                      (only if it needs one)
+
+**Nothing else.** A change wanted in `level.py`, `pieces.py`, `controller.py`,
+`storygen.py` or any existing test is reported rather than made, and the
+integrating agent makes it once. That is what keeps seven parallel branches from
+becoming seven merge conflicts in one file.
 
 **The generator learned a rule from them.** A fragment tagged `gate` asks to be
 arrived at fast, and a piece cannot manufacture speed for the piece after it — so
