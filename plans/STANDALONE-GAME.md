@@ -1123,7 +1123,7 @@ Tracked here as it is built. Status is one of *planned*, *in progress*, *merged*
 | `rockfall` | bounceable descent that randomises the way you leave | **merged** — exit headings spread 7–12°, against 0.00° for the same slope with the rock taken off; 90% get through |
 | `destruction` | the marble can be lost: struck, dropped, crushed, burned | agent working — `controller.py` freed by the ramp fix |
 
-### The library as it stands: 29 fragments, 11 mechanisms
+### The library as it stands: 30 fragments, 11 mechanisms
 
 | # | Fragment | Variants | Cost | Asks |
 |---|---|---|---|---|
@@ -1153,7 +1153,7 @@ Tracked here as it is built. Status is one of *planned*, *in progress*, *merged*
 | 24 | `furnace` | 4 | 8 | island to island, and never stop on the fire |
 | 25 | `lodestone` | 4 | 5 | lean away from the posts, or be walked into the wall |
 | 26 | `seesaw` | 4 | — | **merged** — cross before the plank finds you; dawdle and your own weight digs the climb you carry yourself over. 1 m/s costs 3.28 s over bare floor against 0.12 s at 14 m/s |
-| 27 | `lift` | — | — | **in hand** — ride the platform, and step off while it is level with somewhere |
+| 27 | `lift` | 4 | — | **merged** — step off while a platform is level with somewhere; wait longer and you go higher. The ridden exit takes 7.2 to 10.5 s depending on when you arrived, the walk-past lane the same time whatever you do |
 | 28 | `crusher` | 4 | 6 | **merged** — go under the press between blows; stopping there is what it catches. A stationary marble is CRUSHED at 0.375 s; driven across at 3 m/s, five of six phases of the cycle get through untouched and one is lost |
 | 29 | `cannon` | 4 | — | **merged** — pick the lane before the launcher fires; the lane decides how far you go. The best lane clears the worst by 4.4 to 7.8 m, and the gap holds at 3, 6 and 9 m/s entry |
 | 30 | `collapse` | — | — | **in hand** — the floor goes after you cross it; there is no going back for anything |
@@ -1197,6 +1197,18 @@ piece that had to be rebuilt or thrown away.
   `result.resettable`, mechanisms that must find each other via
   `result.channels`. `controller` already names `STRUCK`, `DROPPED`, `CRUSHED`
   and `BURNED`.
+
+#### Phasing a kinematic body in a test needs its position moved too
+
+`tests/fragments/test_gauntlet.py` starts a piece part-way through its cycle by
+setting `KinematicAnimator.time`, which is safe for a rotating arm because
+nothing rides one. It is not safe for a platform that carries the marble: the
+body is still at its t=0 position, so the first `update()` closes the whole gap
+in a single frame and the velocity that implies flings whatever is standing on
+it — measured, a marble thrown to y≈60 and destroyed as `STRUCK`. A test that
+phases a rider-carrying mechanism has to snap the body's position and
+orientation to `pose(phase)` as well, which is what a platform running since the
+level loaded would already have done.
 
 #### Known engine defect: `Ramp.launch` fires per frame, not per crossing
 
