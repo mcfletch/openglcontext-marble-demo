@@ -405,6 +405,15 @@ class BuildResult:
     channels: dict = field(default_factory=dict)
 
 
+#: How far below the lowest tile of a board the kill plane sits.
+#:
+#: Two cells.  Far enough that a marble bouncing along the floor of the board is
+#: never taken for one that has left it, near enough that a marble which really
+#: has gone over the edge is caught rather than falling for several seconds
+#: first.
+KILL_MARGIN = 8.0
+
+
 @dataclass
 class Level:
     name: str
@@ -414,6 +423,9 @@ class Level:
     time_limit: float
     features: list[object] = field(default_factory=list)
     cell_size: float = CELL_SIZE
+    #: The height below which a marble counts as having left the world.  Set
+    #: from the board in :meth:`__post_init__` unless it is given something
+    #: lower, so it is always under the deepest tile: see :data:`KILL_MARGIN`.
     kill_y: float = -8.0
     respawn_delay: float = 2.0
     surface: str = "stone"
@@ -423,6 +435,19 @@ class Level:
     cell_surfaces: dict = field(default_factory=dict)
     seed: int | None = None
     difficulty: int = 1
+
+    def __post_init__(self):
+        # The kill plane goes under the board, however deep the board goes.  A
+        # constant put it at -8 metres, and a board that descends 0.9 m a cell
+        # passes that after nine cells of slope: measured over twelve generated
+        # boards, six had floor below it and one had 134 of its 192 cells there,
+        # every one of them a tile the player can see and stand on and be killed
+        # for standing on.  A marble respawned onto such a cell is killed again
+        # at once, which is a run that cannot be continued and cannot be
+        # understood -- the plane is invisible and the tile is right there.
+        if self.cells:
+            self.kill_y = min(self.kill_y,
+                              min(self.cells.values()) - KILL_MARGIN)
 
     def surface_of(self, cell):
         return self.cell_surfaces.get(cell, self.surface)
