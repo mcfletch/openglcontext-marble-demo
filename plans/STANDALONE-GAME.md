@@ -1123,7 +1123,7 @@ Tracked here as it is built. Status is one of *planned*, *in progress*, *merged*
 | `rockfall` | bounceable descent that randomises the way you leave | **merged** — exit headings spread 7–12°, against 0.00° for the same slope with the rock taken off; 90% get through |
 | `destruction` | the marble can be lost: struck, dropped, crushed, burned | agent working — `controller.py` freed by the ramp fix |
 
-### The library as it stands: 26 fragments, 9 mechanisms
+### The library as it stands: 27 fragments, 10 mechanisms
 
 | # | Fragment | Variants | Cost | Asks |
 |---|---|---|---|---|
@@ -1152,7 +1152,7 @@ Tracked here as it is built. Status is one of *planned*, *in progress*, *merged*
 | 23 | `chimney` | 4 | 6 | arrive fast enough to climb it, or roll back and try again |
 | 24 | `furnace` | 4 | 8 | island to island, and never stop on the fire |
 | 25 | `lodestone` | 4 | 5 | lean away from the posts, or be walked into the wall |
-| 26 | `seesaw` | — | — | **in hand** — a platform that tips under the marble; where it drops you is where you crossed it |
+| 26 | `seesaw` | 4 | — | **merged** — cross before the plank finds you; dawdle and your own weight digs the climb you carry yourself over. 1 m/s costs 3.28 s over bare floor against 0.12 s at 14 m/s |
 | 27 | `lift` | — | — | **in hand** — ride the platform, and step off while it is level with somewhere |
 | 28 | `crusher` | 4 | 6 | **merged** — go under the press between blows; stopping there is what it catches. A stationary marble is CRUSHED at 0.375 s; driven across at 3 m/s, five of six phases of the cycle get through untouched and one is lost |
 | 29 | `cannon` | — | — | **in hand** — pick the lane, and the lane picks the landing |
