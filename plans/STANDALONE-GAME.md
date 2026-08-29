@@ -1296,7 +1296,7 @@ makes speed, `chimney` spends it, `one_way` makes a chapter final.
 **Mechanisms merged:** `sand`, `lever`, `door`, `water`, `pegs`, `rockfall`,
 `burner`, plus marble destruction as a rule of the game.
 
-### Eleven findings the fragments turned up
+### Twelve findings the fragments turned up
 
 **A driven marble settles at about 5 m/s on a descent, however far it has
 fallen** — 5.08 m/s on a switchback's first fall and 5.15 on its second, and
@@ -1421,6 +1421,33 @@ steers around (bumper, spring trap, rotating arm), and these cannot be steered
 around because they *are* the piece. So this is a pilot capability rather than a
 board defect: it needs something for being held — a player rocks the board — and
 that is the next piece of work on it.
+
+**Rocking the board does not free the pilot either, and the direction of the
+rock is irrelevant.** The diagnosis above said the pilot has nothing for being
+*held*, and that a player meeting that rocks the board. Built — the pilot watching
+how far along its route it has ever got, and leaning off for half a second after
+a second and a half without progress — it wins seed 5, whose 141-second
+`lodestone` hold becomes a win, and loses seed 0, whose single fall becomes 38.
+Three fifths either way.
+
+Three forms were measured and all three come to the same place:
+
+- **Leaning back** against the demand: 3 of 6, seed 0 at 38 falls.
+- **Leaning across** it, alternating sides: **byte-identical** — the same six
+  verdicts and the same fall counts. The direction of the shake makes no
+  difference at all; only that the pilot stops asking for the same thing.
+- **Only rocking where all four neighbours are floor**, on the reasoning that a
+  marble held at the rim is held by the rim and a shake there is a shake into
+  the void: 3 of 6 again, seed 0 unchanged at 38. So seed 0's falls are not at
+  the rim, and the shake is not freeing it from whatever they are.
+
+It is a wash on the acceptance measure, it costs a generator board its only
+clean run (0 falls to 1), and it puts a clock and a special case into a class
+that is otherwise a pure function of where the marble is and where it is going.
+So it is out. What it establishes is that being held is not what the three
+boards are suffering from — or not only that — and the next attempt should start
+by measuring what the marble is actually in contact with when it stops, rather
+than by giving the pilot another thing to try.
 
 ### What is built and merged
 
