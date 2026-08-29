@@ -47,7 +47,8 @@ from typing import Any
 from .level import CELL_SIZE, Bumper, Finish, Level, Ramp, Wall
 
 __all__ = ['Port', 'Piece', 'Board', 'Theme', 'THEMES', 'PIECES', 'MAX_STEP',
-           'joined', 'distance', 'chain', 'plateau', 'ramp_down', 'kicker', 'spillway',
+           'joined', 'distance', 'navigable', 'reachable_through',
+           'chain', 'plateau', 'ramp_down', 'kicker', 'spillway',
            'hairpin', 'bridge', 'scatter']
 
 NEIGHBOURS = ((1, 0), (-1, 0), (0, 1), (0, -1))
@@ -202,6 +203,65 @@ def distance(cells, origin, target):
                 seen[nxt] = seen[cell] + 1
                 queue.append(nxt)
     return None
+
+
+def walled_pairs(level):
+    """Every ordered pair of neighbouring cells a wall stands between."""
+    blocked = set()
+    for feature in level.features:
+        if isinstance(feature, Wall):
+            step = Wall._OFFSET[feature.side]
+            beyond = (feature.cell[0] + step[0], feature.cell[1] + step[1])
+            blocked.add((feature.cell, beyond))
+            blocked.add((beyond, feature.cell))
+    return blocked
+
+
+def reachable_through(level, origin=None):
+    """The cells a marble can reach, **through the gaps between walls**.
+
+    :func:`joined` asks whether the *cells* join up, and a wall is not a cell —
+    which is how every board could be reported connected while a wall stood
+    across the only way forward.  This is the question a marble asks.
+    """
+    origin = level.start_cell if origin is None else origin
+    if origin not in level.cells:
+        return set()
+    walls = walled_pairs(level)
+    seen = {origin}
+    queue = deque([origin])
+    while queue:
+        cell = queue.popleft()
+        for dcol, drow in NEIGHBOURS:
+            beside = (cell[0] + dcol, cell[1] + drow)
+            if (beside in level.cells and beside not in seen
+                    and (cell, beside) not in walls):
+                seen.add(beside)
+                queue.append(beside)
+    return seen
+
+
+def navigable(level):
+    """Whether a marble can get from the start of ``level`` to its finish."""
+    return level.finish_cell in reachable_through(level)
+
+
+def open_the_joins(cells, features):
+    """Drop every wall that turned out to stand between two cells of the board.
+
+    A piece walls its own edge against the cells *it* knows about, and the piece
+    that joins onto it is laid afterwards — so a wall that faced the void when
+    it was placed ends up between two floors.  Every board built by chaining had
+    one of those across it.
+
+    Deciding this when the board is finished rather than when a piece is built
+    is the only place it *can* be decided: no piece knows what will be put next
+    to it.
+    """
+    return [feature for feature in features
+            if not (isinstance(feature, Wall)
+                    and (feature.cell[0] + Wall._OFFSET[feature.side][0],
+                         feature.cell[1] + Wall._OFFSET[feature.side][1]) in cells)]
 
 
 # -- building blocks ------------------------------------------------------
@@ -500,9 +560,15 @@ def chain(seed, names, entry=None, themes=None):
 
 
 def _level(built, start, finish, name='chained', time_limit=None,
-           cell_size=CELL_SIZE):
-    """The cells and features of ``built`` as a playable level."""
-    cells: dict = {}
+           cell_size=CELL_SIZE, extra_cells=None):
+    """The cells and features of ``built`` as a playable level.
+
+    ``extra_cells`` is board that belongs to no piece -- the runs a story lays
+    to join a shifted branch back on.  Without them a board is rebuilt from its
+    pieces alone and every connector becomes a one-cell hole, which is exactly
+    what left branches stranded.
+    """
+    cells: dict = dict(extra_cells or {})
     surfaces: dict = {}
     features: list = []
     for piece in built:
@@ -516,6 +582,7 @@ def _level(built, start, finish, name='chained', time_limit=None,
                                height=feature.height, thickness=feature.thickness,
                                material=theme.wall)
             features.append(feature)
+    features = open_the_joins(cells, features)
     features.append(Finish(finish))
     if time_limit is None:
         time_limit = round(len(cells) * 0.5 + 15.0, 1)

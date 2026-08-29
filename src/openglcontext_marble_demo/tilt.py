@@ -55,14 +55,19 @@ BASE = math.radians(12)
 LIMIT = math.radians(25)
 #: How quickly the board answers, as the natural frequency of its lean, in
 #: radians a second.  A critically damped system reaches about 95% of a step in
-#: ``4.75 / frequency`` seconds, so 8 is a little over half a second to full
-#: deflection: an appreciable moment, which is what makes it feel like something
-#: being moved rather than something being switched.
+#: ``4.75 / frequency`` seconds, so 18 is about a quarter of a second to full
+#: deflection: long enough to feel like something being moved rather than
+#: switched, short enough that a player is not waiting for the board before they
+#: can begin to aim.
+#:
+#: It was 8 -- half a second -- and that was measured as too slow to play with:
+#: a marble covers a cell in about that time, so half of every correction was
+#: spent waiting for the board to arrive.
 #:
 #: Settling back to level is the slower of the two, because a board that snapped
 #: flat the instant a key lifted would feel twitchy to let go of.
-STIFFNESS = 8.0
-SETTLE = 5.5
+STIFFNESS = 18.0
+SETTLE = 9.0
 
 #: How much of the physical lean is drawn.  The whole of it heaves a large board
 #: about; a third of it reads as a tilt without the world swinging past the ball.

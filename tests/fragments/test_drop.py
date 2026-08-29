@@ -150,7 +150,7 @@ def test_leaving_the_lip_too_slowly_lands_short_of_the_landing():
 def test_leaving_the_lip_at_the_right_speed_puts_the_marble_on_the_landing():
     piece = _built()
     _, near, far = _landing(piece)
-    for speed in (6.0, 8.0, 10.0):
+    for speed in (7.0, 8.0, 10.0, 12.0):
         down, verdict = _where(piece, speed)
         assert verdict == 'on the landing', \
             'at %.0f m/s the marble came down %s, and the landing runs ' \
@@ -171,7 +171,7 @@ def test_every_variant_has_a_speed_that_lands_and_a_speed_that_does_not(variant)
     """A drop nothing can clear is a wall; one nothing can miss is a floor."""
     piece = _built(variant)
     _, near, far = _landing(piece)
-    seen = {speed: _where(piece, speed) for speed in (4.0, 10.0, 16.0)}
+    seen = {speed: _where(piece, speed) for speed in (4.0, 10.0, 18.0)}
     landed = [speed for speed, (_, verdict) in seen.items()
               if verdict == 'on the landing']
     missed = [speed for speed, (_, verdict) in seen.items()

@@ -67,9 +67,17 @@ class Told:
     finish: tuple
 
     def level(self, **named):
+        """This story as a playable level.
+
+        ``self.cells`` rather than the pieces' own, because a story lays runs of
+        board that belong to no piece -- the connectors that join a branch back
+        on after it was shifted sideways to find room.  Rebuilt from the pieces
+        alone, every one of those became a one-cell hole and stranded whatever
+        was past it.
+        """
         named.setdefault('name', getattr(self.story, 'name', 'story'))
         return pieces._level(list(self.placed.values()), self.start, self.finish,
-                             **named)
+                             extra_cells=self.cells, **named)
 
     def rules(self):
         """What this story asks of a player, in the order it asks it."""

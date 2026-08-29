@@ -52,11 +52,23 @@ BACKGROUND = (0.16, 0.18, 0.23)
 # original Marble Madness — the marble rolls forward on its own if the player does
 # nothing, and playing is about directing that momentum rather than creating it.
 GRAVITY = 9.81
-#: How far the board leans downhill, in radians.  ``atan(0.22)`` is 12.4°, the
-#: lean the game has always had, written as the angle it is.
-BASE_TILT = math.atan(0.22)
+#: How far the board leans downhill, in radians.
+#:
+#: The pair of numbers below is the game's whole steering feel, and it was set by
+#: one measurement: **how far the marble travels forward while it moves one cell
+#: sideways.** A ratio near 1 means a lane change costs a lane, which threads a
+#: three-wide lane; much above that and a player is aiming at something they have
+#: already passed.
+#:
+#: At the old 12.4° of board lean and 26° of player lean the ratio was **2.77**,
+#: so every fragment about aim was being asked of a control that could not aim.
+#: A gentler board and a wider lean bring it to 1.3, at a cruising speed of
+#: 3.2 m/s. The board's lean is what was traded: it is pace against being able
+#: to put the marble anywhere, and pace is worth nothing if the marble goes
+#: where it likes.
+BASE_TILT = math.radians(8.0)
 #: How far the player may lean it on top of that, on either axis.
-PLAYER_TILT = math.radians(26)
+PLAYER_TILT = math.radians(40)
 
 #: Linear and angular damping, per second, for everything in the game's world.
 #:

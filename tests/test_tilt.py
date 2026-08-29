@@ -303,11 +303,16 @@ def test_the_board_eases_in_rather_than_moving_at_one_rate():
     A constant rate covers the same ground in each equal slice of time; a board
     with mass covers less at first and more once it is moving.
     """
+    # Measured over the first tenth of the rise rather than over fixed tenths
+    # of a second: the board answers in about a quarter of a second now, so two
+    # 0.1 s windows straddle the whole movement and the second is the tail of
+    # it rather than the middle.
     rig = _rig()
-    first = _hold(rig, 0.0, 1.0, 0.1).roll
+    first = _hold(rig, 0.0, 1.0, 0.04).roll
     before = rig.roll
-    second = _hold(rig, 0.0, 1.0, 0.1).roll - before
-    assert second > first * 1.2
+    second = _hold(rig, 0.0, 1.0, 0.04).roll - before
+    assert second > first * 1.2, \
+        'first 40 ms moved %.4f rad, second %.4f' % (first, second)
 
 
 def test_the_board_eases_out_rather_than_stopping_dead():
