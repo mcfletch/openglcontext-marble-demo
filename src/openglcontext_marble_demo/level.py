@@ -432,7 +432,19 @@ class Level:
         return (col * self.cell_size, row * self.cell_size)
 
     def track_map(self):
-        return TrackMap(self.cells, cell_size=self.cell_size)
+        return TrackMap(self.cells, cell_size=self.cell_size,
+                        rails=self.rails())
+
+    def rails(self):
+        """Every ``(cell, step)`` a wall of this level stands across.
+
+        The board's own answer to "can the marble leave this cell that way",
+        which the controller needs to know whether somewhere is safe to put a
+        respawned marble down on.
+        """
+        return frozenset(
+            (feature.cell, Wall._OFFSET[feature.side])
+            for feature in self.features if isinstance(feature, Wall))
 
     def marble_start(self, radius=0.5):
         """World position a marble of ``radius`` rests at over the start cell."""

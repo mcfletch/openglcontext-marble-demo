@@ -225,9 +225,11 @@ class TiltRig:
         angle = math.atan(float(np.linalg.norm(gradient))) * self.visual_gain
         if angle <= 1e-9:
             return (0.0, 1.0, 0.0, 0.0)
-        # The rotation that takes world-up to the leaning board's normal. The
-        # board falls along ``gradient``, so its normal leans the *other* way,
-        # and the axis is ``gradient x up`` rather than ``up x gradient`` --
-        # the opposite sense draws the board leaning into the climb.
-        axis = _unit(np.cross(_unit(gradient), _UP))
+        # The board falls along ``gradient``, so the side the marble is being
+        # pulled towards is the side that goes **down**.  Turning about
+        # ``up x gradient`` does that; the opposite sense raises the side the
+        # marble is accelerating into, and a player reads that as the controls
+        # being reversed -- press right, watch the right-hand edge rise, expect
+        # the ball to roll left away from it.
+        axis = _unit(np.cross(_UP, _unit(gradient)))
         return (float(axis[0]), float(axis[1]), float(axis[2]), float(angle))

@@ -151,7 +151,7 @@ class Story:
         """Build one chapter at ``port``, shifted sideways until it fits."""
         chapter = self.chapters[name]
         across = port.across()
-        for shift in _shifts():
+        for shift in _shifts(_emptier_side(taken, port)):
             at = Port(cell=(port.cell[0] + across[0] * shift,
                             port.cell[1] + across[1] * shift),
                       facing=port.facing, height=port.height, width=port.width)
@@ -159,7 +159,16 @@ class Story:
                                     variant=chapter.variant)
             if chapter.theme is not None:
                 piece.theme = chapter.theme
-            if not (set(piece.cells) & set(taken)):
+            # A piece is entered *at* the cell the last one was left by, so its
+            # own mouth stands on board that is already there.  That is the join,
+            # not a collision -- `pieces.chain` builds the same way -- and
+            # counting it as one shifted every chapter sideways to get clear of
+            # the piece it was supposed to be joined to.  Measured before this
+            # was excluded: seven chapters of a board laid 3, 3, 3, 3, 5, 7 and 8
+            # cells across from the exit they followed, and the board walked
+            # thirty-two cells sideways while descending sixty-one.
+            joint = set(at.cells()) | set(at.ahead(-1).cells())
+            if not (set(piece.cells) - joint) & set(taken):
                 if shift:
                     _rejoin(taken, port, piece.entry)
                 return piece
@@ -168,12 +177,38 @@ class Story:
             'within %d cells either way of %r' % (name, MAX_SHIFT, port.cell))
 
 
-def _shifts():
-    """Offsets to try, nearest first and alternating sides."""
+def _shifts(prefer=1):
+    """Offsets to try, nearest first and alternating sides.
+
+    ``prefer`` is which side gets the first try at each distance.  It matters
+    more than it looks: a port facing down the board has ``across()`` pointing
+    *west*, so a generator that always tried ``+1`` first put every chapter that
+    would not fit one cell west, and the boards marched that way -- measured over
+    ten of them, 265 cells of board west of the start against 44 east, and nine
+    finishing 25 to 35 cells west.  A board that drifts is a board a player
+    spends the run steering across the lean rather than down it.
+    """
     yield 0
     for step in range(1, MAX_SHIFT + 1):
-        yield step
-        yield -step
+        yield step * prefer
+        yield -step * prefer
+
+
+def _emptier_side(taken, port):
+    """Which way across ``port`` the board has less of: ``+1`` or ``-1``.
+
+    Trying that side first is what keeps a board from drifting.  It is measured
+    against the port rather than the whole board so that a story which has
+    genuinely turned a corner goes on turning, rather than being pulled back
+    towards a start it has left behind.
+    """
+    across = port.across()
+    here = port.cell
+    lead = sum(1 for cell in taken
+               if (cell[0] - here[0]) * across[0] + (cell[1] - here[1]) * across[1] > 0)
+    other = sum(1 for cell in taken
+                if (cell[0] - here[0]) * across[0] + (cell[1] - here[1]) * across[1] < 0)
+    return 1 if lead <= other else -1
 
 
 def _in_order(exits):

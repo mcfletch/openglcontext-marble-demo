@@ -47,7 +47,8 @@ from OpenGLContext.scenegraph import basenodes
 from OpenGLContext.video.recorder import RecordingMixin
 
 from . import generator, levelfile, materials, pilot
-from .game import PLAYING, ROLL_DAMPING, SPIN, TILT, MarbleGame
+from .game import (BASE_TILT, PLAYER_TILT, PLAYING, ROLL_DAMPING, SPIN,
+                   TILT, MarbleGame)
 from .hud import HUD
 
 # Annotated Any: the base class is chosen at runtime by the backend the
@@ -139,8 +140,14 @@ class MarbleContext(RecordingMixin, BaseContext):
     record_path = None
     record_options: dict = {}
     control = TILT
-    base_tilt = math.degrees(math.atan(0.22))
-    player_tilt = 26.0
+    # From the game's own constants rather than restated here.  Restated, they
+    # went stale: the game was retuned to an 8-degree lean and 40 degrees of
+    # player tilt -- which is what makes the board aimable, and what every
+    # measurement in the test suite is taken against -- and the program went on
+    # running the 12.4 and 26 it had been given, so the one configuration nobody
+    # was testing was the one people played.
+    base_tilt = math.degrees(BASE_TILT)
+    player_tilt = math.degrees(PLAYER_TILT)
     camera_distance = CAMERA_DISTANCE
     damping = ROLL_DAMPING
 
@@ -365,11 +372,11 @@ def build_parser():
     parser.add_argument("--control", default=TILT, choices=(TILT, SPIN),
                         help="lean the board, or impart spin with each press "
                              "(C switches while playing)")
-    parser.add_argument("--tilt", type=float, default=math.degrees(math.atan(0.22)),
+    parser.add_argument("--tilt", type=float, default=math.degrees(BASE_TILT),
                         dest="base_tilt", metavar="DEGREES",
                         help="how far the board leans downhill; sets the pace")
-    parser.add_argument("--lean", type=float, default=26.0, dest="player_tilt",
-                        metavar="DEGREES",
+    parser.add_argument("--lean", type=float, default=math.degrees(PLAYER_TILT),
+                        dest="player_tilt", metavar="DEGREES",
                         help="how far the player may lean it on top of that")
     parser.add_argument("--camera-distance", type=float, default=CAMERA_DISTANCE,
                         metavar="METRES", help="how far back the camera sits")

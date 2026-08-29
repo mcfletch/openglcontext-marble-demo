@@ -200,6 +200,49 @@ class MarbleController:
         start_cell = track.cell_of(world.position[index][0], world.position[index][2])
         self.checkpoint = start_cell
         self._checkpoint_surface = track.cells.get(start_cell, 0.0)
+        #: The height of the last ground the marble stood on, whether or not it
+        #: was somewhere worth coming back to.  Kept apart from the checkpoint's
+        #: height because the two answer different questions: this one is *how
+        #: far below the board am I*, and the checkpoint's is *where do I come
+        #: back to*.  Sharing one number meant that holding the checkpoint back
+        #: at the top of a descent also held the falling-off test up there, and
+        #: a marble rolling normally down a piece was counted as having fallen.
+        self._ground_surface = self._checkpoint_surface
+
+    # -- where a fallen marble comes back ---------------------------------
+    #: The four cells a checkpoint has to have floor in.
+    _AROUND = ((1, 0), (-1, 0), (0, 1), (0, -1))
+
+    def _somewhere_to_come_back_to(self, cell):
+        """Is ``cell`` somewhere a marble put down at rest will still be a moment later?
+
+        Floor on every side, or a rail where the floor runs out.  A marble is
+        respawned **at rest**, and the board's own lean starts it moving again
+        immediately -- so a checkpoint at the lip of a drop is one the lean
+        carries straight back over the same edge, and the player watches the same
+        two seconds of penalty over and over with nothing they can do about it.
+        A cell that is held on every side is the margin that gives them somewhere
+        to steer from.
+
+        Measured on a lane with a bite out of one side: a marble shoved into the
+        gap fell seven times, six of them from the same lip cell, and every one
+        of the seven checkpoints had void beside it.  Held instead, the same
+        shove costs one fall.
+        """
+        cells = self.track.cells
+        return all((cell[0] + dcol, cell[1] + drow) in cells
+                   or self._railed(cell, (dcol, drow))
+                   for dcol, drow in self._AROUND)
+
+    def _railed(self, cell, step):
+        """Is there a wall on the ``step`` side of ``cell``?
+
+        A plank with rails is as good to come back to as open floor: what a
+        checkpoint needs is that the marble cannot leave by that side, and a rail
+        is the board saying so.
+        """
+        railed = getattr(self.track, 'railed', None)
+        return bool(railed and railed(cell, step))
 
     # -- steering -------------------------------------------------------
     def kick(self, forward, right):
@@ -241,10 +284,12 @@ class MarbleController:
         on_track = cell in self.track.cells
 
         grounded = on_track and self._is_grounded(position, self.track.cells[cell])
-        if grounded:
+        if grounded and self._somewhere_to_come_back_to(cell):
             self.checkpoint = cell
             self._checkpoint_surface = self.track.cells[cell]
-        surface = self.track.cells[cell] if on_track else self._checkpoint_surface
+        if grounded:
+            self._ground_surface = self.track.cells[cell]
+        surface = self.track.cells[cell] if on_track else self._ground_surface
         landed_from = self._watch_the_air(grounded, position[1] - self.radius - surface)
 
         if self.camera is not None:
@@ -381,7 +426,7 @@ class MarbleController:
         # Over the void and dropped below the plane it launched from → a fall, not
         # a jump.  A jump arc stays at or above the plane until it lands.
         return (not on_track
-                and position[1] < self._checkpoint_surface - self.fall_margin)
+                and position[1] < self._ground_surface - self.fall_margin)
 
     # -- fall / destruction / respawn -----------------------------------
     def destroy(self, cause):
@@ -439,6 +484,7 @@ class MarbleController:
     def _respawn(self):
         was_lost = self.state == DESTROYED
         center_x, center_z = self.track.cell_center(*self.checkpoint)
+        self._ground_surface = self._checkpoint_surface
         rest_y = self._checkpoint_surface + self.radius + 0.05
         self.world.position[self.index] = (center_x, rest_y, center_z)
         self.world.linear_velocity[self.index] = (0.0, 0.0, 0.0)

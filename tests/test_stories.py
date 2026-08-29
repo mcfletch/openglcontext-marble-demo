@@ -120,7 +120,17 @@ def test_a_story_is_the_same_board_for_the_same_seed():
 
 
 def test_different_seeds_give_different_boards():
-    assert _branching().build(1).cells != _branching().build(2).cells
+    """Over several seeds rather than one pair.
+
+    A hand-written story pins which fragment goes where, so all a seed varies is
+    what each fragment does with its own rng -- a hairpin's handedness is one
+    coin flip, and two seeds calling it the same way is a coincidence rather
+    than a story that ignores its seed.
+    """
+    boards = {tuple(sorted(_branching().build(seed).cells.items()))
+              for seed in range(6)}
+    assert len(boards) > 1, 'six seeds all laid the same board'
+    assert len(boards) >= 2
 
 
 # -- what comes out -------------------------------------------------------------

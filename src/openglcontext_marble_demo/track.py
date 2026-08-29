@@ -14,11 +14,23 @@ heights).
 
 
 class TrackMap:
-    """A grid of ``(col, row) -> surface_height`` cells with a fixed cell size."""
+    """A grid of ``(col, row) -> surface_height`` cells with a fixed cell size.
 
-    def __init__(self, cells, cell_size=4.0):
+    ``rails`` is the ``(cell, step)`` pairs a wall stands across, where ``step``
+    is a grid direction out of that cell.  Navigational rather than decorative:
+    what a rail means to anything reading the board is that the marble cannot
+    leave by that side, which is why it belongs here beside the cells rather
+    than only in the scene.
+    """
+
+    def __init__(self, cells, cell_size=4.0, rails=()):
         self.cells = dict(cells)
         self.cell_size = float(cell_size)
+        self.rails = frozenset(rails)
+
+    def railed(self, cell, step):
+        """Is there a wall across the ``step`` side of ``cell``?"""
+        return (cell, step) in self.rails
 
     def cell_of(self, x, z):
         """The ``(col, row)`` whose centre is nearest world point ``(x, z)``."""

@@ -123,12 +123,43 @@ def test_marble_on_track_sets_checkpoint_to_current_cell():
 
 
 def test_checkpoint_advances_as_marble_rolls_to_a_new_cell():
+    """Onto cells the marble is held on, and no others.
+
+    A marble is respawned *at rest* and the board's own lean starts it moving
+    again at once, so a checkpoint at the lip of a drop is one the lean carries
+    straight back over the same edge: measured on a lane with a bite out of one
+    side, a marble shoved into the gap fell seven times, six of them from the
+    same lip cell.  A cell counts as somewhere to come back to when every side
+    of it is either more floor or a rail.
+    """
     world, i, track, ctrl = _world_with_marble(start=(0.0, 0.6, 0.0))
     ctrl.update(1 / 60.0)
     assert ctrl.checkpoint == (0, 0)
     world.position[i] = (8.0, 0.6, 0.0)       # teleport onto cell (2,0)
     ctrl.update(1 / 60.0)
-    assert ctrl.checkpoint == (2, 0)
+    assert ctrl.checkpoint == (0, 0), \
+        'a bare strip holds the marble nowhere, so the start is where it comes back'
+
+    # Widen the strip and the middle of it becomes somewhere to come back to.
+    for col in range(4):
+        for row in (-1, 1):
+            track.cells[(col, row)] = 0.0
+    world.position[i] = (8.0, 0.6, 0.0)
+    ctrl.update(1 / 60.0)
+    assert ctrl.checkpoint == (2, 0), 'floor all round and still not a checkpoint'
+
+
+def test_a_rail_makes_a_cell_somewhere_to_come_back_to():
+    """What a checkpoint needs is that the marble cannot leave by that side, and
+    a rail is the board saying so."""
+    world, i, track, ctrl = _world_with_marble(start=(0.0, 0.6, 0.0))
+    track.rails = frozenset(((cell, step)
+                             for cell in ((1, 0), (2, 0))
+                             for step in ((0, 1), (0, -1))))
+    world.position[i] = (8.0, 0.6, 0.0)       # cell (2,0), railed both sides
+    ctrl.update(1 / 60.0)
+    assert ctrl.checkpoint == (2, 0), \
+        'a railed cell is not being counted as somewhere to come back to' 
 
 
 # -- fall vs jump --------------------------------------------------------
