@@ -37,6 +37,13 @@ from typing import Any
 os.environ.setdefault("OPENGLCONTEXT_BACKEND", "glfw")
 os.environ.setdefault("OPENGLCONTEXT_RENDERER", "pbr")
 os.environ.setdefault("OPENGLCONTEXT_IBL", "full")
+# Every session is recorded unless the caller says otherwise.  A gameplay fault
+# is a thing that happened at a moment -- the marble was told it had gone over an
+# edge it was visibly standing on -- and a journal is the only way to say which
+# moment and what the game thought was true at it.  ``1`` means a dated file
+# under the user's application-data directory; the path is printed at startup so
+# it can be quoted in a report.  ``--no-telemetry`` turns it off.
+os.environ.setdefault("OPENGLCONTEXT_TELEMETRY", "1")
 
 import numpy as np
 from OpenGLContext import testingcontext
@@ -69,6 +76,19 @@ CAMERA_FOV = math.radians(30)
 #: Seeing further is worth most exactly when there is least time to react.
 CAMERA_PULL_BACK = 0.30
 CAMERA_PULL_BACK_SPEED = 9.0
+
+
+def _say_where_the_journal_is(context):
+    """Print the session journal's path, if this session is being recorded.
+
+    Printed rather than logged: it is the one thing a player needs to be able to
+    quote when something goes wrong, and a warning in a log they are not
+    watching is a path they will not have.
+    """
+    journal = getattr(getattr(context, 'telemetry', None), 'journal', None)
+    path = getattr(journal, 'path', None)
+    if path is not None and not getattr(journal, 'disabled', False):
+        print('Recording this session to %s' % (path,))
 
 
 def camera_offset(distance=CAMERA_DISTANCE, elevation=CAMERA_ELEVATION,
@@ -115,7 +135,7 @@ MARBLE_CYCLE = ["steel", "chrome", "glass", "rubber", "wood", "ice"]
 DEMO_PAUSE = 2.0
 
 CONTROLS = """\
-Marble — arrows or WASD lean the board; the marble rolls downhill on its own.
+Marble — arrows or WASD lean the board; the board is level until you lean it.
   R  restart the run      N  next board      M  cycle the marble material
   C  lean the board / kick spin     D  let the autopilot play      Esc  quit
 """
@@ -152,6 +172,7 @@ class MarbleContext(RecordingMixin, BaseContext):
 
     def OnInit(self):
         disable_vsync()
+        _say_where_the_journal_is(self)
 
         # The follow camera is the sole driver of context.platform, so unbind the
         # default free-fly movement manager or the two fight over the camera.
@@ -411,7 +432,11 @@ def build_parser():
                                 "the frame size and rate")
     recording.add_argument("--telemetry", metavar="PATH",
                            help="record the session -- every input against the "
-                                "frame that acted on it -- to PATH (a .jsonl)")
+                                "frame that acted on it -- to PATH (a .jsonl). "
+                                "Recording is on by default, to a dated file "
+                                "under the application-data directory")
+    recording.add_argument("--no-telemetry", action="store_true",
+                           help="do not record this session")
     recording.add_argument("--replay", metavar="PATH",
                            help="run a recorded session again, with the same "
                                 "input on the same frames")
@@ -424,6 +449,8 @@ def main(argv=None):
     # the flags are the environment: one way in, whichever the caller used.
     if args.telemetry:
         os.environ["OPENGLCONTEXT_TELEMETRY"] = args.telemetry
+    if args.no_telemetry:
+        os.environ.pop("OPENGLCONTEXT_TELEMETRY", None)
     if args.replay:
         os.environ["OPENGLCONTEXT_TELEMETRY_REPLAY"] = args.replay
     MarbleContext.marble_name = args.marble
