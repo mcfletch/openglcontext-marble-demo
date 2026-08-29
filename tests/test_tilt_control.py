@@ -207,11 +207,20 @@ def test_the_marble_rolls_under_the_games_own_damping_not_the_managers():
 
 
 def test_less_damping_carries_the_marble_further():
-    """The number is a real one: it is most of how fast the game feels."""
+    """The number is a real one: it is most of how fast the game feels.
+
+    Under a held lean rather than an untouched board.  The board is level until
+    somebody leans it, so an untouched one moves the marble nowhere at all and
+    both dampings carry it exactly as far: nought.  Damping is a brake, and a
+    brake is only measurable against something driving.
+    """
     from openglcontext_marble_demo.level import Level
     slow = MarbleGame(_plain_board(rows=14), damping=(0.3, 1.5))
     quick = MarbleGame(_plain_board(rows=14), damping=(0.05, 0.2))
-    assert _run(quick, seconds=4.0)[2] > _run(slow, seconds=4.0)[2] * 1.5
+    far = _run(quick, forward=-1.0, seconds=4.0)[2]
+    near = _run(slow, forward=-1.0, seconds=4.0)[2]
+    assert far > near * 1.5, \
+        'the game\'s own damping carried it %.1f m and the manager\'s %.1f' % (far, near)
     assert Level        # imported for the board the helper builds
 
 

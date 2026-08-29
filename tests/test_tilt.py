@@ -190,31 +190,60 @@ def _drawn_normal(rig):
     return (np.array([0.0, 1.0, 0.0, 0.0]) @ matrix)[:3]
 
 
+def _drawn_height(rig, point):
+    """How high a point of the board is drawn once the lean is applied.
+
+    The question the player is actually asking -- which edge went down -- rather
+    than anything derived from it.  An earlier version of these tests asked it of
+    the surface normal instead and got the sign backwards: a tilted plane's
+    normal leans *out over its downhill side*, the way a hillside's does, so a
+    board whose right edge is low has a normal leaning right and not left.  The
+    tests agreed with each other and with the code, and the board was drawn
+    tipping away from the direction the marble accelerates.
+    """
+    from vrml.vrml97 import transformmatrix
+    matrix = transformmatrix.transformMatrix(rotation=rig.board_rotation())
+    return float((np.array([point[0], point[1], point[2], 1.0]) @ matrix)[1])
+
+
 def test_leaning_right_drops_the_right_edge_of_the_drawn_board():
     """The board must tip the way it pulls.
 
-    Lean right: gravity gains +X, so the board's +X edge is the low one and its
-    normal leans to -X.  Drawn the other way round, the board would appear to
-    climb into the direction the marble accelerates.
+    Lean right: gravity gains +X, so the +X edge of the board is the one drawn
+    low.  Drawn the other way round the board climbs into the direction the
+    marble accelerates, and a player reads that as the controls being reversed --
+    press right, watch the right-hand edge rise, expect the ball to roll left.
     """
     rig = _hold(_rig(), 0.0, 1.0, 2.0)
     assert rig.gravity_direction()[0] > 0        # pulling right
-    assert _drawn_normal(rig)[0] < 0             # and tipped down to the right
+    right = _drawn_height(rig, (10.0, 0.0, 0.0))
+    left = _drawn_height(rig, (-10.0, 0.0, 0.0))
+    assert right < left, \
+        'the right edge is drawn at %+.2f and the left at %+.2f' % (right, left)
 
 
 def test_leaning_left_drops_the_left_edge_of_the_drawn_board():
     rig = _hold(_rig(), 0.0, -1.0, 2.0)
     assert rig.gravity_direction()[0] < 0
-    assert _drawn_normal(rig)[0] > 0
+    right = _drawn_height(rig, (10.0, 0.0, 0.0))
+    left = _drawn_height(rig, (-10.0, 0.0, 0.0))
+    assert left < right, \
+        'the left edge is drawn at %+.2f and the right at %+.2f' % (left, right)
 
 
 def test_the_drawn_board_tips_the_way_the_player_leaned_it():
-    """For any held direction, the drawn normal opposes the player's own pull."""
+    """For any held direction, the side the marble is pulled towards is the side
+    drawn low."""
     for forward, right in ((1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, 1)):
         rig = _hold(_rig(base=0.0), forward, right, 2.0)
-        pull = rig.gravity_direction()[[0, 2]]
-        normal = _drawn_normal(rig)[[0, 2]]
-        assert np.dot(pull, normal) < 0, (forward, right)
+        pull = rig.gravity_direction()
+        flat = np.array([pull[0], 0.0, pull[2]])
+        flat = flat / (np.linalg.norm(flat) or 1.0)
+        toward = _drawn_height(rig, tuple(flat * 10.0))
+        away = _drawn_height(rig, tuple(flat * -10.0))
+        assert toward < away, \
+            'holding %r the pulled-towards side is drawn at %+.2f and the far ' \
+            'side at %+.2f' % ((forward, right), toward, away)
 
 
 def test_the_drawn_board_stays_a_rotation():
