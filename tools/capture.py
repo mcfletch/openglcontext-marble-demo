@@ -7,9 +7,22 @@ auto-exit capture harness, so what it saves is exactly what the game renders.
 
     python tools/capture.py --seed 7 --difficulty 3 --out shot.png
     python tools/capture.py --marble chrome --frames 90 --out chrome.png
+    python tools/capture.py --size 1600x900 --out wide.png
 """
 import argparse
 import os
+
+
+def window_size(text):
+    """``WIDTHxHEIGHT``, for a picture wider than the window the game opens."""
+    try:
+        width, height = (int(part) for part in text.lower().split("x", 1))
+    except ValueError:
+        raise argparse.ArgumentTypeError(
+            "expected WIDTHxHEIGHT, e.g. 1600x900, not %r" % (text,)) from None
+    if width < 1 or height < 1:
+        raise argparse.ArgumentTypeError("a window has to have some size in it")
+    return (width, height)
 
 
 def main(argv=None):
@@ -26,6 +39,9 @@ def main(argv=None):
                         metavar=("FORWARD", "RIGHT"),
                         help="hold this lean, in [-1, 1] per axis, while the "
                              "frames run -- for picturing the board leaning")
+    parser.add_argument("--size", type=window_size, default=None,
+                        metavar="WIDTHxHEIGHT",
+                        help="render at this size rather than the game's default")
     parser.add_argument("--out", default="marble.png")
     args = parser.parse_args(argv)
 
@@ -60,7 +76,10 @@ def main(argv=None):
         # picture can show the board leaning rather than only sitting level.
         held = tuple(args.lean)
         MarbleContext._lean_demand = lambda self, held=held: held
-    MarbleContext.ContextMainLoop()
+    if args.size is not None:
+        MarbleContext.ContextMainLoop(size=args.size)
+    else:
+        MarbleContext.ContextMainLoop()
 
 
 if __name__ == "__main__":
