@@ -40,11 +40,10 @@ def _driven(piece, speed=0.0, seconds=45.0, **named):
     """Play the piece with the autopilot; answer ``(seconds, falls, trail)``.
 
     ``trail`` is one ``(height, speed)`` a frame, which is what the accumulation
-    is read off: the height says which descent the marble is on.  The pilot's own
-    brake is taken off by default, because a driver that will not go over 4.5 m/s
-    measures its own governor rather than the piece.
+    is read off: the height says which descent the marble is on.  The pilot
+    drives as well as steers, since the board is level until it leans one and
+    nothing else moves the marble, so it is flown as it is tuned.
     """
-    named.setdefault('brake_speed', 1e6)
     level = piece.level(time_limit=600.0)
     game = MarbleGame(level)
     driver = pilot.Autopilot(level, forward_axis=game.tilt.forward_axis,
