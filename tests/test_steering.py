@@ -37,16 +37,28 @@ def _open_board(across=14, along=60):
                  features=[Finish((0, along - 1))], cell_size=CELL)
 
 
+#: Which way to hold the board to travel toward the finish.  The steering axes
+#: are the camera's and +forward is up-screen, so going *down* the board is -1.
+ONWARD = -1.0
+
+
 def _control_ratio(**named):
-    """Cells travelled forward per cell moved sideways, at cruising speed."""
+    """Cells travelled forward per cell moved sideways, at cruising speed.
+
+    The marble is driven the whole way -- forward held, right added on top of it
+    -- because that is what a player does, and because the board no longer moves
+    anything by itself: measured against an untouched board this is nought over
+    nought, which flatters the controls rather than testing them.
+    """
     game = MarbleGame(_open_board(), **named)
     world, index = game.scene.world, game.marble.index
-    for _ in range(int(4.0 / DT)):          # reach the speed the board gives
+    for _ in range(int(4.0 / DT)):          # reach a cruising speed
+        game.lean(ONWARD, 0.0)
         game.advance(DT)
     cruise = game.controller.speed
     began = (float(world.position[index][0]), float(world.position[index][2]))
     while abs(float(world.position[index][0]) - began[0]) < CELL:
-        game.lean(0.0, 1.0)
+        game.lean(ONWARD, 1.0)
         game.advance(DT)
         if float(world.position[index][2]) - began[1] > 40 * CELL:
             break
