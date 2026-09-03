@@ -7,6 +7,9 @@ come out differently is when, in the bar's turn, the marble arrived. That is
 measured the way ``tests/fragments/test_gauntlet.py`` measures its own rotating
 arms: starting the bar part way round its turn, which is the same question as a
 marble reaching the hub part way through it.
+
+The board is given the lean the library's rules were measured against -- see
+:data:`~openglcontext_marble_demo.fragments.DESIGN_TILT`.
 """
 import random
 
@@ -47,11 +50,15 @@ def _arrival(piece, phase, seconds=PATIENCE):
 
     Answers ``(exit_name, seconds)`` for the mouth the marble left by, or
     ``(None, seconds)`` if it was still on the hub when ``seconds`` ran out.
+
     Undriven -- no autopilot, no keys -- because the whole claim is about what
-    the bar does with a marble the board's own lean brings to it.
+    the bar does with a marble the board's own lean brings to it.  The board is
+    given that lean explicitly (:data:`~openglcontext_marble_demo.fragments.DESIGN_TILT`)
+    rather than inheriting one: the shipped board is level, and a marble nothing
+    carries never reaches the hub for the bar to meet.
     """
     level = piece.level(time_limit=600.0)
-    game = MarbleGame(level)
+    game = MarbleGame(level, base_tilt=fragments.DESIGN_TILT)
     for animator in game.build.animators:
         animator.time = phase
     world, index = game.scene.world, game.marble.index

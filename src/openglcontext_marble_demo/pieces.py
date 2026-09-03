@@ -47,11 +47,26 @@ from typing import Any
 from .level import CELL_SIZE, Bumper, Finish, Level, Ramp, Wall
 
 __all__ = ['Port', 'Piece', 'Board', 'Theme', 'THEMES', 'PIECES', 'MAX_STEP',
+           'DESIGN_TILT',
            'joined', 'distance', 'navigable', 'reachable_through',
            'chain', 'plateau', 'ramp_down', 'kicker', 'spillway',
            'hairpin', 'bridge', 'scatter']
 
 NEIGHBOURS = ((1, 0), (-1, 0), (0, 1), (0, -1))
+
+#: The downhill board lean, in radians, that every rule here and in the fragment
+#: library was built and measured against.
+#:
+#: A rule is about what a piece does to a marble being *carried* through it -- a
+#: plank that sinks under one that dawdles, a dip whose far side has to be
+#: climbed -- so a piece measured on a board that carries nothing measures
+#: nothing.  In a board a player is given, the pace comes from the descent the
+#: level was built with (:data:`~openglcontext_marble_demo.boards.TERRACE_STEP`)
+#: and from the player; :data:`~openglcontext_marble_demo.game.BASE_TILT` is
+#: zero, because a lean the board applies by itself is one a player can add to
+#: but never cancel.  A single piece on its own has neither, so anything asking
+#: a piece what it does supplies this instead.
+DESIGN_TILT = math.radians(8.0)
 
 #: Largest step between neighbouring cells anything here may build.
 MAX_STEP = 0.9

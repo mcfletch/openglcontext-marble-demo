@@ -24,7 +24,7 @@ import pytest
 from omi_physics import raycast
 from OpenGLContext.physics.demo import DemoScene
 
-from openglcontext_marble_demo import levelfile, materials, mechanisms
+from openglcontext_marble_demo import fragments, levelfile, materials, mechanisms
 from openglcontext_marble_demo.game import MarbleGame
 from openglcontext_marble_demo.level import Finish, Level
 from openglcontext_marble_demo.mechanisms.pegs import PegBoard
@@ -91,7 +91,7 @@ def _run(board, across, speed):
     ``(None, 0.0)`` if it never got there.
     """
     level = _level(board)
-    game = MarbleGame(level)
+    game = MarbleGame(level, base_tilt=fragments.DESIGN_TILT)
     world, marble = game.scene.world, game.marble.index
     # place_body rather than a write to ``position``: the world AABB is what the
     # broad phase asks about, and a bare write leaves it where the marble was.

@@ -46,7 +46,7 @@ def _roll(piece, speed=8.0, magnets=True, seconds=8.0):
     level.features = [f for f in level.features
                       if not isinstance(f, Finish)
                       and (magnets or not isinstance(f, Magnet))]
-    game = MarbleGame(level)
+    game = MarbleGame(level, base_tilt=fragments.DESIGN_TILT)
     world, index = game.scene.world, game.marble.index
     world.linear_velocity[index] = (0.0, 0.0, speed)
     world.wake(index)
@@ -124,7 +124,7 @@ def _drive(piece, speed=8.0, magnets=True, seconds=25.0, dt=1 / 120.0):
     level = piece.level(time_limit=900.0)
     if not magnets:
         level.features = [f for f in level.features if not isinstance(f, Magnet)]
-    game = MarbleGame(level)
+    game = MarbleGame(level, base_tilt=fragments.DESIGN_TILT)
     driver = pilot.Autopilot(level, forward_axis=game.tilt.forward_axis,
                              right_axis=game.tilt.right_axis)
     world, index = game.scene.world, game.marble.index

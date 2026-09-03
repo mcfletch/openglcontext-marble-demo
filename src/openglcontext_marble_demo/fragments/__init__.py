@@ -34,7 +34,10 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
-__all__ = ['Entry', 'fragment', 'library', 'build', 'tagged', 'TAGS']
+from ..pieces import DESIGN_TILT
+
+__all__ = ['Entry', 'fragment', 'library', 'build', 'tagged', 'TAGS',
+           'DESIGN_TILT']
 
 #: The kinds a generator chooses between.  A fragment may carry several.
 TAGS = ('place', 'speed', 'brake', 'aim', 'luck', 'gate', 'hazard')

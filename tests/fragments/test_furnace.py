@@ -57,7 +57,7 @@ def _cross(piece, speed, sideways=0.0, offset=0.0, seconds=12.0):
     """
     level = piece.level(time_limit=600.0)
     level.features = [f for f in level.features if not isinstance(f, Finish)]
-    game = MarbleGame(level)
+    game = MarbleGame(level, base_tilt=fragments.DESIGN_TILT)
     world, index = game.scene.world, game.marble.index
     heat = next(a for a in game.build.animators if isinstance(a, BurnerHeat))
     # ``controller.last_loss`` rather than the animator's own answer: the game

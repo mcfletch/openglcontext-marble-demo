@@ -233,6 +233,12 @@ python tools/capture.py --seed 7 --difficulty 3 --out shot.png
   arrived at fast, and `run-up` says it is somewhere that speed can come from.
   `storygen` deals a run-up in front of every gate, because a piece cannot
   manufacture speed for the piece after it.
+  **Measure its rule on a board that carries a marble.** A rule is about what
+  the piece does to a marble passing through it, and the shipped board is level
+  — its pace comes from the descent a level is built with and from the player,
+  neither of which a single piece on its own has. `pieces.DESIGN_TILT` is the
+  downhill lean every rule in the library was measured against, and it is what a
+  test of one piece hands `MarbleGame(level, base_tilt=...)`.
 - **A new marble/surface** is a row in `materials.MARBLES` / `SURFACES` plus a
   column in the pairwise friction grid.
 - **A new generator style** replaces `generator._carve_path` / `_decorate`; keep the

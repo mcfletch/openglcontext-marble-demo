@@ -26,7 +26,7 @@ import math
 import numpy as np
 import pytest
 
-from openglcontext_marble_demo import levelfile
+from openglcontext_marble_demo import fragments, levelfile
 from openglcontext_marble_demo.game import MarbleGame
 from openglcontext_marble_demo.level import Finish, Level
 from openglcontext_marble_demo.mechanisms.rockfall import Rockfall
@@ -93,7 +93,7 @@ def _descend(feature, offset, speed=6.0):
     the speed at each, the heading it left with, and whether it got there at all.
     """
     game = MarbleGame(_level(feature) if feature is not None else _level(),
-                      debug_flags=0)
+                      debug_flags=0, base_tilt=fragments.DESIGN_TILT)
     world, marble = game.scene.world, game.marble.index
 
     # The crash rule is the one thing on the way down that could turn a scatter

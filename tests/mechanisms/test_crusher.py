@@ -8,7 +8,7 @@ is the same rhythm as ``tests/mechanisms/test_burner.py`` holds the fire to:
 build the real board, run the real physics, and show both halves of the rule
 with the numbers the run produced.
 """
-from openglcontext_marble_demo import levelfile, mechanisms
+from openglcontext_marble_demo import fragments, levelfile, mechanisms
 from openglcontext_marble_demo.controller import CRUSHED, DESTROYED
 from openglcontext_marble_demo.game import WON, MarbleGame
 from openglcontext_marble_demo.level import Finish, Level
@@ -26,7 +26,8 @@ def _level(features):
 
 
 def _game(**press):
-    return MarbleGame(_level([Crusher(cells=(PRESS_CELL,), **press)]))
+    return MarbleGame(_level([Crusher(cells=(PRESS_CELL,), **press)]),
+                      base_tilt=fragments.DESIGN_TILT)
 
 
 def _the_press(game):
@@ -99,7 +100,8 @@ def test_the_press_hangs_above_the_track_rather_than_replacing_it():
 def test_the_press_lies_only_where_the_track_has_a_floor():
     """The far cell has no floor at all -- the same guard ``Burner`` carries,
     and for the same reason: a press needs a floor to lie in."""
-    game = MarbleGame(_level([Crusher(cells=(PRESS_CELL, (0, 40)))]))
+    game = MarbleGame(_level([Crusher(cells=(PRESS_CELL, (0, 40)))]),
+                      base_tilt=fragments.DESIGN_TILT)
     assert len(game.build.animators) == 1
 
 

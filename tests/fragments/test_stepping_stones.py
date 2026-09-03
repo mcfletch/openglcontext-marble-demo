@@ -37,7 +37,7 @@ def _roll(piece, speed, ease_off=None, seconds=10.0, dt=1 / 120.0):
     it.  Answers how far it ever got and whether it went in.
     """
     level = piece.level(time_limit=900.0)
-    game = MarbleGame(level)
+    game = MarbleGame(level, base_tilt=fragments.DESIGN_TILT)
     world, index = game.scene.world, game.marble.index
     facing = piece.entry.facing
     world.linear_velocity[index] = (facing[0] * speed, 0.0, facing[1] * speed)
@@ -70,7 +70,7 @@ def _pick(piece, seconds=40.0, dt=1 / 120.0):
     game plays itself with.
     """
     level = piece.level(time_limit=1800.0)
-    game = MarbleGame(level)
+    game = MarbleGame(level, base_tilt=fragments.DESIGN_TILT)
     driver = pilot.Autopilot(level, forward_axis=game.tilt.forward_axis,
                              right_axis=game.tilt.right_axis)
     world, index = game.scene.world, game.marble.index

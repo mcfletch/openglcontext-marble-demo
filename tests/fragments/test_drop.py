@@ -61,7 +61,7 @@ def _came_down(piece, speed, seconds=6.0):
     """
     level = piece.level(time_limit=600.0)
     level.features = [f for f in level.features if not isinstance(f, Finish)]
-    game = MarbleGame(level)
+    game = MarbleGame(level, base_tilt=fragments.DESIGN_TILT)
     world, index = game.scene.world, game.marble.index
     facing = piece.entry.facing
     world.linear_velocity[index] = (facing[0] * speed, 0.0, facing[1] * speed)

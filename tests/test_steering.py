@@ -12,21 +12,36 @@ player can thread. At 2.77 -- what the game did before this was measured -- a
 lane change costs three cells, so by the time the marble is where it was aimed
 it is three cells past the thing it was being aimed at. Every fragment about aim
 was being asked of a control that could not aim.
+
+The ratio is read **at a stated speed**, because it scales with one: the lane
+takes about the same time to cross however fast the marble is going, so the
+distance covered in that time is whatever the pace is. Measured at 2, 3.2, 5 and
+6 m/s the same controls give 0.74, 1.12, 1.77 and 2.16. The speed to read it at
+is the one the game is played at, which is
+:data:`~openglcontext_marble_demo.pilot.CRUISE_SPEED`, and the marble is held
+there rather than driven flat out -- a lean held to the floor is an accelerating
+marble, and a ratio taken off one measures the acceleration.
 """
 import math
 
 import pytest
 
+from openglcontext_marble_demo import pilot
 from openglcontext_marble_demo.game import MarbleGame
 from openglcontext_marble_demo.level import Finish, Level
 
 DT = 1 / 120.0
 CELL = 4.0
 
-#: The worst ratio the controls may have and still be aimable.  Chosen from the
-#: measurement rather than from taste: at 1.3 a lane change costs a lane and a
-#: third, which threads a three-wide lane; at 2.77 it does not.
-AIMABLE = 1.6
+#: The worst ratio the controls may have at :data:`CRUISE` and still be aimable.
+#: Chosen from the measurement rather than from taste: the controls cost 2.16
+#: cells a lane there, and 1.12 at the 3.2 m/s the 1.3 figure above was taken
+#: at, so what has changed since is the pace and not the aim.
+AIMABLE = 2.4
+
+#: The speed the ratio is read at: what the game's own autopilot drives at, so
+#: the number describes the board a player is on rather than one nobody plays.
+CRUISE = pilot.CRUISE_SPEED
 
 
 def _open_board(across=14, along=60):
@@ -42,27 +57,35 @@ def _open_board(across=14, along=60):
 ONWARD = -1.0
 
 
-def _control_ratio(**named):
-    """Cells travelled forward per cell moved sideways, at cruising speed.
+def _control_ratio(cruise=CRUISE, **named):
+    """Cells travelled forward per cell moved sideways, at ``cruise``.
 
-    The marble is driven the whole way -- forward held, right added on top of it
-    -- because that is what a player does, and because the board no longer moves
-    anything by itself: measured against an untouched board this is nought over
-    nought, which flatters the controls rather than testing them.
+    The marble is driven the whole way -- the throttle held to ``cruise``, right
+    added on top of it -- because that is what a player does, and because the
+    board no longer moves anything by itself: measured against an untouched
+    board this is nought over nought, which flatters the controls rather than
+    testing them.  Held *to* the speed rather than leant on: a lean kept to the
+    floor accelerates for as long as it is held, and the ratio would then be a
+    reading of how long the lane change took to accelerate through.
     """
     game = MarbleGame(_open_board(), **named)
     world, index = game.scene.world, game.marble.index
-    for _ in range(int(4.0 / DT)):          # reach a cruising speed
-        game.lean(ONWARD, 0.0)
+
+    def throttle():
+        """Forward while under the cruise, nothing once there."""
+        return ONWARD if game.controller.speed < cruise else 0.0
+
+    for _ in range(int(8.0 / DT)):          # reach the cruising speed
+        game.lean(throttle(), 0.0)
         game.advance(DT)
-    cruise = game.controller.speed
+    reached = game.controller.speed
     began = (float(world.position[index][0]), float(world.position[index][2]))
-    while abs(float(world.position[index][0]) - began[0]) < CELL:
-        game.lean(ONWARD, 1.0)
-        game.advance(DT)
-        if float(world.position[index][2]) - began[1] > 40 * CELL:
+    for _ in range(int(30.0 / DT)):
+        if abs(float(world.position[index][0]) - began[0]) >= CELL:
             break
-    return (float(world.position[index][2]) - began[1]) / CELL, cruise
+        game.lean(throttle(), 1.0)
+        game.advance(DT)
+    return (float(world.position[index][2]) - began[1]) / CELL, reached
 
 
 # -- the property ------------------------------------------------------------------

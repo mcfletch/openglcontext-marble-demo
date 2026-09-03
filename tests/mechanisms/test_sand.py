@@ -12,8 +12,8 @@ import pytest
 from omi_physics import model
 from OpenGLContext.physics.demo import DemoScene
 
-from openglcontext_marble_demo import levelfile, materials, mechanisms
-from openglcontext_marble_demo.game import BASE_TILT, GRAVITY, ROLL_DAMPING, MarbleGame
+from openglcontext_marble_demo import fragments, levelfile, materials, mechanisms
+from openglcontext_marble_demo.game import GRAVITY, ROLL_DAMPING, MarbleGame
 from openglcontext_marble_demo.level import Finish, Level
 from openglcontext_marble_demo.mechanisms.sand import Sand, SandDrag
 
@@ -32,8 +32,14 @@ def _level(features):
 
 
 def _build(level):
-    """Build ``level`` into a world leaning downhill along +X, as the game's does."""
-    direction = (math.sin(BASE_TILT), -math.cos(BASE_TILT), 0.0)
+    """Build ``level`` into a world leaning downhill along +X.
+
+    The lean is the one this mechanism's rule was measured against
+    (:data:`~openglcontext_marble_demo.fragments.DESIGN_TILT`) rather than the
+    game's own, which is level: what the rule says happens to a marble being
+    carried through the piece, and a world that carries nothing says nothing.
+    """
+    direction = (math.sin(fragments.DESIGN_TILT), -math.cos(fragments.DESIGN_TILT), 0.0)
     scene = DemoScene(gravity=model.Gravity(gravity=GRAVITY, direction=direction),
                       debug_flags=0,
                       default_linear_damping=ROLL_DAMPING[0],
@@ -164,7 +170,8 @@ def test_the_sand_gives_back_exactly_the_damping_it_took():
 
 def test_the_game_drags_a_marble_it_spawned_after_the_level():
     """The field is built before there is a marble, and still finds one."""
-    game = MarbleGame(_level([Sand(cells=SAND_CELLS)]))
+    game = MarbleGame(_level([Sand(cells=SAND_CELLS)]),
+                      base_tilt=fragments.DESIGN_TILT)
     world, marble = game.scene.world, game.marble.index
     before = float(world.linear_damping[marble])
     world.place_body(marble, position=(3 * CELL, RADIUS + 0.001, 0.0))

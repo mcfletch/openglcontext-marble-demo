@@ -53,7 +53,7 @@ def _cross(piece, speed, exit_name='ok', seconds=8.0, dt=DT):
     Answers whether the floor gave way, how long the marble dwelt on it, the
     game's state at the end, and how many times it fell or was lost.
     """
-    game = MarbleGame(_level(piece, exit_name))
+    game = MarbleGame(_level(piece, exit_name), base_tilt=fragments.DESIGN_TILT)
     world, index = game.scene.world, game.marble.index
     facing = piece.entry.facing
     world.linear_velocity[index] = (facing[0] * speed, 0.0, facing[1] * speed)
@@ -156,7 +156,7 @@ def test_the_hold_is_what_separates_them_and_not_the_route():
 def test_a_restarted_run_finds_the_floor_whole_again():
     piece = _built('plain')
     level = piece.level(time_limit=900.0)
-    game = MarbleGame(level)
+    game = MarbleGame(level, base_tilt=fragments.DESIGN_TILT)
     world, index = game.scene.world, game.marble.index
     facing = piece.entry.facing
     world.linear_velocity[index] = (facing[0] * 0.3, 0.0, facing[1] * 0.3)

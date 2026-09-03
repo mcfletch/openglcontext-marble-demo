@@ -161,8 +161,9 @@ def test_an_unknown_piece_is_refused_by_name():
 # always climb is scenery.
 
 def _furthest(piece, speed, seconds=5.0, goal=True):
-    """Roll a marble onto ``piece`` at ``speed`` m/s down a board leaning as the
-    game leans one; answer how far along it ever got, and whether it fell off.
+    """Roll a marble onto ``piece`` at ``speed`` m/s down a board leaning
+    :data:`~openglcontext_marble_demo.pieces.DESIGN_TILT`; answer how far along
+    it ever got, and whether it fell off.
 
     The *furthest* rather than where it ended: a piece on its own has nothing
     after it, so a marble that gets through runs off the end and is respawned,
@@ -182,7 +183,7 @@ def _furthest(piece, speed, seconds=5.0, goal=True):
     level = piece.level(time_limit=600.0)
     if not goal:
         level.features = [f for f in level.features if not isinstance(f, Finish)]
-    game = MarbleGame(level)
+    game = MarbleGame(level, base_tilt=pieces.DESIGN_TILT)
     world, index = game.scene.world, game.marble.index
     facing = piece.entry.facing
     world.linear_velocity[index] = (facing[0] * speed, 0.0, facing[1] * speed)

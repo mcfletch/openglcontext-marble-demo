@@ -11,8 +11,8 @@ import numpy as np
 from omi_physics import model
 from OpenGLContext.physics.demo import DemoScene
 
-from openglcontext_marble_demo import levelfile, materials
-from openglcontext_marble_demo.game import BASE_TILT, GRAVITY, ROLL_DAMPING
+from openglcontext_marble_demo import fragments, levelfile, materials
+from openglcontext_marble_demo.game import GRAVITY, ROLL_DAMPING
 from openglcontext_marble_demo.level import Finish, Level
 from openglcontext_marble_demo.mechanisms.seesaw import Seesaw
 
@@ -37,8 +37,14 @@ def _seesaw(**named):
 
 
 def _build(level):
-    """Build ``level`` into a world leaning downhill along +X, as the game's does."""
-    direction = (math.sin(BASE_TILT), -math.cos(BASE_TILT), 0.0)
+    """Build ``level`` into a world leaning downhill along +X.
+
+    The lean is the one this mechanism's rule was measured against
+    (:data:`~openglcontext_marble_demo.fragments.DESIGN_TILT`) rather than the
+    game's own, which is level: what the rule says happens to a marble being
+    carried through the piece, and a world that carries nothing says nothing.
+    """
+    direction = (math.sin(fragments.DESIGN_TILT), -math.cos(fragments.DESIGN_TILT), 0.0)
     scene = DemoScene(gravity=model.Gravity(gravity=GRAVITY, direction=direction),
                       debug_flags=0,
                       default_linear_damping=ROLL_DAMPING[0],
