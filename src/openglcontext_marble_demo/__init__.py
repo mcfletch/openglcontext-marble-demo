@@ -16,4 +16,4 @@ Run it with the ``oglc-marble`` console script (``--help`` lists the knobs), or
 ``python -m openglcontext_marble_demo``.
 """
 
-__version__ = "0.1.0"
+__version__ = "1.0.0a1"
