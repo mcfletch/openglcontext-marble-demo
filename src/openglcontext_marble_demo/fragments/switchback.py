@@ -22,6 +22,8 @@ the short one as an introduction to it -- and so a test can hold the corner
 constant and change only the run at it.  The autopilot takes 10.0 seconds over
 one descent and 17.1 over two.
 """
+from typing import Any
+
 from openglcontext_marble_demo import pieces
 from openglcontext_marble_demo.fragments import fragment
 from openglcontext_marble_demo.pieces import Piece, Port
@@ -40,7 +42,9 @@ APRON = 2
 
 #: Variants: the material, how far each descent falls, how long the descents and
 #: the crossings are in cells, and how many of each there are.
-_VARIANTS = {
+#: What each variant sets, by name. Values of every kind, which is what a
+#: variant is: the knob a fragment reads by that name.
+_VARIANTS: dict[str, dict[str, Any]] = {
     'plain': {'theme': 'stone', 'fall': 2.7, 'run': 3, 'across': 4, 'legs': 2},
     'steep': {'theme': 'foundry', 'fall': 3.6, 'run': 3, 'across': 4, 'legs': 2},
     'slick': {'theme': 'ice', 'fall': 2.7, 'run': 3, 'across': 5, 'legs': 2},
@@ -51,8 +55,8 @@ _VARIANTS = {
 @fragment('switchback', tags=('brake', 'speed'), cost=6.0,
           rule='take the corners slowly enough to turn: they are at the foot of the descents',
           variants=tuple(_VARIANTS))
-def switchback(rng, entry, variant='plain', theme=None, fall=None, run=None,
-               across=None, legs=None, side=None):
+def switchback(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, fall: Any=None, run: Any=None,
+               across: Any=None, legs: Any=None, side: Any=None) -> Any:
     """Descents joined by right-angles, alternating which way they turn.
 
     ``side`` is which way the first corner turns, ``1`` or ``-1`` across the

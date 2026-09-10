@@ -12,6 +12,7 @@ format saves it under, so a mechanism cannot exist and be unsaveable.
 """
 import importlib
 import pkgutil
+from typing import Any
 
 __all__ = ['mechanism', 'registry']
 
@@ -19,14 +20,14 @@ _REGISTRY: dict = {}
 _LOADED = False
 
 
-def mechanism(name):
+def mechanism(name: str) -> Any:
     """Register the decorated dataclass as a mechanism called ``name``.
 
     Registering is also what teaches
     :mod:`~openglcontext_marble_demo.levelfile` to read and write it, so there
     is one act rather than two and no way to do half of it.
     """
-    def register(cls):
+    def register(cls: Any) -> Any:
         from openglcontext_marble_demo import levelfile
         _REGISTRY[name] = cls
         levelfile.FEATURES[name] = cls
@@ -35,7 +36,7 @@ def mechanism(name):
     return register
 
 
-def _load():
+def _load() -> None:
     global _LOADED
     if _LOADED:
         return
@@ -45,7 +46,7 @@ def _load():
             importlib.import_module('%s.%s' % (__name__, found.name))
 
 
-def registry():
+def registry() -> Any:
     """Every registered mechanism, by the name it saves under."""
     _load()
     return dict(_REGISTRY)

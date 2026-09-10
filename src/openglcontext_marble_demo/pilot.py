@@ -45,6 +45,7 @@ its sign turned round: over the cruise it leans back, under it leans on.
 """
 import math
 from collections import deque
+from typing import Any
 
 import numpy as np
 
@@ -99,13 +100,13 @@ CORNER_LOOK = 3
 #: stop when it is in trouble, not as a matter of course.
 
 
-def hazard_cells(level):
+def hazard_cells(level: Any) -> Any:
     """The cells of ``level`` that carry something a marble cannot roll over."""
     return {feature.cell for feature in level.features
             if isinstance(feature, HAZARDS) and feature.cell in level.cells}
 
 
-def steerable(level, here, there, step=0.05):
+def steerable(level: Any, here: Any, there: Any, step: Any=0.05) -> Any:
     """Can a marble be steered in a straight line from ``here`` to ``there``?
 
     Both are ``(x, z)`` in world metres.  Every cell the line crosses has to be
@@ -136,7 +137,7 @@ def steerable(level, here, there, step=0.05):
     return True
 
 
-def route_over(level, blocked=frozenset()):
+def route_over(level: Any, blocked: Any=frozenset()) -> Any:
     """The shortest run of cells from start to finish, avoiding ``blocked``.
 
     A step up of more than :data:`~openglcontext_marble_demo.pieces.MAX_STEP` is
@@ -172,11 +173,11 @@ def route_over(level, blocked=frozenset()):
 class Autopilot:
     """Plays ``level`` by leaning the board along a route across it."""
 
-    def __init__(self, level, forward_axis=(0.0, 0.0, -1.0),
-                 right_axis=(1.0, 0.0, 0.0), look_ahead=LOOK_AHEAD,
-                 steer_gain=STEER_GAIN, damping=DAMPING,
-                 cruise_speed=CRUISE_SPEED, throttle_gain=THROTTLE_GAIN,
-                 corner_speed=CORNER_SPEED, corner_look=CORNER_LOOK):
+    def __init__(self, level: Any, forward_axis: Any=(0.0, 0.0, -1.0),
+                 right_axis: Any=(1.0, 0.0, 0.0), look_ahead: Any=LOOK_AHEAD,
+                 steer_gain: Any=STEER_GAIN, damping: Any=DAMPING,
+                 cruise_speed: Any=CRUISE_SPEED, throttle_gain: Any=THROTTLE_GAIN,
+                 corner_speed: Any=CORNER_SPEED, corner_look: Any=CORNER_LOOK) -> None:
         self.level = level
         self.forward_axis = _unit(forward_axis)
         self.right_axis = _unit(right_axis)
@@ -197,7 +198,7 @@ class Autopilot:
             if self.route else np.zeros((0, 2))
 
     # -- where it is aiming ---------------------------------------------
-    def target(self, position):
+    def target(self, position: Any) -> Any:
         """The point on the route it is steering for, in world space.
 
         The nearest point of the line, plus a look-ahead along it — so the aim
@@ -220,7 +221,7 @@ class Autopilot:
         return np.array([point[0], position[1], point[1]], dtype='d')
 
     # -- what it asks of the board --------------------------------------
-    def lean(self, position, velocity):
+    def lean(self, position: Any, velocity: Any) -> Any:
         """The ``(forward, right)`` a player would be holding, each in [-1, 1].
 
         Bounded to what a held key gives, because a pilot with more authority
@@ -251,7 +252,7 @@ class Autopilot:
         return _bounded(float(np.dot(demand, self.forward_axis)),
                         float(np.dot(demand, self.right_axis)))
 
-    def throttle(self, position, velocity):
+    def throttle(self, position: Any, velocity: Any) -> Any:
         """How hard to lean along the route: positive leans on, negative brakes.
 
         One term for both, because they are one thing -- the board is level, so
@@ -263,7 +264,7 @@ class Autopilot:
         speed = float(np.dot(velocity, along))
         return (self.cruise_for(position) - speed) * self.throttle_gain
 
-    def steering(self, to_aim, velocity, across):
+    def steering(self, to_aim: Any, velocity: Any, across: Any) -> Any:
         """How hard to lean across it: at the offset, less how fast it is closing.
 
         The damping is what turns a weave into a line.
@@ -272,7 +273,7 @@ class Autopilot:
         drift = float(np.dot(velocity, across))
         return offset * self.steer_gain - drift * self.damping
 
-    def cruise_for(self, position):
+    def cruise_for(self, position: Any) -> Any:
         """The speed to hold here: less of it where the route turns ahead.
 
         Measured over the next :attr:`corner_look` cells of route, as the angle
@@ -287,7 +288,7 @@ class Autopilot:
         eased = 1.0 - (1.0 - self.corner_speed) * min(turn / (math.pi / 2.0), 1.0)
         return self.cruise_speed * eased
 
-    def _turn_after(self, nearest):
+    def _turn_after(self, nearest: Any) -> Any:
         """How far the route turns between here and ``corner_look`` cells on."""
         last = len(self._points) - 1
         first, mid, far = (min(nearest, last - 2),
@@ -300,26 +301,26 @@ class Autopilot:
         return float(math.acos(max(-1.0, min(1.0, float(np.dot(before, after))))))
 
 
-def _flat_unit(vector):
+def _flat_unit(vector: Any) -> Any:
     """``vector`` flattened onto the ground and normalised, or None if it is nothing."""
     flat = np.array([vector[0], 0.0, vector[2]], dtype='d')
     length = float(np.linalg.norm(flat))
     return flat / length if length > 1e-9 else None
 
 
-def _flat2(vector):
+def _flat2(vector: Any) -> Any:
     """A 2D route step normalised, or None if the two points coincide."""
     length = float(np.linalg.norm(vector))
     return np.asarray(vector, dtype='d') / length if length > 1e-9 else None
 
 
-def _unit(vector):
+def _unit(vector: Any) -> Any:
     vector = np.asarray(vector, dtype='d')
     length = np.linalg.norm(vector)
     return vector / length if length > 1e-12 else vector
 
 
-def _bounded(forward, right):
+def _bounded(forward: Any, right: Any) -> Any:
     """The pair scaled to fit in [-1, 1], keeping the direction it asked for.
 
     Clipping each axis on its own turns a demand of two-forward-one-right into

@@ -15,6 +15,7 @@ reads as a 4×4 grid of 1 m tiles (see :func:`grout_normal_texture` and
 ``tools/make_grout_normal.py``).
 """
 import os
+from typing import Any
 
 import numpy as np
 from OpenGLContext.scenegraph import basenodes
@@ -41,7 +42,7 @@ _grout_cache: dict[tuple, object] = {}
 _surface_cache: dict[tuple, object] = {}
 
 
-def marble_material_node(marble):
+def marble_material_node(marble: Any) -> Any:
     """A PBRMaterial for a marble: metals reflect; glass is a smooth dielectric.
 
     Per the plan's resolved decision, glass is approximated as a very smooth
@@ -55,11 +56,11 @@ def marble_material_node(marble):
     return PBRMaterial(**kw)
 
 
-def marble_appearance(marble):
+def marble_appearance(marble: Any) -> Any:
     return basenodes.Appearance(material=marble_material_node(marble))
 
 
-def surface_appearance(surface, grout=False, uv_scale=4.0):
+def surface_appearance(surface: Any, grout: Any=False, uv_scale: Any=4.0) -> Any:
     """A shared PBRMaterial appearance for a track surface.
 
     Appearances are cached and shared across all tiles of a surface (they are
@@ -93,7 +94,7 @@ def surface_appearance(surface, grout=False, uv_scale=4.0):
     return appearance
 
 
-def tile_mesh(size, meters_per_tile=1.0):
+def tile_mesh(size: Any, meters_per_tile: Any=1.0) -> Any:
     """A box :class:`PBRMesh` with per-metre UVs and tangents, for grouted tiles.
 
     Unlike the ``Box`` primitive, this supplies the tangent attribute the PBR normal
@@ -102,7 +103,11 @@ def tile_mesh(size, meters_per_tile=1.0):
     """
     hx, hy, hz = size[0] / 2.0, size[1] / 2.0, size[2] / 2.0
     half = np.array([hx, hy, hz])
-    positions, normals, texcoords, tangents, indices = [], [], [], [], []
+    positions: list[Any] = []
+    normals: list[Any] = []
+    texcoords: list[Any] = []
+    tangents: list[Any] = []
+    indices: list[Any] = []
     for u_dir, v_dir in _BOX_FACES:
         u = np.array(u_dir, dtype="d")
         v = np.array(v_dir, dtype="d")
@@ -123,13 +128,13 @@ def tile_mesh(size, meters_per_tile=1.0):
                    indices=np.array(indices, "uint32"))
 
 
-def color_appearance(color, metallic=0.0, roughness=0.5):
+def color_appearance(color: Any, metallic: Any=0.0, roughness: Any=0.5) -> Any:
     """A one-off PBR appearance for a prop (bumper, ramp, marker)."""
     return basenodes.Appearance(
         material=PBRMaterial(baseColor=tuple(color), metallic=metallic, roughness=roughness))
 
 
-def _grout_texture(key, path, srgb):
+def _grout_texture(key: Any, path: str, srgb: Any) -> Any:
     """Load a tiling grout map as a REPEAT-wrapped :class:`PBRTexture` (cached).
 
     The assets are produced by ``tools/make_grout.py``; if they have not been

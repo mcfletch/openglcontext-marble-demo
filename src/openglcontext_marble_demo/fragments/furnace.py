@@ -20,6 +20,8 @@ slowly.
     >>> 'ok' in piece.exits
     True
 """
+from typing import Any
+
 from openglcontext_marble_demo.fragments import fragment
 from openglcontext_marble_demo.mechanisms.burner import Burner
 from openglcontext_marble_demo.pieces import LANE, Piece, Port, _lay, _rails
@@ -32,7 +34,9 @@ RULE = 'island to island, and never stop on the fire'
 #: cool tiles are set in each row of it, and ``burn_time`` how long the fire
 #: takes.  A longer burn_time is a wider field a marble can afford to cross
 #: badly, which is the difficulty dial.
-VARIANTS = {
+#: What each variant sets, by name. Values of every kind, which is what a
+#: variant is: the knob a fragment reads by that name.
+VARIANTS: dict[str, dict[str, Any]] = {
     'plain': {'theme': 'foundry', 'length': 4, 'width': 5, 'islands': 2,
               'burn_time': 1.6},
     # A longer chamber has to give more time or nothing crosses it: five cells
@@ -49,8 +53,8 @@ VARIANTS = {
 
 @fragment('furnace', tags=('hazard', 'aim'), rule=RULE, cost=8.0,
           variants=tuple(VARIANTS))
-def furnace(rng, entry, variant='plain', theme=None, length=None, width=None,
-            islands=None, burn_time=None):
+def furnace(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, length: Any=None, width: Any=None,
+            islands: Any=None, burn_time: Any=None) -> Any:
     """A chamber floored with fire, with cool tiles staggered across it."""
     settings = dict(VARIANTS[variant])
     theme = theme or settings['theme']
@@ -101,7 +105,7 @@ def furnace(rng, entry, variant='plain', theme=None, length=None, width=None,
                  features=features, theme=theme, rule=RULE)
 
 
-def _span(cells, port, length):
+def _span(cells: Any, port: Any, length: Any) -> Any:
     """Every cell of ``length`` rows of the lane starting at ``port``."""
     return [cell for step in range(length) for cell in port.ahead(step).cells()
             if cell in cells]

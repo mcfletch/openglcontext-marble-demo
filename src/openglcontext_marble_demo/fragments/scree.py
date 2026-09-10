@@ -16,6 +16,8 @@ it arrived, because a slope is still a slope.
     >>> 'ok' in piece.exits
     True
 """
+from typing import Any
+
 from openglcontext_marble_demo.fragments import fragment
 from openglcontext_marble_demo.mechanisms.rockfall import Rockfall
 from openglcontext_marble_demo.pieces import LANE, Piece, Port, _lay, _rails, _slope
@@ -27,7 +29,9 @@ RULE = 'commit to the broken slope and deal with where it leaves you'
 #: ``drop`` is how far the broken slope falls over its length; the rock is laid
 #: on top of a run the fragment lays, because the cells are the track and the
 #: track belongs to the level.
-VARIANTS = {
+#: What each variant sets, by name. Values of every kind, which is what a
+#: variant is: the knob a fragment reads by that name.
+VARIANTS: dict[str, dict[str, Any]] = {
     'plain': {'theme': 'stone', 'length': 6, 'width': 5, 'density': 1.5,
               'drop': 3.6},
     'long': {'theme': 'stone', 'length': 9, 'width': 5, 'density': 1.5,
@@ -41,8 +45,8 @@ VARIANTS = {
 
 @fragment('scree', tags=('luck', 'hazard'), rule=RULE, cost=5.0,
           variants=tuple(VARIANTS))
-def scree(rng, entry, variant='plain', theme=None, length=None, width=None,
-          density=None, drop=None):
+def scree(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, length: Any=None, width: Any=None,
+          density: Any=None, drop: Any=None) -> Any:
     """A rockfall with a mouth above it and a wide landing below."""
     settings = dict(VARIANTS[variant])
     theme = theme or settings['theme']

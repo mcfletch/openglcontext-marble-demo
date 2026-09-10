@@ -17,6 +17,8 @@ which makes it the one corner a player is not asked to slow down for.
 ``run`` is how long the legs are, and a long approach is a gentler corner
 because the marble arrives already turning.
 """
+from typing import Any
+
 from openglcontext_marble_demo.fragments import fragment
 from openglcontext_marble_demo.level import Ramp
 from openglcontext_marble_demo.pieces import MAX_STEP, Piece, Port, _lay, _ring
@@ -36,7 +38,9 @@ NO_BOOST = -1e6
 
 #: Material, layout and effect: what it is made of, how long the legs are and
 #: which way it turns, and how high each terrace of the bank stands.
-VARIANTS = {
+#: What each variant sets, by name. Values of every kind, which is what a
+#: variant is: the knob a fragment reads by that name.
+VARIANTS: dict[str, dict[str, Any]] = {
     'plain': {'theme': 'stone', 'run': 4, 'turn': 1, 'bank': MAX_STEP - 0.05},
     'sweeping': {'theme': 'stone', 'run': 6, 'turn': -1, 'bank': MAX_STEP - 0.05},
     'foundry': {'theme': 'foundry', 'run': 4, 'turn': -1, 'bank': MAX_STEP - 0.05},
@@ -46,7 +50,7 @@ VARIANTS = {
 
 @fragment('banked_turn', tags=('speed', 'aim'), cost=2.0, rule=RULE,
           variants=tuple(VARIANTS))
-def banked_turn(rng, entry, variant='plain', **named):
+def banked_turn(rng: Any, entry: Any, variant: Any='plain', **named: Any) -> Any:
     """A right-angle whose outside is built up into a bank.
 
     ``run`` is how long each leg is, ``turn`` which way the corner goes (``1``
@@ -61,8 +65,8 @@ def banked_turn(rng, entry, variant='plain', **named):
     return _banked_turn(entry, theme=theme, **settings)
 
 
-def _banked_turn(entry, theme='stone', run=4, turn=1, bank=MAX_STEP - 0.05, banks=1,
-                 width=None):
+def _banked_turn(entry: Any, theme: Any='stone', run: Any=4, turn: Any=1, bank: Any=MAX_STEP - 0.05, banks: Any=1,
+                 width: Any=None) -> Any:
     width = entry.width if width is None else width
     half = width // 2
     banks = min(banks, half)
@@ -86,7 +90,7 @@ def _banked_turn(entry, theme='stone', run=4, turn=1, bank=MAX_STEP - 0.05, bank
                  theme=theme, rule=RULE)
 
 
-def _bank_lanes(entry, cell, run, half, banks):
+def _bank_lanes(entry: Any, cell: Any, run: Any, half: Any, banks: Any) -> Any:
     """How many terraces above the floor of the bend ``cell`` sits.
 
     The bank is the last ``banks`` lanes of the square the legs meet in, carried
@@ -100,7 +104,7 @@ def _bank_lanes(entry, cell, run, half, banks):
     return min(max(along - (run - 1 + half - banks), 0), banks)
 
 
-def _ramps(cells):
+def _ramps(cells: Any) -> Any:
     """A tilted tile on every cell the bank steps up from.
 
     Terraces at different heights are a staircase, and a marble meets each riser

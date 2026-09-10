@@ -44,6 +44,7 @@ Nothing here reads a clock, opens a window or touches the physics: it is handed
 its own time step, so how the controls respond is a question a test can ask.
 """
 import math
+from typing import Any
 
 import numpy as np
 
@@ -77,11 +78,11 @@ SETTLE = 9.0
 VISUAL_GAIN = 0.32
 
 
-def _clip(value):
+def _clip(value: Any) -> Any:
     return max(-1.0, min(1.0, float(value)))
 
 
-def _demand(amount, limit):
+def _demand(amount: float, limit: Any) -> Any:
     """The lean ``amount`` in [-1, 1] asks for, as an angle.
 
     ``amount`` scales the board's **pull** rather than its angle: half a stick is
@@ -92,7 +93,7 @@ def _demand(amount, limit):
     return math.atan(math.tan(limit) * _clip(amount))
 
 
-def _step(value, rate, wanted, frequency, dt):
+def _step(value: Any, rate: Any, wanted: Any, frequency: float, dt: float) -> Any:
     """One semi-implicit step of a critically damped spring toward ``wanted``.
 
     Semi-implicit -- the rate is moved first and the value follows it -- because
@@ -109,13 +110,13 @@ def _step(value, rate, wanted, frequency, dt):
     return value, rate
 
 
-def _unit(vector):
+def _unit(vector: Any) -> Any:
     vector = np.asarray(vector, dtype='d')
     length = np.linalg.norm(vector)
     return vector / length if length > 1e-12 else vector
 
 
-def _bounded(pitch, roll, limit):
+def _bounded(pitch: float, roll: float, limit: Any) -> Any:
     """``(pitch, roll)`` scaled down together so their combined lean fits.
 
     The lean a board is *drawn* at, and the one gravity gets, is the two axes
@@ -145,10 +146,10 @@ class TiltRig:
     or exaggerated without changing how the game plays.
     """
 
-    def __init__(self, base=BASE, limit=LIMIT, stiffness=STIFFNESS,
-                 settle=SETTLE, forward_axis=(0.0, 0.0, -1.0),
-                 right_axis=(1.0, 0.0, 0.0), downhill_axis=(0.0, 0.0, 1.0),
-                 visual_gain=VISUAL_GAIN):
+    def __init__(self, base: Any=BASE, limit: Any=LIMIT, stiffness: float=STIFFNESS,
+                 settle: float=SETTLE, forward_axis: Any=(0.0, 0.0, -1.0),
+                 right_axis: Any=(1.0, 0.0, 0.0), downhill_axis: Any=(0.0, 0.0, 1.0),
+                 visual_gain: Any=VISUAL_GAIN) -> None:
         self.base = float(base)
         self.limit = float(limit)
         self.stiffness = float(stiffness)
@@ -167,7 +168,7 @@ class TiltRig:
         self.roll_rate = 0.0
 
     # -- per-frame ------------------------------------------------------
-    def update(self, dt, forward=0.0, right=0.0):
+    def update(self, dt: float, forward: Any=0.0, right: Any=0.0) -> None:
         """Lean the board toward what ``forward``/``right`` in [-1, 1] ask for.
 
         A critically damped step toward the demanded lean: the board accelerates
@@ -188,13 +189,13 @@ class TiltRig:
         self.roll, self.roll_rate = _step(
             self.roll, self.roll_rate, wanted_roll, frequency, dt)
 
-    def level(self):
+    def level(self) -> None:
         """Return the board to level at once (a respawn, a new board)."""
         self.pitch = self.roll = 0.0
         self.pitch_rate = self.roll_rate = 0.0
 
     # -- what the board leans into --------------------------------------
-    def gradient(self):
+    def gradient(self) -> Any:
         """The board's slope as a horizontal vector: base lean plus player lean.
 
         Its length is the tangent of the total lean, and its direction is the way
@@ -204,7 +205,7 @@ class TiltRig:
                 + self.forward_axis * math.tan(self.pitch)
                 + self.right_axis * math.tan(self.roll))
 
-    def gravity_direction(self):
+    def gravity_direction(self) -> Any:
         """The unit gravity direction for the current lean.
 
         Written straight onto ``world.gravity.direction``; the physics re-reads it
@@ -213,7 +214,7 @@ class TiltRig:
         return _unit(self.gradient() - _UP)
 
     # -- what the renderer draws ----------------------------------------
-    def board_rotation(self):
+    def board_rotation(self) -> Any:
         """The board's visible lean as a VRML ``(x, y, z, angle)`` axis-angle.
 
         The **player's** lean only, scaled by ``visual_gain``: ``base`` is a

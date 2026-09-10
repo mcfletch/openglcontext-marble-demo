@@ -16,6 +16,7 @@ world's pairwise-friction override (see
 :meth:`omi_physics.world.PhysicsWorld.set_pair_friction`).
 """
 from dataclasses import dataclass
+from typing import Any
 
 from omi_physics import model
 
@@ -99,7 +100,7 @@ PAIR_FRICTION = {
 }
 
 
-def physics_material(material):
+def physics_material(material: Any) -> Any:
     """OMI :class:`~omi_physics.model.Material` for a marble/surface."""
     return model.Material(
         staticFriction=material.static_friction,
@@ -108,7 +109,7 @@ def physics_material(material):
     )
 
 
-def register_materials(world):
+def register_materials(world: Any) -> Any:
     """Add every marble + surface material to ``world``; return ``{name: index}``."""
     index = {}
     for name, material in list(MARBLES.items()) + list(SURFACES.items()):
@@ -116,7 +117,7 @@ def register_materials(world):
     return index
 
 
-def apply_pair_frictions(world, index):
+def apply_pair_frictions(world: Any, index: Any) -> None:
     """Install the pairwise marble↔surface friction overrides into ``world``.
 
     ``index`` is the ``{name: material_index}`` map from :func:`register_materials`.

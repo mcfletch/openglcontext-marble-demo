@@ -9,6 +9,8 @@ What that is for is making a choice final.  A split whose two ways can be
 swapped between at leisure is not really two ways; put one of these on a branch
 and the decision is a decision.
 """
+from typing import Any
+
 from openglcontext_marble_demo.fragments import fragment
 from openglcontext_marble_demo.pieces import LANE, MAX_STEP, Piece, Port, _lay, _rails
 
@@ -21,7 +23,9 @@ RULE = 'over the lip, and there is no going back'
 #: and a marble rolls down a step and cannot roll up one -- which is why every
 #: slope in the game is built of tilted tiles.  Making it deeper would only put
 #: a cliff on the board that nothing else is allowed to build.
-VARIANTS = {
+#: What each variant sets, by name. Values of every kind, which is what a
+#: variant is: the knob a fragment reads by that name.
+VARIANTS: dict[str, dict[str, Any]] = {
     'plain': {'theme': 'stone', 'lip': MAX_STEP, 'before': 3, 'after': 3},
     'long': {'theme': 'stone', 'lip': MAX_STEP, 'before': 5, 'after': 5},
     'foundry': {'theme': 'foundry', 'lip': MAX_STEP, 'before': 4, 'after': 3},
@@ -31,8 +35,8 @@ VARIANTS = {
 
 @fragment('one_way', tags=('gate', 'place'), rule=RULE, cost=1.0,
           variants=tuple(VARIANTS))
-def one_way(rng, entry, variant='plain', theme=None, lip=None, before=None,
-            after=None):
+def one_way(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, lip: Any=None, before: Any=None,
+            after: Any=None) -> Any:
     """A shelf, a lip that cannot be climbed, and the floor below it."""
     settings = dict(VARIANTS[variant])
     theme = theme or settings['theme']

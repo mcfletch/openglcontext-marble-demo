@@ -16,6 +16,8 @@ returns a tenth of what went into it.
 The throat is the same width whatever the mouth is, so ``mouth`` is how far
 wrong a player can be and ``taper`` is how long they have to put it right.
 """
+from typing import Any
+
 from openglcontext_marble_demo.fragments import fragment
 from openglcontext_marble_demo.pieces import LANE, Piece, Port, _lay, _ring
 
@@ -25,7 +27,9 @@ RULE = 'be on the line by the throat, or the closing wall will have you'
 
 #: Material, layout and effect, per variant: what it is made of, how wide the
 #: mouth is against how long the taper is, and how long the throat holds.
-VARIANTS = {
+#: What each variant sets, by name. Values of every kind, which is what a
+#: variant is: the knob a fragment reads by that name.
+VARIANTS: dict[str, dict[str, Any]] = {
     'plain': {'theme': 'stone', 'mouth': 7, 'taper': 2, 'hold': 2},
     'funnel': {'theme': 'stone', 'mouth': 9, 'taper': 1, 'hold': 1},
     'foundry': {'theme': 'foundry', 'mouth': 7, 'taper': 3, 'hold': 3},
@@ -35,7 +39,7 @@ VARIANTS = {
 
 @fragment('narrows', tags=('aim', 'gate'), cost=5.0, rule=RULE,
           variants=tuple(VARIANTS))
-def narrows(rng, entry, variant='plain', **named):
+def narrows(rng: Any, entry: Any, variant: Any='plain', **named: Any) -> Any:
     """A converging hall with a one-cell throat in the middle of it.
 
     ``mouth`` is how wide it starts (and so how far off line a marble may
@@ -48,7 +52,7 @@ def narrows(rng, entry, variant='plain', **named):
     return _narrows(entry, theme=theme, **settings)
 
 
-def _narrows(entry, theme='stone', mouth=7, taper=2, hold=2, throat=1):
+def _narrows(entry: Any, theme: Any='stone', mouth: Any=7, taper: Any=2, hold: Any=2, throat: Any=1) -> Any:
     cells: dict = {}
     port = _lay(cells, entry, taper, width=mouth)
     for width in range(mouth - 2, throat, -2):

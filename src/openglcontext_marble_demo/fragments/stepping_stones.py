@@ -18,6 +18,8 @@ sides, stepping down between the terraces -- so the piece is one region and a
 player picking their way at walking pace can get across it.  That is the slow
 way round, and it is the only one: down the middle there is nothing but air.
 """
+from typing import Any
+
 from openglcontext_marble_demo.fragments import fragment
 from openglcontext_marble_demo.pieces import LANE, MAX_STEP, Piece, Port, _lay
 
@@ -27,7 +29,9 @@ RULE = 'carry enough speed to cross the gaps; easing off is how you fall in'
 
 #: Material, layout and effect: what the stones are made of, how many there are
 #: and how long each is, and how much air is between them.
-VARIANTS = {
+#: What each variant sets, by name. Values of every kind, which is what a
+#: variant is: the knob a fragment reads by that name.
+VARIANTS: dict[str, dict[str, Any]] = {
     'plain': {'theme': 'stone', 'stones': 4, 'run': 2, 'gap': 1},
     'short': {'theme': 'stone', 'stones': 5, 'run': 1, 'gap': 1},
     'foundry': {'theme': 'foundry', 'stones': 4, 'run': 3, 'gap': 1},
@@ -37,7 +41,7 @@ VARIANTS = {
 
 @fragment('stepping_stones', tags=('speed', 'hazard'), cost=8.0, rule=RULE,
           variants=tuple(VARIANTS))
-def stepping_stones(rng, entry, variant='plain', **named):
+def stepping_stones(rng: Any, entry: Any, variant: Any='plain', **named: Any) -> Any:
     """A run of stones with gaps between them, each stone a terrace lower.
 
     ``stones`` is how many there are and ``run`` how many cells long each is --
@@ -51,8 +55,8 @@ def stepping_stones(rng, entry, variant='plain', **named):
     return _stepping_stones(entry, theme=theme, **settings)
 
 
-def _stepping_stones(entry, theme='stone', stones=4, run=2, gap=1, step=MAX_STEP - 0.05,
-                     width=None):
+def _stepping_stones(entry: Any, theme: Any='stone', stones: Any=4, run: Any=2, gap: Any=1, step: Any=MAX_STEP - 0.05,
+                     width: Any=None) -> Any:
     width = entry.width if width is None else width
     across = entry.across()
     cells: dict = {}

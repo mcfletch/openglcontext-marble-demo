@@ -113,24 +113,24 @@ class Port:
     height: float = 0.0
     width: int = LANE
 
-    def ahead(self, steps=1):
+    def ahead(self, steps: Any=1) -> Any:
         """The port ``steps`` cells further along the way it faces."""
         return Port(cell=(self.cell[0] + self.facing[0] * steps,
                           self.cell[1] + self.facing[1] * steps),
                     facing=self.facing, height=self.height, width=self.width)
 
-    def across(self):
+    def across(self) -> Any:
         """The unit step across the facing, which is the way a mouth is wide."""
         return (-self.facing[1], self.facing[0])
 
-    def cells(self):
+    def cells(self) -> Any:
         """The cells of the mouth, centred on :attr:`cell`."""
         side = self.across()
         half = self.width // 2
         return [(self.cell[0] + side[0] * offset, self.cell[1] + side[1] * offset)
                 for offset in range(-half, self.width - half)]
 
-    def turned(self, facing):
+    def turned(self, facing: Any) -> Any:
         """The same place, facing another way."""
         return Port(cell=self.cell, facing=facing, height=self.height,
                     width=self.width)
@@ -155,16 +155,16 @@ class Piece:
     #: What this piece asks of a player, in one line; empty for a place.
     rule: str = ''
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if 'ok' not in self.exits:
             raise ValueError('%s has no way on: exits needs an "ok"' % self.name)
 
     @property
-    def exit(self):
+    def exit(self) -> Any:
         """The way on, which is what a chain follows."""
         return self.exits['ok']
 
-    def level(self, **named):
+    def level(self, **named: Any) -> Any:
         """This piece on its own, as a playable level -- which is how a joiner's
         rule is tested: put a marble on it and see whether the rule held."""
         return _level([self], self.entry.cell, self.exit.cell, **named)
@@ -178,13 +178,13 @@ class Board:
     start: tuple
     finish: tuple
 
-    def level(self, **named):
+    def level(self, **named: Any) -> Any:
         return _level(self.pieces, self.start, self.finish, **named)
 
 
 # -- reachability ---------------------------------------------------------
 
-def joined(cells, origin, target):
+def joined(cells: Any, origin: Any, target: Any) -> Any:
     """Whether ``target`` can be reached from ``origin`` over ``cells``."""
     if origin not in cells:
         return False
@@ -202,7 +202,7 @@ def joined(cells, origin, target):
     return target in seen
 
 
-def distance(cells, origin, target):
+def distance(cells: Any, origin: Any, target: Any) -> Any:
     """Steps from ``origin`` to ``target`` over ``cells``, or None if unreachable."""
     if origin not in cells:
         return None
@@ -220,7 +220,7 @@ def distance(cells, origin, target):
     return None
 
 
-def walled_pairs(level):
+def walled_pairs(level: Any) -> Any:
     """Every ordered pair of neighbouring cells a wall stands between."""
     blocked = set()
     for feature in level.features:
@@ -232,7 +232,7 @@ def walled_pairs(level):
     return blocked
 
 
-def reachable_through(level, origin=None):
+def reachable_through(level: Any, origin: Any=None) -> Any:
     """The cells a marble can reach, **through the gaps between walls**.
 
     :func:`joined` asks whether the *cells* join up, and a wall is not a cell —
@@ -256,12 +256,12 @@ def reachable_through(level, origin=None):
     return seen
 
 
-def navigable(level):
+def navigable(level: Any) -> Any:
     """Whether a marble can get from the start of ``level`` to its finish."""
     return level.finish_cell in reachable_through(level)
 
 
-def open_the_joins(cells, features):
+def open_the_joins(cells: Any, features: Any) -> Any:
     """Drop every wall that turned out to stand between two cells of the board.
 
     A piece walls its own edge against the cells *it* knows about, and the piece
@@ -281,7 +281,7 @@ def open_the_joins(cells, features):
 
 # -- building blocks ------------------------------------------------------
 
-def _lay(cells, port, length, height=None, width=None):
+def _lay(cells: Any, port: Any, length: Any, height: Any=None, width: Any=None) -> Any:
     """Fill ``length`` cells of lane from ``port`` along its facing.
 
     Answers the port at the far end.  Everything here is built out of this:
@@ -299,7 +299,7 @@ def _lay(cells, port, length, height=None, width=None):
                 height=height, width=width)
 
 
-def _slope(cells, features, port, length, drop, width=None):
+def _slope(cells: Any, features: Any, port: Any, length: Any, drop: Any, width: Any=None) -> Any:
     """A run of ``length`` cells falling ``drop`` in total, in equal steps.
 
     The step is capped at :data:`MAX_STEP`, so a slope that asked for more than
@@ -335,7 +335,7 @@ def _slope(cells, features, port, length, drop, width=None):
                 height=round(port.height + each * (steps - 1), 6), width=width)
 
 
-def _rails(cells, port, length, sides=('left', 'right'), width=None):
+def _rails(cells: Any, port: Any, length: Any, sides: Any=('left', 'right'), width: Any=None) -> Any:
     """Walls down one or both sides of a run, facing outward."""
     width = port.width if width is None else width
     across = port.across()
@@ -355,7 +355,7 @@ def _rails(cells, port, length, sides=('left', 'right'), width=None):
     return made
 
 
-def _ring(cells, region, gaps=()):
+def _ring(cells: Any, region: Any, gaps: Any=()) -> Any:
     """Walls round the outside of ``region``, except where a way leads out."""
     spared = set(gaps)
     made = []
@@ -371,7 +371,7 @@ def _ring(cells, region, gaps=()):
 
 # -- places ---------------------------------------------------------------
 
-def plateau(rng, entry, theme='stone', across=None, along=None):
+def plateau(rng: Any, entry: Any, theme: Any='stone', across: Any=None, along: Any=None) -> Any:
     """Somewhere to be: a walled square, wide enough to move about in.
 
     It asks nothing.  What a plateau is for is giving a player room to set up
@@ -390,7 +390,7 @@ def plateau(rng, entry, theme='stone', across=None, along=None):
 
 # -- joiners --------------------------------------------------------------
 
-def ramp_down(rng, entry, theme='stone', drop=None, length=None):
+def ramp_down(rng: Any, entry: Any, theme: Any='stone', drop: Any=None, length: Any=None) -> Any:
     """The plain way between two terraces: a walled slope that asks nothing.
 
     Every board needs one of these.  A challenge is only a challenge against
@@ -407,7 +407,7 @@ def ramp_down(rng, entry, theme='stone', drop=None, length=None):
                  features=slopes + walls, theme=theme)
 
 
-def kicker(rng, entry, theme='stone', depth=None, lift=None):
+def kicker(rng: Any, entry: Any, theme: Any='stone', depth: Any=None, lift: Any=None) -> Any:
     """A dip whose far side climbs higher than its near side dropped.
 
     A short dip and a long way back up, leaving ``lift`` above where it was
@@ -436,7 +436,7 @@ def kicker(rng, entry, theme='stone', depth=None, lift=None):
                  rule='carry speed into it or crawl out the far side')
 
 
-def spillway(rng, entry, theme='stone', drop=None, run_out=4):
+def spillway(rng: Any, entry: Any, theme: Any='stone', drop: Any=None, run_out: Any=4) -> Any:
     """A descent with no wall at the bottom: control it, or overshoot.
 
     Walled down both sides and open at the end, with a flat run-out.  The rule
@@ -461,7 +461,7 @@ def spillway(rng, entry, theme='stone', drop=None, run_out=4):
                  rule='hold the descent or run off the open end')
 
 
-def hairpin(rng, entry, theme='stone'):
+def hairpin(rng: Any, entry: Any, theme: Any='stone') -> Any:
     """A right-angle you have to brake for, or be carried past.
 
     A short straight, a turn, and a wall across where a marble that did not slow
@@ -485,7 +485,7 @@ def hairpin(rng, entry, theme='stone'):
                  rule='brake for the right-angle or be carried past it')
 
 
-def bridge(rng, entry, theme='stone', length=None):
+def bridge(rng: Any, entry: Any, theme: Any='stone', length: Any=None) -> Any:
     """One cell wide, with nothing either side.
 
     No walls: a bridge with rails is a corridor.  What it asks is that the
@@ -503,7 +503,7 @@ def bridge(rng, entry, theme='stone', length=None):
                  theme=theme, rule='cross a single cell with nothing beside it')
 
 
-def scatter(rng, entry, theme='rubber', length=None):
+def scatter(rng: Any, entry: Any, theme: Any='rubber', length: Any=None) -> Any:
     """A field of bumpers that flings you about.
 
     Getting through is partly luck, which is what it is for: it is the piece
@@ -546,7 +546,7 @@ PIECES = {
 
 # -- chaining -------------------------------------------------------------
 
-def chain(seed, names, entry=None, themes=None):
+def chain(seed: int, names: Any, entry: Any=None, themes: Any=None) -> Any:
     """Build the pieces ``names`` in order, each entered where the last was left.
 
     ``themes`` is a name per piece, or one name for all of them, or None for
@@ -574,8 +574,8 @@ def chain(seed, names, entry=None, themes=None):
                  finish=built[-1].exit.cell)
 
 
-def _level(built, start, finish, name='chained', time_limit=None,
-           cell_size=CELL_SIZE, extra_cells=None):
+def _level(built: Any, start: Any, finish: Any, name: str='chained', time_limit: Any=None,
+           cell_size: float=CELL_SIZE, extra_cells: Any=None) -> Any:
     """The cells and features of ``built`` as a playable level.
 
     ``extra_cells`` is board that belongs to no piece -- the runs a story lays

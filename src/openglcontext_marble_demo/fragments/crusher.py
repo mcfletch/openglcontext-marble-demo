@@ -16,6 +16,8 @@ it needs. What it asks is that a player not stop in the lane -- read the
 rhythm, keep rolling, and a press is furniture; stall under one and the next
 blow is the one that counts.
 """
+from typing import Any
+
 from openglcontext_marble_demo import pieces
 from openglcontext_marble_demo.fragments import fragment
 from openglcontext_marble_demo.mechanisms.crusher import Crusher
@@ -36,7 +38,9 @@ RUN_OUT = 2
 #: ``plain`` but gives the lane more room either side of the press, ``foundry``
 #: puts two blows in the lane out of step with each other, and ``brisk`` keeps
 #: a single press but on a shorter cycle -- the same rule, read faster.
-_VARIANTS = {
+#: What each variant sets, by name. Values of every kind, which is what a
+#: variant is: the knob a fragment reads by that name.
+_VARIANTS: dict[str, dict[str, Any]] = {
     'plain': {'theme': 'stone', 'presses': 1, 'width': LANE,
               'period': 3.0, 'strike': 0.25, 'dwell': 0.4},
     'foundry': {'theme': 'foundry', 'presses': 2, 'width': LANE,
@@ -51,8 +55,8 @@ _VARIANTS = {
 @fragment('crusher', tags=('gate', 'hazard'), cost=8.0,
           rule='go under the press between blows; stopping there is what it catches',
           variants=tuple(_VARIANTS))
-def crusher(rng, entry, variant='plain', theme=None, presses=None, width=None,
-           period=None, strike=None, dwell=None):
+def crusher(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, presses: Any=None, width: Any=None,
+           period: Any=None, strike: Any=None, dwell: Any=None) -> Any:
     """A walled lane with ``presses`` presses striking across it in turn."""
     settings = _VARIANTS[variant]
     theme = theme or settings['theme']

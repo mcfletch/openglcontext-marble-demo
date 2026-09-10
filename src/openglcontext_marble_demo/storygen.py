@@ -42,6 +42,7 @@ and changed a tile at a time, which is what makes it a starting point rather tha
 somebody else's board.
 """
 import random
+from typing import Any
 
 from . import fragments
 from .stories import Chapter, Story
@@ -62,7 +63,7 @@ RUN_UP_TAG = 'run-up'
 DIFFICULTY = {1: 2.0, 2: 3.5, 3: 5.0, 4: 6.5, 5: 99.0}
 
 
-def compose(seed=0, chapters=8, difficulty=3, themes=None):
+def compose(seed: int=0, chapters: Any=8, difficulty: Any=3, themes: Any=None) -> Any:
     """A story of about ``chapters`` chapters, composed from the library.
 
     ``chapters`` is the length of the main line; a board may come out longer,
@@ -88,7 +89,7 @@ def compose(seed=0, chapters=8, difficulty=3, themes=None):
 
 # -- choosing ---------------------------------------------------------------
 
-def _by_kind(library, place, ceiling=None):
+def _by_kind(library: Any, place: Any, ceiling: Any=None) -> Any:
     """The fragments that are places, or the ones that are not."""
     found = []
     for name, entry in sorted(library.items()):
@@ -101,7 +102,7 @@ def _by_kind(library, place, ceiling=None):
     return found
 
 
-def _main_line(rng, library, places, joiners, chapters):
+def _main_line(rng: Any, library: Any, places: Any, joiners: Any, chapters: Any) -> Any:
     """The spine, as ``(id, fragment)`` pairs: place, joiner, place, joiner...
 
     Joiners are dealt cheapest-first into the first half and dearest into the
@@ -130,7 +131,7 @@ def _main_line(rng, library, places, joiners, chapters):
     return _give_the_gates_a_run_up(library, line)
 
 
-def _length_with_run_ups(library, picks):
+def _length_with_run_ups(library: Any, picks: Any) -> Any:
     """How many chapters ``picks`` becomes, once places and run-ups are in.
 
     A place before each joiner and one to end on, plus a run-up for every joiner
@@ -140,7 +141,7 @@ def _length_with_run_ups(library, picks):
     return 2 * len(picks) + 1 + gates
 
 
-def _pick_joiners(rng, library, joiners, count):
+def _pick_joiners(rng: Any, library: Any, joiners: Any, count: int) -> Any:
     """``count`` joiners, cheap ones first, never the same one twice running.
 
     Sorted by cost after choosing rather than while: choosing by cost would
@@ -149,7 +150,7 @@ def _pick_joiners(rng, library, joiners, count):
     """
     if not joiners:
         return []
-    chosen = []
+    chosen: list[Any] = []
     while len(chosen) < count:
         offered = [name for name in joiners
                    if not chosen or name != chosen[-1]] or list(joiners)
@@ -163,7 +164,7 @@ def _pick_joiners(rng, library, joiners, count):
     return _unrepeat(chosen)
 
 
-def _give_the_gates_a_run_up(library, line):
+def _give_the_gates_a_run_up(library: Any, line: Any) -> Any:
     """Deal a run-up in front of every gate that has not got one.
 
     The run-up goes *immediately* before the gate, displacing nothing: a place
@@ -177,7 +178,7 @@ def _give_the_gates_a_run_up(library, line):
                      if RUN_UP_TAG in entry.tags)
     if not run_ups:
         return line
-    out = []
+    out: list[Any] = []
     for index, (chapter, fragment) in enumerate(line):
         if (GATE_TAG in library[fragment].tags
                 and not (out and RUN_UP_TAG in library[out[-1][1]].tags)):
@@ -186,7 +187,7 @@ def _give_the_gates_a_run_up(library, line):
     return out
 
 
-def _unrepeat(names):
+def _unrepeat(names: Any) -> Any:
     """Break up any pair the cost sort put next to each other."""
     for index in range(1, len(names)):
         if names[index] == names[index - 1]:
@@ -197,7 +198,7 @@ def _unrepeat(names):
     return names
 
 
-def _unlike(rng, offered, line):
+def _unlike(rng: Any, offered: Any, line: Any) -> Any:
     """One of ``offered``, avoiding whatever went down last."""
     last = line[-1][1] if line else None
     choices = [name for name in offered if name != last] or list(offered)
@@ -206,7 +207,7 @@ def _unlike(rng, offered, line):
 
 # -- writing it out ---------------------------------------------------------
 
-def _write(story, line, rng, themes):
+def _write(story: Any, line: Any, rng: Any, themes: Any) -> None:
     """Put the main line into the story, each chapter leading to the next."""
     library = fragments.library()
     for index, (name, fragment) in enumerate(line):
@@ -218,7 +219,7 @@ def _write(story, line, rng, themes):
             exits={'ok': following} if following else {})
 
 
-def _add_a_way_round(story, line, library, rng, themes, places, joiners):
+def _add_a_way_round(story: Any, line: Any, library: Any, rng: Any, themes: Any, places: Any, joiners: Any) -> None:
     """Wire one failure exit to a slower way that rejoins the main line.
 
     Only where the board has a joiner with somewhere to rejoin *after* it: a way

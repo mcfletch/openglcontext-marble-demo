@@ -23,6 +23,8 @@ is also the answer to the water for a player who would rather not wait.
     >>> 'ok' in piece.exits
     True
 """
+from typing import Any
+
 from openglcontext_marble_demo.fragments import fragment
 from openglcontext_marble_demo.mechanisms.water import Water
 from openglcontext_marble_demo.pieces import LANE, Piece, Port, _lay, _rails, _slope
@@ -34,7 +36,9 @@ RULE = 'sink through, and wait to find out the floor gives'
 #: ``depth`` is how far the marble sinks before it reaches the plug, and
 #: ``below`` how far under the pool the chamber that catches it sits.  The
 #: chamber must be deeper than the plug or the marble lands back in the pool.
-VARIANTS = {
+#: What each variant sets, by name. Values of every kind, which is what a
+#: variant is: the knob a fragment reads by that name.
+VARIANTS: dict[str, dict[str, Any]] = {
     'plain': {'theme': 'stone', 'depth': 3.0, 'below': 4.5, 'run': 3},
     'deep': {'theme': 'stone', 'depth': 4.5, 'below': 6.3, 'run': 3},
     'cold': {'theme': 'ice', 'depth': 3.0, 'below': 4.5, 'run': 4},
@@ -44,8 +48,8 @@ VARIANTS = {
 
 @fragment('cistern', tags=('hazard', 'gate'), rule=RULE, cost=3.0,
           variants=tuple(VARIANTS))
-def cistern(rng, entry, variant='plain', theme=None, depth=None, below=None,
-            run=None):
+def cistern(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, depth: Any=None, below: Any=None,
+            run: Any=None) -> Any:
     """An approach, a pool with a plug, and the chamber that catches you."""
     settings = dict(VARIANTS[variant])
     theme = theme or settings['theme']

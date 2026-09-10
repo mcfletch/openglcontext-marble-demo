@@ -41,6 +41,7 @@ when the level was built.
 """
 import math
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 
@@ -71,13 +72,13 @@ class MagnetPull:
     same pass done once.
     """
 
-    def __init__(self, world, posts):
+    def __init__(self, world: Any, posts: Any) -> None:
         self.world = world
         self.posts = [(float(x), float(z), float(strength), float(radius),
                        (float(axis[0]), float(axis[1])))
                       for x, z, strength, radius, axis in posts]
 
-    def pull_at(self, point):
+    def pull_at(self, point: Any) -> Any:
         """The acceleration a body at world ``point`` feels, as ``(ax, az)``.
 
         A pure function of the posts and the point, so the field can be measured
@@ -102,7 +103,7 @@ class MagnetPull:
             az += amount * axis[1]
         return ax, az
 
-    def bodies_in_reach(self):
+    def bodies_in_reach(self) -> Any:
         """The indices of the dynamic bodies any post can act on.
 
         One vector pass over the body arrays rather than a loop over bodies: the
@@ -120,7 +121,7 @@ class MagnetPull:
             within |= ((x - post_x) ** 2 + (z - post_z) ** 2) < radius * radius
         return [int(index) for index in np.flatnonzero(near & within)]
 
-    def update(self, dt=0.0):
+    def update(self, dt: float=0.0) -> None:
         """Apply one frame of pull to everything in reach."""
         if not (dt and self.posts):
             return
@@ -151,19 +152,19 @@ class Magnet:
     """
     cell: tuple[int, int]
     strength: float = 9.0
-    radius: float = 12.0
+    radius: Any = 12.0
     axis: tuple[int, int] = (1, 0)
     height: float = 0.0
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.cell = (int(self.cell[0]), int(self.cell[1]))
         self.axis = (int(self.axis[0]), int(self.axis[1]))
 
-    def owned_cells(self):
+    def owned_cells(self) -> Any:
         """None: a magnet stands on the floor the piece around it laid."""
         return set()
 
-    def build(self, scene, level, index, result):
+    def build(self, scene: Any, level: Any, index: Any, result: Any) -> None:
         if self.cell not in level.cells:
             return
         x, z = level.cell_center(self.cell)

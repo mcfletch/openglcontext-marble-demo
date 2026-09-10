@@ -39,6 +39,7 @@ it was edited.
 import math
 import random
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 from omi_physics import model
@@ -75,7 +76,7 @@ _PEG_COLOR = (0.72, 0.74, 0.78)
 _CHUTE_COLOR = (0.25, 0.9, 0.55)
 
 
-def _frame(facing):
+def _frame(facing: Any) -> Any:
     """The world axes of a board facing ``facing``, as ``(along, left)``."""
     along = np.array([facing[0], 0.0, facing[1]], dtype='d')
     left = np.array([facing[1], 0.0, -facing[0]], dtype='d')
@@ -137,26 +138,26 @@ class PegBoard:
 
     # -- shape ----------------------------------------------------------
 
-    def rows(self):
+    def rows(self) -> Any:
         """Rows the board occupies: pegs and chute together."""
         return self.length + self.slot_length
 
-    def step(self):
+    def step(self) -> Any:
         """How far each row falls below the one before it, as a signed height."""
         return -abs(self.drop) / max(self.rows(), 1)
 
-    def offsets(self):
+    def offsets(self) -> Any:
         """The cell offset of each slot, left to right as the marble travels."""
         first = self.width // 2
         return [first - index for index in range(self.width)]
 
-    def cell_at(self, row, offset):
+    def cell_at(self, row: Any, offset: Any) -> Any:
         """The cell ``row`` rows down the board and ``offset`` cells to the left."""
         left = (self.facing[1], -self.facing[0])
         return (self.cell[0] + self.facing[0] * row + left[0] * offset,
                 self.cell[1] + self.facing[1] * row + left[1] * offset)
 
-    def cells(self):
+    def cells(self) -> Any:
         """The heights the board wants, as ``{cell: height}``.
 
         A level lays these itself -- ``level.cells.update(board.cells())`` --
@@ -168,18 +169,18 @@ class PegBoard:
                 for row in range(self.rows())
                 for offset in self.offsets()}
 
-    def owned_cells(self):
+    def owned_cells(self) -> Any:
         """Every cell the board tiles itself, so no flat one is laid under it."""
         return set(self.cells())
 
-    def slot_cells(self, index):
+    def slot_cells(self, index: Any) -> Any:
         """The chute cells of slot ``index``, top to bottom."""
         offset = self.offsets()[index]
         return [self.cell_at(row, offset) for row in range(self.length, self.rows())]
 
     # -- where things are -----------------------------------------------
 
-    def board_coordinates(self, position, cell_size=CELL_SIZE):
+    def board_coordinates(self, position: Any, cell_size: float=CELL_SIZE) -> Any:
         """``position`` as ``(along, left)`` metres from the entry cell's centre.
 
         ``along`` grows down the board and ``left`` toward the marble's left, so
@@ -191,7 +192,7 @@ class PegBoard:
         delta = np.asarray(position, dtype='d') - origin
         return float(np.dot(delta, along_axis)), float(np.dot(delta, left_axis))
 
-    def slot_of(self, position, cell_size=CELL_SIZE):
+    def slot_of(self, position: Any, cell_size: float=CELL_SIZE) -> Any:
         """Which slot ``position`` is over, or ``None`` if it is off the board.
 
         Asked across the board only: a marble still among the pegs is over the
@@ -202,12 +203,12 @@ class PegBoard:
         offsets = self.offsets()
         return offsets.index(offset) if offset in offsets else None
 
-    def past_the_end(self, position, cell_size=CELL_SIZE):
+    def past_the_end(self, position: Any, cell_size: float=CELL_SIZE) -> Any:
         """Whether ``position`` is beyond the far end of the slots."""
         along, _ = self.board_coordinates(position, cell_size)
         return along > (self.rows() - 0.5) * cell_size
 
-    def entry_position(self, across=0.0, height=0.55, cell_size=CELL_SIZE):
+    def entry_position(self, across: Any=0.0, height: Any=0.55, cell_size: float=CELL_SIZE) -> Any:
         """A world point on the entry row, ``across`` metres to the left of centre.
 
         ``height`` is clearance above the board's surface, so the default is a
@@ -220,7 +221,7 @@ class PegBoard:
                            self.cell[1] * cell_size], dtype='d')
         return tuple(origin + left_axis * across)
 
-    def peg_places(self, cell_size=CELL_SIZE):
+    def peg_places(self, cell_size: float=CELL_SIZE) -> Any:
         """``(along, left)`` of every peg, in metres from the entry cell's centre.
 
         Rows alternate by half a spacing, which is what makes a field out of a
@@ -250,13 +251,13 @@ class PegBoard:
 
     # -- building -------------------------------------------------------
 
-    def build(self, scene, level, index, result):
+    def build(self, scene: Any, level: Any, index: Any, result: Any) -> None:
         self._require_cells(level)
         self._tiles(scene, level, index, result)
         self._pegs(scene, level, index, result)
         self._walls(scene, level, index, result)
 
-    def _require_cells(self, level):
+    def _require_cells(self, level: Any) -> None:
         missing = sorted(set(self.cells()) - set(level.cells))
         if missing:
             raise ValueError(
@@ -264,13 +265,13 @@ class PegBoard:
                 'not in the level, starting at %r. Say level.cells.update(board.cells()) '
                 'first.' % (len(missing), missing[0]))
 
-    def _rise(self, level, row, offset):
+    def _rise(self, level: Any, row: Any, offset: Any) -> Any:
         """How much the tile at ``(row, offset)`` climbs toward the next row."""
         here = level.cells[self.cell_at(row, offset)]
         ahead = level.cells.get(self.cell_at(row + 1, offset), here + self.step())
         return ahead - here
 
-    def _tiles(self, scene, level, index, result):
+    def _tiles(self, scene: Any, level: Any, index: Any, result: Any) -> None:
         """One tilted slab per cell, and the chute trigger under the fast slot."""
         cs = level.cell_size
         mesh = render.tile_mesh(size=(cs, TILE_THICKNESS, cs))
@@ -302,7 +303,7 @@ class PegBoard:
                 if row >= self.length and offset == fast:
                     self._chute(scene, level, result, cell)
 
-    def _chute(self, scene, level, result, cell):
+    def _chute(self, scene: Any, level: Any, result: Any, cell: Any) -> None:
         """The trigger over one fast-slot cell, and the speed it gives back."""
         x, z = level.cell_center(cell)
         cs = level.cell_size
@@ -312,7 +313,7 @@ class PegBoard:
         result.feature_bodies.append(trigger)
         result.effects[trigger.index] = self._boost()
 
-    def _boost(self):
+    def _boost(self) -> Any:
         """Bring the marble *up to* :attr:`boost_speed` down the board.
 
         A cap and never a brake, so a marble that arrived through the pegs
@@ -321,14 +322,14 @@ class PegBoard:
         along_axis, _ = _frame(self.facing)
         wanted = self.boost_speed
 
-        def effect(world, marble):
+        def effect(world: Any, marble: Any) -> None:
             travelling = float(np.dot(world.linear_velocity[marble], along_axis))
             if travelling < wanted:
                 world.apply_impulse(
                     marble, along_axis * (wanted - travelling) * world.mass[marble])
         return effect
 
-    def _surface(self, level, along, across, cell_size):
+    def _surface(self, level: Any, along: Any, across: Any, cell_size: float) -> Any:
         """Height of the tile top under ``(along, across)``, in metres."""
         offsets = self.offsets()
         offset = min(max(int(round(across / cell_size)), min(offsets)), max(offsets))
@@ -336,7 +337,7 @@ class PegBoard:
         base = level.cells[self.cell_at(row, offset)]
         return base + self._rise(level, row, offset) * (along / cell_size - row + 0.5)
 
-    def _pegs(self, scene, level, index, result):
+    def _pegs(self, scene: Any, level: Any, index: Any, result: Any) -> None:
         """The posts themselves, on a material of their own rather than a surface's."""
         material = scene.raw_material(model.Material(
             staticFriction=self.peg_friction + 0.1,
@@ -360,7 +361,7 @@ class PegBoard:
             body.transform.children[0].appearance = appearance
             result.feature_bodies.append(body)
 
-    def _walls(self, scene, level, index, result):
+    def _walls(self, scene: Any, level: Any, index: Any, result: Any) -> None:
         """Rails down both sides, and a divider between every pair of slots."""
         left = (self.facing[1], -self.facing[0])
         right = (-left[0], -left[1])

@@ -31,6 +31,7 @@ rejoin is that both ways reach the same place.
 """
 from collections import deque
 from dataclasses import dataclass, field
+from typing import Any
 
 from . import fragments, pieces
 from .pieces import Port
@@ -66,7 +67,7 @@ class Told:
     start: tuple
     finish: tuple
 
-    def level(self, **named):
+    def level(self, **named: Any) -> Any:
         """This story as a playable level.
 
         ``self.cells`` rather than the pieces' own, because a story lays runs of
@@ -79,7 +80,7 @@ class Told:
         return pieces._level(list(self.placed.values()), self.start, self.finish,
                              extra_cells=self.cells, **named)
 
-    def rules(self):
+    def rules(self) -> Any:
         """What this story asks of a player, in the order it asks it."""
         return [(chapter, piece.rule)
                 for chapter, piece in self.placed.items() if piece.rule]
@@ -93,7 +94,7 @@ class Story:
     chapters: dict = field(default_factory=dict)
 
     # -- checking -------------------------------------------------------
-    def check(self):
+    def check(self) -> None:
         """Raise if this story cannot be laid out at all.
 
         Every complaint names the thing that is wrong: a story is written by
@@ -111,7 +112,7 @@ class Story:
                         % (chapter.id, exit_name, target))
 
     # -- laying it out --------------------------------------------------
-    def build(self, seed=0, entry=None):
+    def build(self, seed: int=0, entry: Any=None) -> Any:
         """Lay the story out into a :class:`Told`."""
         import random
         self.check()
@@ -121,7 +122,9 @@ class Story:
         placed: dict = {}
         cells: dict = {}
         # The main line first: it is the spine everything else is placed around.
-        pending = deque([(self.start, where, None)])
+        # (fragment name, the port it grows from, the join that led here)
+        pending: deque[tuple[str, Any, str | None]] = deque(
+            [(self.start, where, None)])
         while pending:
             name, port, joining = pending.popleft()
             if name in placed:
@@ -147,7 +150,7 @@ class Story:
         return Told(story=self, placed=placed, cells=cells,
                     start=placed[self.start].entry.cell, finish=finish)
 
-    def _lay(self, rng, name, port, taken):
+    def _lay(self, rng: Any, name: str, port: Any, taken: Any) -> Any:
         """Build one chapter at ``port``, shifted sideways until it fits."""
         chapter = self.chapters[name]
         across = port.across()
@@ -177,7 +180,7 @@ class Story:
             'within %d cells either way of %r' % (name, MAX_SHIFT, port.cell))
 
 
-def _shifts(prefer=1):
+def _shifts(prefer: Any=1) -> Any:
     """Offsets to try, nearest first and alternating sides.
 
     ``prefer`` is which side gets the first try at each distance.  It matters
@@ -194,7 +197,7 @@ def _shifts(prefer=1):
         yield -step * prefer
 
 
-def _emptier_side(taken, port):
+def _emptier_side(taken: Any, port: Any) -> Any:
     """Which way across ``port`` the board has less of: ``+1`` or ``-1``.
 
     Trying that side first is what keeps a board from drifting.  It is measured
@@ -211,13 +214,13 @@ def _emptier_side(taken, port):
     return 1 if lead <= other else -1
 
 
-def _in_order(exits):
+def _in_order(exits: Any) -> Any:
     """``ok`` first, so the main line is laid before anything hangs off it."""
     return (['ok'] if 'ok' in exits else []) + sorted(
         name for name in exits if name != 'ok')
 
 
-def _rejoin(cells, leaving, arriving):
+def _rejoin(cells: Any, leaving: Any, arriving: Any) -> None:
     """Fill the cells between two ports so both ways reach the same place.
 
     An L of single cells at the height of the port being left.  It is a
@@ -235,7 +238,7 @@ def _rejoin(cells, leaving, arriving):
         cells.setdefault((to_col, at), height)
 
 
-def _furthest(cells, origin):
+def _furthest(cells: Any, origin: Any) -> Any:
     """The cell furthest from ``origin`` over the board, which is the end of it.
 
     Worked out rather than declared: a story's last chapter is whichever one no

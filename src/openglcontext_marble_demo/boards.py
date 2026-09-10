@@ -39,6 +39,7 @@ from __future__ import annotations
 
 from collections import deque
 from dataclasses import dataclass, field
+from typing import Any
 
 __all__ = ['Cell', 'Strand', 'Board', 'SPINE', 'SHORTCUT', 'SCENIC',
            'MAX_SIDEWAYS_RUN', 'TERRACE_RUN', 'TERRACE_STEP',
@@ -97,17 +98,17 @@ class Board:
     start: tuple = (0, 0)
     finish: tuple = (0, 0)
 
-    def strands_of(self, kind):
+    def strands_of(self, kind: Any) -> Any:
         return [strand for strand in self.strands if strand.kind == kind]
 
-    def route_exists(self, blocked=frozenset()):
+    def route_exists(self, blocked: Any=frozenset()) -> Any:
         """Whether start and finish are still joined avoiding ``blocked``."""
         return reachable(self.cells, self.start, blocked).issuperset({self.finish})
 
 
 # -- reachability ---------------------------------------------------------
 
-def reachable(cells, origin, blocked=frozenset()):
+def reachable(cells: Any, origin: Any, blocked: Any=frozenset()) -> Any:
     """Every cell reachable from ``origin`` over ``cells``, avoiding ``blocked``."""
     if origin in blocked or origin not in cells:
         return set()
@@ -123,7 +124,7 @@ def reachable(cells, origin, blocked=frozenset()):
     return seen
 
 
-def distances(cells, origin):
+def distances(cells: Any, origin: Any) -> Any:
     """Steps from ``origin`` to every reachable cell, over ``cells``."""
     found = {origin: 0}
     queue = deque([origin])
@@ -139,7 +140,7 @@ def distances(cells, origin):
 
 # -- the spine ------------------------------------------------------------
 
-def carve_spine(rng, length):
+def carve_spine(rng: Any, length: Any) -> Any:
     """A forward-biased walk of ``length`` cells from ``(0, 0)``.
 
     Forward is +row, which is the way the board leans, so rolling and
@@ -177,7 +178,7 @@ def carve_spine(rng, length):
     return spine
 
 
-def _spine_step(rng, sideways, last_side):
+def _spine_step(rng: Any, sideways: Any, last_side: Any) -> Any:
     """Forward, or a turn — never a reversal, and never a long sideways run."""
     if sideways >= MAX_SIDEWAYS_RUN:
         return FORWARD
@@ -190,7 +191,7 @@ def _spine_step(rng, sideways, last_side):
 
 # -- width ----------------------------------------------------------------
 
-def widen(run, radius=1, plaza_every=5, plaza_radius=2):
+def widen(run: Any, radius: Any=1, plaza_every: Any=5, plaza_radius: Any=2) -> Any:
     """Every cell within ``radius`` of ``run``, opening into plazas at intervals.
 
     Room is measured **around** the run rather than across it, and that is the
@@ -215,7 +216,7 @@ def widen(run, radius=1, plaza_every=5, plaza_radius=2):
 
 # -- the ways round -------------------------------------------------------
 
-def braid(rng, spine, count=2, reach=(3, 7)):
+def braid(rng: Any, spine: Any, count: int=2, reach: Any=(3, 7)) -> Any:
     """Strands that leave the spine and rejoin it, and the cells they need.
 
     Returns ``(strands, added)``: the strands built and the cells they put down.
@@ -234,9 +235,9 @@ def braid(rng, spine, count=2, reach=(3, 7)):
     Either way it is a **loop**, and a loop is what makes a maze a choice rather
     than a solution.
     """
-    strands = []
+    strands: list[Any] = []
     added = set()
-    used = set()
+    used: set[Any] = set()
 
     for begin, end in _bends(spine, reach):
         if len(strands) >= count:
@@ -268,7 +269,7 @@ def braid(rng, spine, count=2, reach=(3, 7)):
     return strands, added
 
 
-def _bends(spine, reach):
+def _bends(spine: Any, reach: Any) -> Any:
     """Spans of the spine where a straighter way exists, slackest first.
 
     The slack is how many cells the spine spends over the shortest grid route
@@ -290,7 +291,7 @@ def _bends(spine, reach):
     return [(begin, end) for _, begin, end in found]
 
 
-def _chord(begin, finish, rng):
+def _chord(begin: Any, finish: Any, rng: Any) -> Any:
     """The straight way between two cells: along one axis, then the other."""
     first_along_column = rng.random() < 0.5
     corner = (finish[0], begin[1]) if first_along_column else (begin[0], finish[1])
@@ -298,7 +299,7 @@ def _chord(begin, finish, rng):
     return _tidy_run(run)
 
 
-def _detour(begin, finish, side, rng):
+def _detour(begin: Any, finish: Any, side: Any, rng: Any) -> Any:
     """An L-shaped run from ``begin`` to ``finish`` bulging toward ``side``.
 
     Out to the side, along, and back in: three straight legs, which is the
@@ -320,7 +321,7 @@ def _detour(begin, finish, side, rng):
     return _tidy_run(run)
 
 
-def _tidy_run(run):
+def _tidy_run(run: Any) -> Any:
     """Drop the repeat where two legs meet at their shared corner."""
     tidy = [run[0]]
     for cell in run[1:]:
@@ -329,7 +330,7 @@ def _tidy_run(run):
     return tidy
 
 
-def _leg(begin, end):
+def _leg(begin: Any, end: Any) -> Any:
     """The cells from ``begin`` to ``end`` along one axis, excluding ``begin``."""
     (col, row), (to_col, to_row) = begin, end
     if col != to_col:
@@ -339,7 +340,7 @@ def _leg(begin, end):
     return [(col, r) for r in range(row + step, to_row + step, step)]
 
 
-def prune(cells, protect):
+def prune(cells: Any, protect: Any) -> Any:
     """Drop cells with fewer than two ways off them, except those protected.
 
     A tile reachable only from one side is a nub: somewhere a marble can go and
@@ -360,7 +361,7 @@ def prune(cells, protect):
 
 # -- height ---------------------------------------------------------------
 
-def terrace(cells, spine, run=TERRACE_RUN, step=TERRACE_STEP):
+def terrace(cells: Any, spine: Any, run: Any=TERRACE_RUN, step: Any=TERRACE_STEP) -> Any:
     """Heights that fall with the rank a cell is on, in flat runs.
 
     Height depends on ``row`` alone — how far *forward* a cell is — which does
@@ -376,7 +377,7 @@ def terrace(cells, spine, run=TERRACE_RUN, step=TERRACE_STEP):
 
 # -- the whole thing ------------------------------------------------------
 
-def build(rng, length=14, radius=1, plaza_every=5, difficulty=2):
+def build(rng: Any, length: Any=14, radius: Any=1, plaza_every: Any=5, difficulty: Any=2) -> Any:
     """A complete :class:`Board`: spine, room, braids and heights."""
     spine = carve_spine(rng, length)
     cells = widen(spine, radius=radius, plaza_every=plaza_every)

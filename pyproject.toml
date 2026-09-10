@@ -97,16 +97,23 @@ ignore = [
 # 3.12 type syntax, so checking against 3.10 fails before it reaches any code
 # here. What the floor promises is checked by the test suite, which runs on it.
 python_version = "3.12"
+# Every definition states its types, and a body is checked rather than skipped:
+# an unannotated parameter is `Any`, and an `Any` travelling through a call is
+# a check that reports success without having compared anything.
+check_untyped_defs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
 warn_return_any = true
 warn_unused_ignores = true
 ignore_missing_imports = true
 
-# The engine and the physics ship no ``py.typed``, so mypy has nothing to check
-# their surface against. Saying so per package keeps the silence deliberate and
-# narrow: anything *else* that cannot be resolved is still an error worth
-# seeing, which a bare global ignore would hide.
+# The toolkits with no declarations to read. The engine, the physics and the
+# bindings all ship ``py.typed``, so what this demo asks of them is compared
+# against what they promise. Saying the rest per package keeps the silence
+# deliberate and narrow: anything else that cannot be resolved is still an
+# error worth seeing, which a bare global ignore would hide.
 [[tool.mypy.overrides]]
-module = ["OpenGLContext.*", "omi_physics.*", "OpenGL.*", "glfw.*", "PIL.*"]
+module = ["glfw.*", "PIL.*"]
 ignore_missing_imports = true
 follow_untyped_imports = false
 

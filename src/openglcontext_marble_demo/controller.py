@@ -38,7 +38,7 @@ contact — destroys a marble by calling :meth:`destroy` with its own cause.  Th
 game finds those hazards among the build's animators: anything answering
 ``lost(body)`` with a cause or ``None`` is asked once a frame.
 """
-from typing import NamedTuple
+from typing import Any, NamedTuple
 
 import numpy as np
 
@@ -97,10 +97,10 @@ class MarbleController:
     #: Frames after leaving the air during which a floor contact is that landing.
     LANDING_GRACE = 10
 
-    def __init__(self, world, index, track, marble_radius=0.5, marble_material="steel",
-                 camera=None, kill_y=-8.0, respawn_delay=2.0, destroy_delay=None,
-                 on_lost=None, kick_speed=1.2,
-                 linear_fraction=0.6, steer_forward=FORWARD_AXIS, steer_right=RIGHT_AXIS):
+    def __init__(self, world: Any, index: Any, track: Any, marble_radius: Any=0.5, marble_material: Any="steel",
+                 camera: Any=None, kill_y: Any=-8.0, respawn_delay: Any=2.0, destroy_delay: Any=None,
+                 on_lost: Any=None, kick_speed: Any=1.2,
+                 linear_fraction: Any=0.6, steer_forward: Any=FORWARD_AXIS, steer_right: Any=RIGHT_AXIS) -> None:
         self.world = world
         self.index = index
         self.track = track
@@ -213,7 +213,7 @@ class MarbleController:
     #: The four cells a checkpoint has to have floor in.
     _AROUND = ((1, 0), (-1, 0), (0, 1), (0, -1))
 
-    def _somewhere_to_come_back_to(self, cell):
+    def _somewhere_to_come_back_to(self, cell: Any) -> Any:
         """Is ``cell`` somewhere a marble put down at rest will still be a moment later?
 
         Floor on every side, or a rail where the floor runs out.  A marble is
@@ -234,7 +234,7 @@ class MarbleController:
                    or self._railed(cell, (dcol, drow))
                    for dcol, drow in self._AROUND)
 
-    def _railed(self, cell, step):
+    def _railed(self, cell: Any, step: Any) -> Any:
         """Is there a wall on the ``step`` side of ``cell``?
 
         A plank with rails is as good to come back to as open floor: what a
@@ -245,7 +245,7 @@ class MarbleController:
         return bool(railed and railed(cell, step))
 
     # -- steering -------------------------------------------------------
-    def kick(self, forward, right):
+    def kick(self, forward: Any, right: Any) -> None:
         """Impart one steering kick in the camera-relative direction.
 
         ``forward``/``right`` are in [-1, 1].  The kick is mostly **spin** (angular
@@ -273,7 +273,7 @@ class MarbleController:
             self.index, travel * (mass * speed * self.linear_fraction))
 
     # -- per-frame update ----------------------------------------------
-    def update(self, dt):
+    def update(self, dt: float) -> Any:
         """Advance the track-presence state machine one frame; drive the camera."""
         if self.state != ACTIVE:
             self._update_respawn(dt)
@@ -313,7 +313,7 @@ class MarbleController:
             self._begin_fall()
         return self.state
 
-    def _touches(self):
+    def _touches(self) -> Any:
         """This step's contacts on the marble, as :class:`Touch` records."""
         world, i = self.world, self.index
         mass = max(float(world.mass[i]), 1e-6)
@@ -324,7 +324,7 @@ class MarbleController:
                       float(contact.depth))
                 for contact in world.contacts if i in (contact.a, contact.b)]
 
-    def _watch_the_air(self, grounded, clearance):
+    def _watch_the_air(self, grounded: Any, clearance: Any) -> Any:
         """Remember how far above the surface the marble has been, and when.
 
         The height is latched on the way *down* -- the frame the marble is back
@@ -347,14 +347,14 @@ class MarbleController:
         return self._fell_from
 
     @property
-    def airborne(self):
+    def airborne(self) -> Any:
         """Whether the marble fell far enough, recently enough, that a floor
         contact now is a landing rather than a roll."""
         return (self._since_air <= self.LANDING_GRACE
                 and max(self._fell_from, self._peak_clearance) >= self.FALL_HEIGHT)
 
     # -- impact speed kills ---------------------------------------------
-    def _apply_impact_rules(self, touches, airborne=True):
+    def _apply_impact_rules(self, touches: Any, airborne: Any=True) -> None:
         """Scrub speed on a hard wall hit or landing (non-elastic surfaces only).
 
         A large normal impulse per unit mass is an effective approach speed, and
@@ -381,7 +381,7 @@ class MarbleController:
                 self._scale_horizontal_speed(self.wall_retain)
 
     # -- being crushed ---------------------------------------------------
-    def _held_too_long(self, touches, dt):
+    def _held_too_long(self, touches: Any, dt: float) -> Any:
         """Whether the marble has been squeezed past bearing, for long enough.
 
         The press has to be *held*.  A gap that shuts on the marble and opens
@@ -396,7 +396,7 @@ class MarbleController:
         return self._squeezed_for >= self.crush_time
 
     @staticmethod
-    def _squeeze(touches):
+    def _squeeze(touches: Any) -> Any:
         """How far below its diameter the marble is being held, in metres.
 
         Two contacts whose outward normals oppose one another are the two sides
@@ -408,7 +408,7 @@ class MarbleController:
                     if float(np.dot(first.normal, second.normal)) <= OPPOSED),
                    default=0.0)
 
-    def _scale_horizontal_speed(self, retain):
+    def _scale_horizontal_speed(self, retain: Any) -> None:
         # Scrub the horizontal velocity *and* the spin — otherwise the spin the
         # marble built up re-accelerates it a frame later and the crash wouldn't
         # bite (a real crash kills both).
@@ -417,10 +417,10 @@ class MarbleController:
         v[2] *= retain
         self.world.angular_velocity[self.index] *= retain
 
-    def _is_grounded(self, position, surface):
+    def _is_grounded(self, position: Any, surface: Any) -> Any:
         return (position[1] - self.radius) <= surface + self.ground_tolerance
 
-    def _has_fallen(self, position, on_track):
+    def _has_fallen(self, position: Any, on_track: Any) -> Any:
         if position[1] < self.kill_y:
             return True
         # Over the void and dropped below the plane it launched from → a fall, not
@@ -429,7 +429,7 @@ class MarbleController:
                 and position[1] < self._ground_surface - self.fall_margin)
 
     # -- fall / destruction / respawn -----------------------------------
-    def destroy(self, cause):
+    def destroy(self, cause: Any) -> Any:
         """Lose the marble to ``cause``; a new one arrives at the last checkpoint.
 
         Public because the board reaches in through it: three of the four ways to
@@ -452,18 +452,18 @@ class MarbleController:
             self.on_lost(cause)
         return self.state
 
-    def forget_the_run(self):
+    def forget_the_run(self) -> None:
         """Clear what the marble has been through, for a run started over."""
         self.fall_count = 0
         self.loss_count = 0
         self.last_loss = None
 
-    def _begin_fall(self):
+    def _begin_fall(self) -> None:
         self.state = FALLEN
         self.respawn_timer = 0.0
         self._hold_camera()
 
-    def _hold_camera(self):
+    def _hold_camera(self) -> None:
         """Freeze the view on the square the marble was last safely on."""
         if self.camera is None:
             return
@@ -472,16 +472,16 @@ class MarbleController:
         self.camera.hold()
 
     @property
-    def wait_to_return(self):
+    def wait_to_return(self) -> Any:
         """Seconds before the marble comes back, which is longer for a loss."""
         return self.destroy_delay if self.state == DESTROYED else self.respawn_delay
 
-    def _update_respawn(self, dt):
+    def _update_respawn(self, dt: float) -> None:
         self.respawn_timer += dt
         if self.respawn_timer >= self.wait_to_return:
             self._respawn()
 
-    def _respawn(self):
+    def _respawn(self) -> None:
         was_lost = self.state == DESTROYED
         center_x, center_z = self.track.cell_center(*self.checkpoint)
         self._ground_surface = self._checkpoint_surface
@@ -506,16 +506,16 @@ class MarbleController:
 
     # -- convenience ----------------------------------------------------
     @property
-    def is_respawning(self):
+    def is_respawning(self) -> Any:
         return self.state in (FALLEN, DESTROYED)
 
     @property
-    def is_lost(self):
+    def is_lost(self) -> Any:
         """Whether a destroyed marble is still waiting to be replaced."""
         return self.state == DESTROYED
 
     @property
-    def speed(self):
+    def speed(self) -> Any:
         """Horizontal speed of the marble (for the HUD)."""
         v = self.world.linear_velocity[self.index]
         return float(np.hypot(v[0], v[2]))

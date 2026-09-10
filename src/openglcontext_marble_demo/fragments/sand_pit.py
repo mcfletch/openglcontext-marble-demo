@@ -21,6 +21,8 @@ is a corridor with some decoration in the middle of it.
     >>> 'ok' in piece.exits
     True
 """
+from typing import Any
+
 from openglcontext_marble_demo.fragments import fragment
 from openglcontext_marble_demo.level import Ramp
 from openglcontext_marble_demo.mechanisms.sand import Sand
@@ -33,7 +35,9 @@ RULE = 'thread the hard edge, or take the ramp and clear it'
 #: Material, layout and effect together.  ``length`` is how many cells of sand,
 #: ``width`` how wide the chamber, ``shoulder`` how many cells of hard floor are
 #: left along one side, and ``launch`` whether a ramp is offered on the approach.
-VARIANTS = {
+#: What each variant sets, by name. Values of every kind, which is what a
+#: variant is: the knob a fragment reads by that name.
+VARIANTS: dict[str, dict[str, Any]] = {
     'plain': {'theme': 'stone', 'length': 3, 'width': 5, 'shoulder': 1,
               'launch': True},
     'wide': {'theme': 'stone', 'length': 4, 'width': 7, 'shoulder': 2,
@@ -47,8 +51,8 @@ VARIANTS = {
 
 @fragment('sand_pit', tags=('aim', 'hazard'), rule=RULE, cost=7.0,
           variants=tuple(VARIANTS))
-def sand_pit(rng, entry, variant='plain', theme=None, length=None, width=None,
-             shoulder=None, launch=None):
+def sand_pit(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, length: Any=None, width: Any=None,
+             shoulder: Any=None, launch: Any=None) -> Any:
     """A chamber floored with sand, a hard shoulder down one side, a ramp in."""
     settings = dict(VARIANTS[variant])
     theme = theme or settings['theme']
@@ -75,7 +79,7 @@ def sand_pit(rng, entry, variant='plain', theme=None, length=None, width=None,
     # everything else.
     shoulder_columns = {half - offset for offset in range(shoulder)}
 
-    def _at(port, step, offset):
+    def _at(port: Any, step: Any, offset: Any) -> Any:
         cell = port.ahead(step).cell
         return (cell[0] + across[0] * hand * offset,
                 cell[1] + across[1] * hand * offset)
@@ -112,7 +116,7 @@ def sand_pit(rng, entry, variant='plain', theme=None, length=None, width=None,
                  features=features, theme=theme, rule=RULE)
 
 
-def _span(cells, port, length):
+def _span(cells: Any, port: Any, length: Any) -> Any:
     """Every cell of ``length`` rows of the lane starting at ``port``."""
     return [cell for step in range(length) for cell in port.ahead(step).cells()
             if cell in cells]

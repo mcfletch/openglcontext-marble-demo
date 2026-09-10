@@ -29,7 +29,9 @@ another mid-run.
     >>> Burner(cells=((3, 0), (4, 0))).owned_cells() == {(3, 0), (4, 0)}
     True
 """
+from collections.abc import Sequence
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 from OpenGLContext.scenegraph import basenodes
@@ -69,7 +71,7 @@ class BurnerHeat:
     for the few bodies actually near the fire.
     """
 
-    def __init__(self, world, ceilings, cell_size, burn_time, cool_rate):
+    def __init__(self, world: Any, ceilings: Any, cell_size: float, burn_time: Any, cool_rate: Any) -> None:
         self.world = world
         self.ceilings = dict(ceilings)
         self.cell_size = float(cell_size)
@@ -88,7 +90,7 @@ class BurnerHeat:
         self._south = max(rows) * self.cell_size + half
         self._top = max(self.ceilings.values())
 
-    def holds(self, point):
+    def holds(self, point: Any) -> Any:
         """Is world ``point`` down in the fire?
 
         The cell edge is the whole of the boundary: a hand's breadth outside it,
@@ -99,7 +101,7 @@ class BurnerHeat:
         ceiling = self.ceilings.get(cell)
         return ceiling is not None and y < ceiling
 
-    def bodies_inside(self):
+    def bodies_inside(self) -> Any:
         """The indices of the dynamic bodies currently in the fire."""
         world = self.world
         position = world.position
@@ -112,7 +114,7 @@ class BurnerHeat:
                 & (z >= self._north) & (z <= self._south))
         return [int(i) for i in np.flatnonzero(near) if self.holds(position[i])]
 
-    def update(self, dt=0.0):
+    def update(self, dt: float=0.0) -> None:
         """Take ``dt`` seconds of heat into everything in the fire, out of the rest."""
         inside = set(self.bodies_inside())
         for index in inside:
@@ -127,7 +129,7 @@ class BurnerHeat:
             else:
                 self.heat[index] = cooled
 
-    def lost(self, body):
+    def lost(self, body: Any) -> Any:
         """What ``body`` has been lost to, or ``None`` while it is still whole.
 
         Answers **once**: the heat is spent on the marble it took, and the one
@@ -140,7 +142,7 @@ class BurnerHeat:
         del self.heat[body]
         return BURNED
 
-    def reset(self, world=None):
+    def reset(self, world: Any=None) -> None:
         """Put the fire out on everything: a restarted run starts cold."""
         self.heat.clear()
 
@@ -167,20 +169,23 @@ class Burner:
     The field covers those of ``cells`` the level has track for; the plate needs
     a floor to lie in, and the track is what says where there is one.
     """
-    cells: tuple[tuple[int, int], ...]
-    burn_time: float = 1.2
+    #: The cells this covers, as `(col, row)` pairs. Taken as any sequence
+    #: of them, because a level gives tuples and a file gives back lists;
+    #: `__post_init__` settles it to tuples so the two are one board.
+    cells: Sequence[Sequence[int]]
+    burn_time: Any = 1.2
     cool_rate: float = 1.0
     catch_height: float = 1.0
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         # A file gives back lists where a level gave tuples; one spelling here
         # means a board that has been through the file format is the same board.
         self.cells = tuple((int(col), int(row)) for col, row in self.cells)
 
-    def owned_cells(self):
+    def owned_cells(self) -> Any:
         return set(self.cells)
 
-    def build(self, scene, level, index, result):
+    def build(self, scene: Any, level: Any, index: Any, result: Any) -> None:
         material = scene.world.add_material(materials.physics_material(EMBER))
         appearance = _ember_appearance()
         ceilings = {}
@@ -203,7 +208,7 @@ class Burner:
             result.resettable.append(heat)
 
 
-def _ember_appearance():
+def _ember_appearance() -> Any:
     """A dark plate with a hot glow coming off it, shared by every tile."""
     return basenodes.Appearance(material=PBRMaterial(
         baseColor=EMBER.base_color, metallic=EMBER.metallic,

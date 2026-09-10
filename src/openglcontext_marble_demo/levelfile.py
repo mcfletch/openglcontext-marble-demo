@@ -28,6 +28,7 @@ import json
 import os
 import tempfile
 import typing
+from typing import Any
 
 from .level import Bumper, Elevator, Finish, Gate, Level, Ramp, RotatingArm, SpringTrap, Wall
 
@@ -66,13 +67,13 @@ _PLAIN = ('name', 'time_limit', 'cell_size', 'kill_y', 'respawn_delay',
           'surface', 'seed', 'difficulty')
 
 
-def _cell(value):
+def _cell(value: Any) -> Any:
     """A ``(col, row)`` pair from a JSON list, as integers."""
     col, row = value
     return (int(col), int(row))
 
 
-def to_json(level):
+def to_json(level: Any) -> Any:
     """``level`` as a JSON-safe document."""
     return {
         'generator': GENERATOR,
@@ -89,7 +90,7 @@ def to_json(level):
     }
 
 
-def from_json(document):
+def from_json(document: Any) -> Any:
     """A :class:`~openglcontext_marble_demo.level.Level` from ``document``.
 
     Raises :exc:`ValueError` for a file from a newer writer, for a mechanism
@@ -126,19 +127,19 @@ def from_json(document):
 
 # -- features ------------------------------------------------------------
 
-def _feature_to_json(feature):
+def _feature_to_json(feature: Any) -> Any:
     kind = _KIND_OF.get(type(feature))
     if kind is None:
         raise ValueError('%s has no name in levelfile.FEATURES, so it cannot '
                          'be saved' % type(feature).__name__)
-    document = {'kind': kind}
+    document: dict[str, Any] = {'kind': kind}
     for field in dataclasses.fields(feature):
         value = getattr(feature, field.name)
         document[field.name] = list(value) if isinstance(value, tuple) else value
     return document
 
 
-def _load_mechanisms():
+def _load_mechanisms() -> None:
     """Import the mechanisms package, which is what registers what it holds.
 
     Registering happens on import, and a process that only reads a board file
@@ -151,7 +152,7 @@ def _load_mechanisms():
     mechanisms.registry()
 
 
-def _feature_from_json(entry):
+def _feature_from_json(entry: Any) -> Any:
     kind = entry.get('kind')
     if kind not in FEATURES:
         _load_mechanisms()
@@ -179,7 +180,7 @@ _HEAD = ('generator', 'version', 'name', 'time_limit', 'cell_size', 'kill_y',
          'finish_cell')
 
 
-def dumps(document):
+def dumps(document: Any) -> Any:
     """``document`` as text, with each cell and each mechanism on one line.
 
     Assembled rather than handed to ``json.dumps(indent=2)``, which puts every
@@ -187,7 +188,7 @@ def dumps(document):
     ``json.dumps``, so the escaping and the number formatting are the library's
     rather than this module's guesses about them.
     """
-    def one(value):
+    def one(value: Any) -> Any:
         return json.dumps(value, ensure_ascii=False)
 
     lines = ['{']
@@ -208,7 +209,7 @@ def dumps(document):
     return '\n'.join(lines) + '\n'
 
 
-def save(level, path):
+def save(level: Any, path: str) -> Any:
     """Write ``level`` to ``path``; return the path.
 
     Written beside the target and moved onto it, because a board file is the
@@ -233,7 +234,7 @@ def save(level, path):
     return path
 
 
-def load(path):
+def load(path: str) -> Any:
     """Read a level from ``path``."""
     with open(path, encoding='utf-8') as handle:
         return from_json(json.load(handle))

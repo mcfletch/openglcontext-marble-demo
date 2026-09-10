@@ -19,7 +19,9 @@ becomes a hole with a slower route past it rather than the end of the run.
     True
 """
 import math
+from collections.abc import Sequence
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 from omi_physics import mathutil, model
@@ -66,9 +68,12 @@ class Collapse:
     so the carry clears the near corner of what is on the other side of the
     hole rather than driving into it.
     """
-    cells: tuple[tuple[int, int], ...]
+    #: The cells this covers, as `(col, row)` pairs. Taken as any sequence
+    #: of them, because a level gives tuples and a file gives back lists;
+    #: `__post_init__` settles it to tuples so the two are one board.
+    cells: Sequence[Sequence[int]]
     direction: tuple[int, int] = (1, 0)
-    hold_time: float = 0.9
+    hold_time: Any = 0.9
     recover_rate: float = 1.5
     drop_time: float = 0.35
     catch_height: float = 1.0
@@ -76,16 +81,16 @@ class Collapse:
     launch_speed: float = 4.0
     thickness: float = 0.4
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         # A file gives back lists where a level gave tuples; one spelling here
         # means a board that has been through the file format is the same board.
         self.cells = tuple((int(col), int(row)) for col, row in self.cells)
         self.direction = (int(self.direction[0]), int(self.direction[1]))
 
-    def owned_cells(self):
+    def owned_cells(self) -> Any:
         return set(self.cells)
 
-    def build(self, scene, level, index, result):
+    def build(self, scene: Any, level: Any, index: Any, result: Any) -> None:
         material = index[level.surface]
         cs = level.cell_size
         surface = level.cells[self.cells[0]]
@@ -137,8 +142,8 @@ class CollapseWatch:
     marble.
     """
 
-    def __init__(self, world, cells, surface, cell_size, hold_time, recover_rate,
-                catch_height, panel):
+    def __init__(self, world: Any, cells: Any, surface: Any, cell_size: float, hold_time: Any, recover_rate: Any,
+                catch_height: Any, panel: Any) -> None:
         self.world = world
         self.surface = float(surface)
         self.hold_time = float(hold_time)
@@ -156,13 +161,13 @@ class CollapseWatch:
         self._north = min(rows) * cs - half
         self._south = max(rows) * cs + half
 
-    def holds(self, point):
+    def holds(self, point: Any) -> Any:
         """Is world ``point`` down on the floor, within reach of its weight?"""
         x, y, z = point[0], point[1], point[2]
         return (self._west <= x <= self._east and self._north <= z <= self._south
                and y < self.surface + self.catch_height)
 
-    def bodies_inside(self):
+    def bodies_inside(self) -> Any:
         """The indices of the dynamic bodies currently pressing on the floor."""
         world = self.world
         position = world.position
@@ -172,7 +177,7 @@ class CollapseWatch:
                & (z >= self._north) & (z <= self._south))
         return [int(i) for i in np.flatnonzero(near)]
 
-    def update(self, dt=0.0):
+    def update(self, dt: float=0.0) -> None:
         """Take ``dt`` seconds of weight from everything on the floor, give it
         back from everything that has left -- and let the floor go once
         anything has taken enough of it."""
@@ -193,7 +198,7 @@ class CollapseWatch:
             else:
                 self.held[index] = eased
 
-    def reset(self, world=None):
+    def reset(self, world: Any=None) -> None:
         """Nothing has stood on the floor yet: a restarted run starts clean."""
         self.held.clear()
 
@@ -207,8 +212,8 @@ class _Panel:
     time the animator is actually given rather than of the game's.
     """
 
-    def __init__(self, hinge, axis, wdir, reach, duration, carry_speed=0.0,
-                launch_speed=0.0):
+    def __init__(self, hinge: Any, axis: Any, wdir: Any, reach: Any, duration: Any, carry_speed: Any=0.0,
+                launch_speed: Any=0.0) -> None:
         self.hinge = np.asarray(hinge, dtype='d')
         self.axis = np.asarray(axis, dtype='d')
         self.wdir = np.asarray(wdir, dtype='d')
@@ -216,14 +221,15 @@ class _Panel:
         self.duration = float(duration)
         self.carry_speed = float(carry_speed)
         self.launch_speed = float(launch_speed)
-        self.released_at = None
+        #: When the tile last let go, or None while it is holding.
+        self.released_at: float | None = None
         self._now = 0.0
 
-    def reset(self, world=None):
+    def reset(self, world: Any=None) -> None:
         """Shut the floor again, so a restarted run meets the same surprise."""
         self.released_at = None
 
-    def release(self, world, body):
+    def release(self, world: Any, body: Any) -> None:
         """Let the floor go: carry the body toward the way down, and wake it.
 
         The carry alone would drive the body straight at the near edge of
@@ -242,14 +248,14 @@ class _Panel:
         world.wake(body)
 
     @property
-    def angle(self):
+    def angle(self) -> Any:
         """How far open the floor is, in radians, from shut to a quarter turn."""
         if self.released_at is None:
             return 0.0
         share = (self._now - self.released_at) / self.duration
         return math.pi / 2.0 * min(1.0, max(0.0, share))
 
-    def pose(self, t):
+    def pose(self, t: float) -> Any:
         """Where the floor is at animator time ``t``: ``(position, quaternion)``."""
         self._now = t
         angle = self.angle
@@ -259,7 +265,7 @@ class _Panel:
         return tuple(position), tuple(quat)
 
 
-def _kinematic_box(scene, size, position, color, material_index):
+def _kinematic_box(scene: Any, size: Any, position: Any, color: Any, material_index: Any) -> Any:
     """Add a kinematic box to a ``DemoScene``: render Transform plus physics body."""
     shape = scene.world.add_shape(model.Shape.box(size))
     transform = Transform(translation=tuple(position),

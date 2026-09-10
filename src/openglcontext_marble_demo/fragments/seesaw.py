@@ -22,6 +22,8 @@ than sitting there forever.
     >>> 'ok' in piece.exits
     True
 """
+from typing import Any
+
 from openglcontext_marble_demo.fragments import fragment
 from openglcontext_marble_demo.mechanisms.seesaw import Seesaw
 from openglcontext_marble_demo.pieces import LANE, Piece, Port, _lay, _rails
@@ -35,7 +37,9 @@ RULE = ('cross with speed before the plank finds you; dawdle and your own '
 #: plank's span in cells; ``max_tilt`` (degrees) and ``response`` (seconds) are
 #: how far it leans and how readily — the two numbers that decide how hard a
 #: slow crossing bites.
-VARIANTS = {
+#: What each variant sets, by name. Values of every kind, which is what a
+#: variant is: the knob a fragment reads by that name.
+VARIANTS: dict[str, dict[str, Any]] = {
     'plain':  {'theme': 'stone', 'length': 5, 'width': 3,
                'max_tilt': 7.0, 'response': 0.5},
     'long':   {'theme': 'stone', 'length': 7, 'width': 3,
@@ -49,8 +53,8 @@ VARIANTS = {
 
 @fragment('seesaw', tags=('speed', 'gate'), rule=RULE, cost=6.0,
           variants=tuple(VARIANTS))
-def seesaw(rng, entry, variant='plain', theme=None, length=None, width=None,
-           max_tilt=None, response=None):
+def seesaw(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, length: Any=None, width: Any=None,
+           max_tilt: Any=None, response: Any=None) -> Any:
     """A mouth, a plank hinged at its far row, and a landing beyond it."""
     settings = dict(VARIANTS[variant])
     theme = theme or settings['theme']

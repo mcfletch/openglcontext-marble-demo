@@ -16,6 +16,8 @@ of the lever is that it is worth a run-up rather than that it is a wall.
     >>> 'ok' in piece.exits
     True
 """
+from typing import Any
+
 from openglcontext_marble_demo.fragments import fragment
 from openglcontext_marble_demo.mechanisms.lever import Door, Lever
 from openglcontext_marble_demo.pieces import LANE, Piece, Port, _lay, _ring
@@ -27,7 +29,9 @@ RULE = 'hit the lever hard enough, which takes a run at it'
 #: ``across`` and ``along`` are the room; ``hardness`` is what the lever wants,
 #: in metres a second of closing speed.  A bigger room is an easier lever,
 #: because a bigger room is more floor to build speed on.
-VARIANTS = {
+#: What each variant sets, by name. Values of every kind, which is what a
+#: variant is: the knob a fragment reads by that name.
+VARIANTS: dict[str, dict[str, Any]] = {
     'plain': {'theme': 'foundry', 'across': 7, 'along': 6, 'hardness': 4.0},
     'tight': {'theme': 'foundry', 'across': 5, 'along': 5, 'hardness': 4.0},
     'stiff': {'theme': 'stone', 'across': 7, 'along': 7, 'hardness': 6.0},
@@ -37,8 +41,8 @@ VARIANTS = {
 
 @fragment('locked_room', tags=('speed', 'gate'), rule=RULE, cost=6.0,
           variants=tuple(VARIANTS))
-def locked_room(rng, entry, variant='plain', theme=None, across=None,
-                along=None, hardness=None):
+def locked_room(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, across: Any=None,
+                along: Any=None, hardness: Any=None) -> Any:
     """A walled room with a lever at the far end and the door it opens."""
     settings = dict(VARIANTS[variant])
     theme = theme or settings['theme']

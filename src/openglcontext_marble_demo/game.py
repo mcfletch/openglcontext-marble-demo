@@ -26,6 +26,7 @@ Both run on one gravity path: the game owns a
 simply a rig whose player lean is bounded at zero.
 """
 import math
+from typing import Any
 
 from omi_physics import model
 from OpenGLContext.physics.demo import DemoScene
@@ -104,11 +105,11 @@ LOSS_PENALTY = 8.0
 
 
 class MarbleGame:
-    def __init__(self, level, marble_material="steel", camera=None,
-                 radius=MARBLE_RADIUS, debug_flags=0,
-                 steer_forward=None, steer_right=None,
-                 control=TILT, base_tilt=BASE_TILT, player_tilt=PLAYER_TILT,
-                 damping=ROLL_DAMPING, loss_penalty=LOSS_PENALTY):
+    def __init__(self, level: Any, marble_material: Any="steel", camera: Any=None,
+                 radius: Any=MARBLE_RADIUS, debug_flags: Any=0,
+                 steer_forward: Any=None, steer_right: Any=None,
+                 control: Any=TILT, base_tilt: Any=BASE_TILT, player_tilt: Any=PLAYER_TILT,
+                 damping: Any=ROLL_DAMPING, loss_penalty: Any=LOSS_PENALTY) -> None:
         self.level = level
         self.marble_material = marble_material
         self.radius = radius
@@ -166,7 +167,7 @@ class MarbleGame:
         self.ended_by = None
 
     # -- setup ----------------------------------------------------------
-    def _spawn_marble(self):
+    def _spawn_marble(self) -> Any:
         marble = materials.MARBLES[self.marble_material]
         body = self.scene.add_sphere(
             radius=self.radius, position=self.level.marble_start(self.radius),
@@ -176,7 +177,7 @@ class MarbleGame:
         body.transform.children[0].appearance = render.marble_appearance(marble)
         return body
 
-    def _wire_triggers(self):
+    def _wire_triggers(self) -> None:
         """One trigger listener drives both the finish (win) and the feature effects.
 
         The finish body ends the run; every other trigger in ``build.effects`` (ramp
@@ -187,7 +188,7 @@ class MarbleGame:
         effects = self.build.effects
         world = self.scene.world
 
-        def on_trigger(event_type, trigger_body, other_body):
+        def on_trigger(event_type: Any, trigger_body: Any, other_body: Any) -> None:
             if other_body != marble_index or event_type == "exit":
                 return
             self.gates.discard(trigger_body)
@@ -201,7 +202,7 @@ class MarbleGame:
         world.add_trigger_listener(on_trigger)
 
     # -- per-frame ------------------------------------------------------
-    def lean(self, forward, right):
+    def lean(self, forward: Any, right: Any) -> None:
         """Record which way the player is leaning the board, in [-1, 1].
 
         This is *held* input, not an event: it stands until it is changed, and
@@ -210,12 +211,12 @@ class MarbleGame:
         """
         self._demand = (forward, right) if self.state == PLAYING else (0.0, 0.0)
 
-    def kick(self, forward, right):
+    def kick(self, forward: Any, right: Any) -> None:
         """Apply one steering kick (from a key press / repeat) while playing."""
         if self.state == PLAYING:
             self.controller.kick(forward, right)
 
-    def advance(self, dt):
+    def advance(self, dt: float) -> Any:
         """Step the world and the clock; return the (possibly new) game state."""
         if self.state != PLAYING:
             return self.state
@@ -238,7 +239,7 @@ class MarbleGame:
         return self.state
 
     # -- losing the marble ----------------------------------------------
-    def _check_hazards(self):
+    def _check_hazards(self) -> None:
         """Ask the board's hazards whether any of them has taken the marble.
 
         A hazard destroys by holding rather than by striking, so there is no
@@ -249,7 +250,7 @@ class MarbleGame:
             if cause is not None:
                 self.controller.destroy(cause)
 
-    def _marble_lost(self, cause):
+    def _marble_lost(self, cause: Any) -> None:
         """Charge the run for a destroyed marble; end it if it cannot pay.
 
         The clock is the only thing a run spends, so this is what a trap costs:
@@ -262,7 +263,7 @@ class MarbleGame:
             self.state = LOST
             self.ended_by = cause
 
-    def reset(self):
+    def reset(self) -> None:
         """Abort the run: marble back to the start, clock full, playing again."""
         self.controller.checkpoint = self.level.start_cell
         self.controller._checkpoint_surface = self.level.cells[self.level.start_cell]
@@ -283,12 +284,12 @@ class MarbleGame:
         self._draw_lean()
 
     @property
-    def gates_left(self):
+    def gates_left(self) -> Any:
         """How many waypoints are still to be reached."""
         return len(self.gates)
 
     # -- live material change ------------------------------------------
-    def set_marble_material(self, name):
+    def set_marble_material(self, name: str) -> None:
         """Swap the marble's material live — both its look and its feel.
 
         Updates the body's physics material (so the pairwise friction with the
@@ -309,7 +310,7 @@ class MarbleGame:
         self.controller.marble_material = name
 
     # -- rendering ------------------------------------------------------
-    def _draw_lean(self):
+    def _draw_lean(self) -> None:
         """Point the board Transform at the lean, about the marble.
 
         Rotating about the marble rather than the world origin keeps the ball
@@ -320,7 +321,7 @@ class MarbleGame:
         self.board.rotation = self.tilt.board_rotation()
         self.board.center = tuple(self.scene.world.position[self.marble.index])
 
-    def scene_graph(self, extra=()):
+    def scene_graph(self, extra: Any=()) -> Any:
         """The full graph: the leaning board, the debug overlay, ``extra``, sky.
 
         Only the board leans.  The light and the background are outside it, so

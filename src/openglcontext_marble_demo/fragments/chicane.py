@@ -18,6 +18,8 @@ hurrying is the slow way through.
 Long legs make a lazy chicane and short ones a sharp one, which is the whole of
 the difference between the variants: ``leg`` is the time a player is given.
 """
+from typing import Any
+
 from openglcontext_marble_demo.fragments import fragment
 from openglcontext_marble_demo.pieces import LANE, Piece, Port, _lay, _ring
 
@@ -28,7 +30,9 @@ RULE = 'weave it in rhythm; too much speed and the walls have you'
 #: The three axes a variant bundles: material (the theme, which is grip as much
 #: as colour), layout (how long a leg is and which way the bends go) and effect
 #: (how soon the rhythm breaks, which is what the leg length sets).
-VARIANTS = {
+#: What each variant sets, by name. Values of every kind, which is what a
+#: variant is: the knob a fragment reads by that name.
+VARIANTS: dict[str, dict[str, Any]] = {
     'plain': {'theme': 'stone', 'leg': 4, 'bends': (3,)},
     'tight': {'theme': 'stone', 'leg': 3, 'bends': (3,)},
     'foundry': {'theme': 'foundry', 'leg': 4, 'bends': (-3,)},
@@ -38,7 +42,7 @@ VARIANTS = {
 
 @fragment('chicane', tags=('aim', 'speed'), cost=4.0, rule=RULE,
           variants=tuple(VARIANTS))
-def chicane(rng, entry, variant='plain', **named):
+def chicane(rng: Any, entry: Any, variant: Any='plain', **named: Any) -> Any:
     """A lane that steps across the board and back again.
 
     ``leg`` is how many cells of lane lie between one bend and the next, which
@@ -52,7 +56,7 @@ def chicane(rng, entry, variant='plain', **named):
     return _chicane(entry, theme=theme, **settings)
 
 
-def _chicane(entry, theme='stone', leg=4, bends=(3,), width=None):
+def _chicane(entry: Any, theme: Any='stone', leg: Any=4, bends: Any=(3,), width: Any=None) -> Any:
     width = entry.width if width is None else width
     across = entry.across()
     cells: dict = {}

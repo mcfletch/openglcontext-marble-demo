@@ -17,6 +17,7 @@ method, so adding a mechanism is adding a class — the level just lists it.
 """
 import math
 from dataclasses import dataclass, field
+from typing import Any
 
 import numpy as np
 from omi_physics import mathutil, model
@@ -33,14 +34,14 @@ CELL_SIZE = 4.0
 UP = np.array([0.0, 1.0, 0.0])
 
 
-def _world_direction(grid_dir):
+def _world_direction(grid_dir: Any) -> Any:
     """A grid ``(dcol, drow)`` step as a unit world vector in the XZ plane."""
     v = np.array([grid_dir[0], 0.0, grid_dir[1]], dtype='d')
     n = np.linalg.norm(v)
     return v / n if n else v
 
 
-def _spawn_kinematic_box(scene, size, position, color, material_index):
+def _spawn_kinematic_box(scene: Any, size: Any, position: Any, color: Any, material_index: Any) -> Any:
     """Add a kinematic box to a ``DemoScene`` (render Transform + physics body).
 
     ``DemoScene`` only exposes static/dynamic bodies, so elevators and arms build
@@ -75,10 +76,10 @@ class Finish:
     """The goal pad: a sensor over one cell that ends the run on overlap."""
     cell: tuple[int, int]
 
-    def owned_cells(self):
+    def owned_cells(self) -> Any:
         return set()
 
-    def build(self, scene, level, index, result):
+    def build(self, scene: Any, level: Any, index: Any, result: Any) -> None:
         x, z = level.cell_center(self.cell)
         surface = level.cells[self.cell]
         # A trigger box is invisible, so lay a glowing pad on the cell to mark the
@@ -112,10 +113,10 @@ class Gate:
     cell: tuple[int, int]
     order: int = 0
 
-    def owned_cells(self):
+    def owned_cells(self) -> Any:
         return set()
 
-    def build(self, scene, level, index, result):
+    def build(self, scene: Any, level: Any, index: Any, result: Any) -> None:
         x, z = level.cell_center(self.cell)
         surface = level.cells[self.cell]
         colour = (0.95, 0.75, 0.15)
@@ -157,10 +158,10 @@ class Ramp:
     #: there so that nothing arriving fast passes through it.
     THICKNESS = 0.4
 
-    def owned_cells(self):
+    def owned_cells(self) -> Any:
         return {self.cell}
 
-    def build(self, scene, level, index, result):
+    def build(self, scene: Any, level: Any, index: Any, result: Any) -> None:
         x, z = level.cell_center(self.cell)
         base = level.cells[self.cell]
         cs = level.cell_size
@@ -197,10 +198,10 @@ class Ramp:
         result.feature_bodies.append(trigger)
         result.effects[trigger.index] = self._boost_effect(wdir)
 
-    def _boost_effect(self, wdir):
+    def _boost_effect(self, wdir: Any) -> Any:
         boost_speed, launch, launch_up = self.boost_speed, self.launch, self.launch_up
 
-        def effect(world, marble):
+        def effect(world: Any, marble: Any) -> None:
             mass = world.mass[marble]
             if boost_speed is not None:
                 along = float(np.dot(world.linear_velocity[marble], wdir))
@@ -222,10 +223,10 @@ class Wall:
 
     _OFFSET = {"N": (0, -1), "S": (0, 1), "E": (1, 0), "W": (-1, 0)}
 
-    def owned_cells(self):
+    def owned_cells(self) -> Any:
         return set()
 
-    def build(self, scene, level, index, result):
+    def build(self, scene: Any, level: Any, index: Any, result: Any) -> None:
         x, z = level.cell_center(self.cell)
         base = level.cells[self.cell]
         cs = level.cell_size
@@ -244,7 +245,7 @@ class Wall:
         result.feature_bodies.append(body)
 
 
-def _ramp_color(launch):
+def _ramp_color(launch: Any) -> Any:
     return (0.85, 0.45, 0.2) if launch else (0.5, 0.55, 0.62)
 
 
@@ -257,13 +258,13 @@ class Bumper:
     simply a static body of ``rubber_pad``.
     """
     cell: tuple[int, int]
-    radius: float = 0.4
+    radius: Any = 0.4
     height: float = 0.9
 
-    def owned_cells(self):
+    def owned_cells(self) -> Any:
         return set()
 
-    def build(self, scene, level, index, result):
+    def build(self, scene: Any, level: Any, index: Any, result: Any) -> None:
         x, z = level.cell_center(self.cell)
         base = level.cells[self.cell]
         body = scene.add_box(size=(self.radius * 2, self.height, self.radius * 2),
@@ -287,10 +288,10 @@ class SpringTrap:
     impulse: tuple[float, float, float] = (0.0, 8.0, 0.0)
     rearm: float = 1.5
 
-    def owned_cells(self):
+    def owned_cells(self) -> Any:
         return set()
 
-    def build(self, scene, level, index, result):
+    def build(self, scene: Any, level: Any, index: Any, result: Any) -> None:
         x, z = level.cell_center(self.cell)
         base = level.cells[self.cell]
         pad_size = 1.4          # a small pad, not a cell-wide plate
@@ -305,12 +306,12 @@ class SpringTrap:
         result.feature_bodies.append(trigger)
         result.effects[trigger.index] = self._effect()
 
-    def _effect(self):
+    def _effect(self) -> Any:
         delta_v = np.asarray(self.impulse, dtype='d')
         rearm = self.rearm
         state = {"last": -1e9}
 
-        def effect(world, marble):
+        def effect(world: Any, marble: Any) -> None:
             if world.time - state["last"] >= rearm:
                 world.apply_impulse(marble, delta_v * world.mass[marble])
                 state["last"] = world.time
@@ -325,10 +326,10 @@ class Elevator:
     period: float = 3.0
     thickness: float = 0.5
 
-    def owned_cells(self):
+    def owned_cells(self) -> Any:
         return {self.cell}          # replaces the flat tile with the moving platform
 
-    def build(self, scene, level, index, result):
+    def build(self, scene: Any, level: Any, index: Any, result: Any) -> None:
         x, z = level.cell_center(self.cell)
         base = level.cells[self.cell]
         size = (level.cell_size * 0.9, self.thickness, level.cell_size * 0.9)
@@ -337,7 +338,7 @@ class Elevator:
                                     (0.3, 0.7, 0.85), index[level.surface])
         travel, period, y0 = self.travel, self.period, base - top_offset
 
-        def pose(t):
+        def pose(t: float) -> Any:
             rise = travel * 0.5 * (1.0 - math.cos(2.0 * math.pi * t / period))
             return (x, y0 + rise, z), (0.0, 0.0, 0.0, 1.0)
 
@@ -354,10 +355,10 @@ class RotatingArm:
     thickness: float = 0.3
     clearance: float = 0.3          # how high the bar floats above the surface
 
-    def owned_cells(self):
+    def owned_cells(self) -> Any:
         return set()                # sweeps above the tile; the tile stays
 
-    def build(self, scene, level, index, result):
+    def build(self, scene: Any, level: Any, index: Any, result: Any) -> None:
         x, z = level.cell_center(self.cell)
         base = level.cells[self.cell]
         y = base + self.clearance + self.thickness / 2.0
@@ -366,7 +367,7 @@ class RotatingArm:
                                     (0.9, 0.6, 0.15), index[level.surface])
         rate = self.rpm * 2.0 * math.pi / 60.0   # rad/s
 
-        def pose(t):
+        def pose(t: float) -> Any:
             quat = mathutil.quat_from_axis_angle((0.0, 1.0, 0.0), rate * t)
             return (x, y, z), tuple(quat)
 
@@ -421,7 +422,9 @@ class Level:
     start_cell: tuple[int, int]
     finish_cell: tuple[int, int]
     time_limit: float
-    features: list[object] = field(default_factory=list)
+    #: The mechanisms on this board. Every one answers `owned_cells` and
+    #: `build`; what else it is is its own, and a level never asks.
+    features: list[Any] = field(default_factory=list)
     cell_size: float = CELL_SIZE
     #: The height below which a marble counts as having left the world.  Set
     #: from the board in :meth:`__post_init__` unless it is given something
@@ -436,7 +439,7 @@ class Level:
     seed: int | None = None
     difficulty: int = 1
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         # The kill plane goes under the board, however deep the board goes.  A
         # constant put it at -8 metres, and a board that descends 0.9 m a cell
         # passes that after nine cells of slope: measured over twelve generated
@@ -449,18 +452,18 @@ class Level:
             self.kill_y = min(self.kill_y,
                               min(self.cells.values()) - KILL_MARGIN)
 
-    def surface_of(self, cell):
+    def surface_of(self, cell: Any) -> Any:
         return self.cell_surfaces.get(cell, self.surface)
 
-    def cell_center(self, cell):
+    def cell_center(self, cell: Any) -> Any:
         col, row = cell
         return (col * self.cell_size, row * self.cell_size)
 
-    def track_map(self):
+    def track_map(self) -> Any:
         return TrackMap(self.cells, cell_size=self.cell_size,
                         rails=self.rails())
 
-    def rails(self):
+    def rails(self) -> Any:
         """Every ``(cell, step)`` a wall of this level stands across.
 
         The board's own answer to "can the marble leave this cell that way",
@@ -471,12 +474,12 @@ class Level:
             (feature.cell, Wall._OFFSET[feature.side])
             for feature in self.features if isinstance(feature, Wall))
 
-    def marble_start(self, radius=0.5):
+    def marble_start(self, radius: Any=0.5) -> Any:
         """World position a marble of ``radius`` rests at over the start cell."""
         x, z = self.cell_center(self.start_cell)
         return (x, self.cells[self.start_cell] + radius + 0.1, z)
 
-    def build_into(self, scene, index):
+    def build_into(self, scene: Any, index: Any) -> Any:
         """Create floor tiles + features in ``scene``; return a :class:`BuildResult`."""
         # One shared grouted tile mesh (not the Box primitive — it supplies the
         # tangents the normal map needs) and a per-surface cached appearance.

@@ -10,6 +10,8 @@ A variant is a bundle of the three axes: **material** (the theme, which is grip
 as much as colour), **layout** (the shape), and **effect** (what it does to a
 marble that gets it wrong).
 """
+from typing import Any
+
 from openglcontext_marble_demo import pieces
 from openglcontext_marble_demo.fragments import fragment
 
@@ -57,9 +59,9 @@ _SCATTER = {
 }
 
 
-def _wrap(builder, table):
+def _wrap(builder: Any, table: Any) -> Any:
     """Turn one of the original builders into a fragment that takes a variant."""
-    def build(rng, entry, variant='plain', **named):
+    def build(rng: Any, entry: Any, variant: Any='plain', **named: Any) -> Any:
         settings = dict(table[variant])
         settings.update(named)
         return builder(rng, entry, **settings)

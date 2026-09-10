@@ -25,6 +25,7 @@ a pair is a shareable, reproducible board.
     True
 """
 import random
+from typing import Any
 
 from . import boards
 from .level import (
@@ -66,11 +67,11 @@ _HAZARDS = (Bumper, SpringTrap, RotatingArm)
 _PATCH_SURFACES = ("ice_sheet", "metal", "rubber_pad")
 
 
-def _tier(difficulty, ladder):
+def _tier(difficulty: Any, ladder: Any) -> Any:
     return ladder[max(0, min(int(difficulty) - 1, len(ladder) - 1))]
 
 
-def generate(seed=0, difficulty=1, cell_size=CELL_SIZE):
+def generate(seed: int=0, difficulty: Any=1, cell_size: float=CELL_SIZE) -> Any:
     """Return a reproducible :class:`~openglcontext_marble_demo.level.Level`."""
     rng = random.Random(seed * 1000 + difficulty)
     board = boards.build(rng, length=_tier(difficulty, SPINE_LENGTH),
@@ -102,10 +103,10 @@ def generate(seed=0, difficulty=1, cell_size=CELL_SIZE):
 
 # -- decoration ----------------------------------------------------------
 
-def _decorate(rng, board, difficulty):
+def _decorate(rng: Any, board: Any, difficulty: Any) -> Any:
     """Ramps and mechanisms, placed strand by strand and checked as they go."""
     features = []
-    blocked = set()
+    blocked: set[Any] = set()
     spared = {board.start, board.finish}
     # The cells next to the start and the finish are spared too: a hazard the
     # marble meets before it is moving, or on the pad, is not a decision.
@@ -139,12 +140,12 @@ def _decorate(rng, board, difficulty):
 class _Density:
     """How thickly a strand is decorated: hazards, and speed ramps."""
 
-    def __init__(self, hazard, ramp):
+    def __init__(self, hazard: Any, ramp: Any) -> None:
         self.hazard = hazard
         self.ramp = ramp
 
 
-def _density(strand, difficulty):
+def _density(strand: Any, difficulty: Any) -> Any:
     """A shortcut earns its saving with hazards; everything else stays passable.
 
     This is the whole risk/reward statement, and it is one line: the strand that
@@ -157,17 +158,17 @@ def _density(strand, difficulty):
     return _Density(hazard=0.02 + 0.10 * difficulty, ramp=0.12 + 0.02 * difficulty)
 
 
-def _breathing_room(difficulty):
+def _breathing_room(difficulty: Any) -> Any:
     """Cells left alone after a hazard, so an easy board is not a gauntlet."""
     return max(1, 4 - difficulty // 2)
 
 
-def _keeps_a_clean_line(board, blocked, cell):
+def _keeps_a_clean_line(board: Any, blocked: Any, cell: Any) -> Any:
     """Whether blocking ``cell`` too still leaves a hazard-free way through."""
     return board.route_exists(blocked | {cell})
 
 
-def _ramp(rng, board, cell, heading, difficulty):
+def _ramp(rng: Any, board: Any, cell: Any, heading: Any, difficulty: Any) -> Any:
     """A speed ramp, or a launch ramp where there is board ahead to land on."""
     ahead = (cell[0] + heading[0] * 2, cell[1] + heading[1] * 2)
     launch = ahead in board.cells and rng.random() < 0.25 + 0.03 * difficulty
@@ -176,7 +177,7 @@ def _ramp(rng, board, cell, heading, difficulty):
                 boost_speed=7.0 if launch else 9.0)
 
 
-def _mechanism(rng, cell, heading, difficulty):
+def _mechanism(rng: Any, cell: Any, heading: Any, difficulty: Any) -> Any:
     """Pick a mechanism, weighted toward the ones there is room to dodge."""
     kind = rng.choices(("bumper", "spring", "arm", "elevator"),
                        weights=(3, 2, 2, 1))[0]
@@ -191,7 +192,7 @@ def _mechanism(rng, cell, heading, difficulty):
     return Elevator(cell=cell, travel=2.0 + 0.3 * difficulty, period=3.0)
 
 
-def _rails(rng, board, strand):
+def _rails(rng: Any, board: Any, strand: Any) -> Any:
     """Low walls along the odd cell edge that faces the void.
 
     A rail is not an obstacle: it faces outward, so it keeps a marble on the
@@ -208,7 +209,7 @@ def _rails(rng, board, strand):
     return rails
 
 
-def _surface_patches(rng, board, difficulty):
+def _surface_patches(rng: Any, board: Any, difficulty: Any) -> Any:
     """Short runs of ice/metal/rubber along the strands, for grip and for looks."""
     surfaces = {}
     chance = 0.10 + 0.03 * difficulty
@@ -227,11 +228,11 @@ def _surface_patches(rng, board, difficulty):
     return surfaces
 
 
-def _step(a, b):
+def _step(a: Any, b: Any) -> Any:
     return (b[0] - a[0], b[1] - a[1])
 
 
-def _void_side(cell, cells, rng):
+def _void_side(cell: Any, cells: Any, rng: Any) -> Any:
     """A cardinal side of ``cell`` facing the void, or ``None`` if fully enclosed."""
     col, row = cell
     sides = [d for d in _SIDE_OF if (col + d[0], row + d[1]) not in cells]

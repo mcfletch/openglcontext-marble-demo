@@ -27,6 +27,7 @@ the flap.
 """
 import math
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 from omi_physics import mathutil, model
@@ -87,10 +88,10 @@ class Water:
     rim: float = 0.3
     plug_thickness: float = 0.25
 
-    def owned_cells(self):
+    def owned_cells(self) -> Any:
         return {self.cell}
 
-    def site(self, level):
+    def site(self, level: Any) -> Any:
         """Where this pool is in world units, given the level it belongs to."""
         x, z = level.cell_center(self.cell)
         surface = level.cells[self.cell]
@@ -98,7 +99,7 @@ class Water:
                      span=level.cell_size - 2.0 * self.rim,
                      cell_size=level.cell_size)
 
-    def build(self, scene, level, index, result):
+    def build(self, scene: Any, level: Any, index: Any, result: Any) -> None:
         site = self.site(level)
         material = index[level.surface]
         self._build_rim(scene, site, material, result)
@@ -107,7 +108,7 @@ class Water:
         self._build_plug(scene, site, material, result)
 
     # -- the parts ------------------------------------------------------
-    def _build_rim(self, scene, site, material, result):
+    def _build_rim(self, scene: Any, site: Any, material: Any, result: Any) -> None:
         """Four static walls inside the cell edges, tops flush with the floor around.
 
         They are what keeps the marble in the pool rather than dropping out of the
@@ -127,7 +128,7 @@ class Water:
                 RIM_COLOR, metallic=0.1, roughness=0.7)
             result.feature_bodies.append(body)
 
-    def _build_water(self, scene, site):
+    def _build_water(self, scene: Any, site: Any) -> None:
         """The water itself: a translucent column, drawn and not collided with."""
         column = basenodes.Box(size=(site.span, self.depth, site.span))
         appearance = basenodes.Appearance(material=PBRMaterial(
@@ -137,7 +138,7 @@ class Water:
             translation=(site.x, site.middle, site.z),
             children=[basenodes.Shape(geometry=column, appearance=appearance)]))
 
-    def _build_pool(self, scene, site, result):
+    def _build_pool(self, scene: Any, site: Any, result: Any) -> None:
         """The volume that does the sinking, and the :class:`_Pool` behind it."""
         half = site.span / 2.0
         pool = _Pool(scene.world,
@@ -151,7 +152,7 @@ class Water:
         result.feature_bodies.append(trigger)
         result.animators.append(pool)
 
-    def _build_plug(self, scene, site, material, result):
+    def _build_plug(self, scene: Any, site: Any, material: Any, result: Any) -> None:
         """The flap, its hinge animation, and the trigger that lets it go."""
         plug = _Plug(hinge=(site.x - site.span / 2.0,
                             site.floor - self.plug_thickness / 2.0, site.z),
@@ -183,7 +184,7 @@ class _Site:
     cell_size: float
 
     @property
-    def middle(self):
+    def middle(self) -> Any:
         """Half way down, where anything spanning the whole depth is centred."""
         return (self.surface + self.floor) / 2.0
 
@@ -199,8 +200,8 @@ class _Pool:
     drag back.
     """
 
-    def __init__(self, world, low, high, gravity_factor, damping,
-                 margin=DRY_MARGIN):
+    def __init__(self, world: Any, low: Any, high: Any, gravity_factor: Any, damping: Any,
+                 margin: Any=DRY_MARGIN) -> None:
         self.world = world
         self.low = np.asarray(low, dtype='d') - margin
         self.high = np.asarray(high, dtype='d') + margin
@@ -209,7 +210,7 @@ class _Pool:
         #: body index -> the gravity factor and damping it arrived with.
         self.held: dict[int, tuple[float, float]] = {}
 
-    def take(self, world, body):
+    def take(self, world: Any, body: Any) -> None:
         """Slow ``body`` down, remembering what it was before the water had it."""
         if body in self.held:
             return
@@ -218,11 +219,11 @@ class _Pool:
         world.gravity_factor[body] = self.gravity_factor
         world.linear_damping[body] = self.damping
 
-    def holds(self, position):
+    def holds(self, position: Any) -> Any:
         """True while ``position`` is inside the pool, plus the dry margin."""
         return bool(np.all(position >= self.low) and np.all(position <= self.high))
 
-    def update(self, dt):
+    def update(self, dt: float) -> None:
         """Give back what the water took from anything that has left it."""
         for body in [b for b in self.held if not self.holds(self.world.position[b])]:
             gravity_factor, damping = self.held.pop(body)
@@ -241,32 +242,33 @@ class _Plug:
     animator is actually given.
     """
 
-    def __init__(self, hinge, reach, duration):
+    def __init__(self, hinge: Any, reach: Any, duration: Any) -> None:
         self.hinge = tuple(float(v) for v in hinge)
         self.reach = float(reach)
         self.duration = float(duration)
-        self.released_at = None
+        #: When the gate last let go, or None while it is shut.
+        self.released_at: float | None = None
         self._now = 0.0
 
-    def reset(self, world=None):
+    def reset(self, world: Any=None) -> None:
         """Shut the flap again, so a restarted run meets the same surprise."""
         self.released_at = None
 
-    def release(self, world, body):
+    def release(self, world: Any, body: Any) -> None:
         """Let the flap go, and wake the body that reached it so it feels the drop."""
         if self.released_at is None:
             self.released_at = self._now
         world.wake(body)
 
     @property
-    def angle(self):
+    def angle(self) -> Any:
         """How far open the flap is, in radians, from shut to a quarter turn."""
         if self.released_at is None:
             return 0.0
         share = (self._now - self.released_at) / self.duration
         return math.pi / 2.0 * min(1.0, max(0.0, share))
 
-    def pose(self, t):
+    def pose(self, t: float) -> Any:
         """Where the flap is at animator time ``t``: ``(position, quaternion)``."""
         self._now = t
         angle = self.angle
@@ -275,7 +277,7 @@ class _Plug:
                 tuple(mathutil.quat_from_axis_angle((0.0, 0.0, 1.0), -angle)))
 
 
-def _kinematic_box(scene, size, position, color, material_index):
+def _kinematic_box(scene: Any, size: Any, position: Any, color: Any, material_index: Any) -> Any:
     """Add a kinematic box to a ``DemoScene``: render Transform plus physics body.
 
     ``DemoScene`` offers static and dynamic bodies; a flap the mechanism drives

@@ -21,6 +21,7 @@ which is the whole point of a decision that cannot be taken back.
     True
 """
 import math
+from typing import Any
 
 from openglcontext_marble_demo.fragments import fragment
 from openglcontext_marble_demo.mechanisms.collapse import Collapse
@@ -32,7 +33,9 @@ RULE = 'cross it moving; stop on it and the floor is gone for good'
 
 #: Material, layout and effect: what the floor is made of, how many tiles of it
 #: there are, and how long it bears weight before it gives.
-VARIANTS = {
+#: What each variant sets, by name. Values of every kind, which is what a
+#: variant is: the knob a fragment reads by that name.
+VARIANTS: dict[str, dict[str, Any]] = {
     'plain':   {'theme': 'stone',   'length': 2, 'hold_time': 0.9, 'below': 1.8},
     'quick':   {'theme': 'ice',     'length': 1, 'hold_time': 0.5, 'below': 1.8},
     'foundry': {'theme': 'foundry', 'length': 3, 'hold_time': 1.5, 'below': 2.7},
@@ -40,7 +43,7 @@ VARIANTS = {
 }
 
 
-def _steps(cells, port, drop, width):
+def _steps(cells: Any, port: Any, drop: Any, width: Any) -> Any:
     """Cells stepping down by at most :data:`MAX_STEP` each, unramped.
 
     A stepped slope rolls downhill and cannot be climbed -- a riser is a wall
@@ -64,8 +67,8 @@ def _steps(cells, port, drop, width):
 
 @fragment('collapse', tags=('hazard', 'gate'), rule=RULE, cost=5.0,
           variants=tuple(VARIANTS))
-def collapse(rng, entry, variant='plain', theme=None, length=None, hold_time=None,
-            below=None):
+def collapse(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, length: Any=None, hold_time: Any=None,
+            below: Any=None) -> Any:
     """An approach, a floor that only holds a moment, and a way down past it."""
     settings = dict(VARIANTS[variant])
     theme = theme or settings['theme']

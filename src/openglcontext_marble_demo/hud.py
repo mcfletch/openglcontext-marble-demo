@@ -7,6 +7,7 @@ and shader text renderer).  Keeping the content pure means the interesting logic
 tested without a window.
 """
 import math
+from typing import Any
 
 from OpenGLContext.scenegraph.text.shadertext import get_text_renderer
 
@@ -15,7 +16,7 @@ from .game import LOST, PLAYING, WON
 URGENT_TIME = 4.0            # seconds remaining below which the clock turns red
 
 
-def hud_lines(game):
+def hud_lines(game: Any) -> Any:
     """The lines drawn in the top-right corner.
 
     The clock, how fast the marble is going, what it is made of, how many times
@@ -42,11 +43,11 @@ def hud_lines(game):
     return lines
 
 
-def time_is_urgent(game):
+def time_is_urgent(game: Any) -> Any:
     return game.state == PLAYING and game.time_left <= URGENT_TIME
 
 
-def banner(game):
+def banner(game: Any) -> Any:
     """A big center message: the end of the run, or the marble just lost.
 
     A trap the player cannot name is a trap they cannot learn, so a destroyed
@@ -71,13 +72,13 @@ class HUD:
     :meth:`render` from a context's ``renderShaderOverlay(flatpass)`` hook.
     """
 
-    def __init__(self, game, font_size=20, banner_size=34):
+    def __init__(self, game: Any, font_size: Any=20, banner_size: Any=34) -> None:
         self.game = game
         self._text = get_text_renderer(font_size)
         self._banner = get_text_renderer(banner_size)
         self.margin = 14
 
-    def render(self, flatpass, context):
+    def render(self, flatpass: Any, context: Any) -> None:
         width, height = context.getViewPort()
         if not width or not height:
             return
@@ -85,7 +86,7 @@ class HUD:
         self._draw_status(shader, width, height)
         self._draw_banner(shader, width, height)
 
-    def _draw_status(self, shader, width, height):
+    def _draw_status(self, shader: Any, width: Any, height: Any) -> None:
         lines = hud_lines(self.game)
         line_h = self._text.char_height * 1.2
         # Top-right, stacked downward, inset by the width of the longest line
@@ -102,7 +103,7 @@ class HUD:
                                    viewport_width=width, viewport_height=height,
                                    color=color, background_color=(0.05, 0.06, 0.08, 0.6))
 
-    def _draw_banner(self, shader, width, height):
+    def _draw_banner(self, shader: Any, width: Any, height: Any) -> None:
         message = banner(self.game)
         if message is None:
             return

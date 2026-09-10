@@ -33,7 +33,9 @@ not exist when the level was built.
     >>> mechanisms.registry()['updraft'] is Updraft
     True
 """
+from collections.abc import Sequence
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 from OpenGLContext.scenegraph import basenodes
@@ -57,7 +59,7 @@ class UpdraftLift:
     per frame before the world steps.
     """
 
-    def __init__(self, world, cells, cell_size, floor, reach, strength):
+    def __init__(self, world: Any, cells: Any, cell_size: float, floor: Any, reach: Any, strength: Any) -> None:
         self.world = world
         self.floor = float(floor)
         self.top = float(floor) + float(reach)
@@ -70,13 +72,13 @@ class UpdraftLift:
         self._north = min(rows) * cell_size - half
         self._south = max(rows) * cell_size + half
 
-    def holds(self, point):
+    def holds(self, point: Any) -> Any:
         """Is world ``point`` inside the shaft's footprint and its reach?"""
         x, y, z = point[0], point[1], point[2]
         return (self._west <= x <= self._east and self._north <= z <= self._south
                 and self.floor <= y <= self.top)
 
-    def bodies_in_reach(self):
+    def bodies_in_reach(self) -> Any:
         """The indices of the dynamic bodies currently inside the shaft.
 
         One vector pass over the body arrays, in the manner of
@@ -94,7 +96,7 @@ class UpdraftLift:
                 & (y >= self.floor) & (y <= self.top))
         return [int(index) for index in np.flatnonzero(near)]
 
-    def update(self, dt=0.0):
+    def update(self, dt: float=0.0) -> None:
         """Apply one frame of lift to everything inside the shaft."""
         if not dt:
             return
@@ -121,20 +123,23 @@ class Updraft:
     it is not claiming a cell's tile, it is a field over cells nothing ever laid
     one for.
     """
-    cells: tuple[tuple[int, int], ...]
+    #: The cells this covers, as `(col, row)` pairs. Taken as any sequence
+    #: of them, because a level gives tuples and a file gives back lists;
+    #: `__post_init__` settles it to tuples so the two are one board.
+    cells: Sequence[Sequence[int]]
     strength: float = 7.5
     floor: float = -6.0
     reach: float = 7.5
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         # A file gives back lists where a level gave tuples; one spelling here
         # means a board that has been through the file format is the same board.
         self.cells = tuple((int(col), int(row)) for col, row in self.cells)
 
-    def owned_cells(self):
+    def owned_cells(self) -> Any:
         return set()
 
-    def build(self, scene, level, index, result):
+    def build(self, scene: Any, level: Any, index: Any, result: Any) -> None:
         if not self.cells:
             return
         self._draw(scene, level)
@@ -142,7 +147,7 @@ class Updraft:
             scene.world, self.cells, level.cell_size, self.floor, self.reach,
             self.strength))
 
-    def _draw(self, scene, level):
+    def _draw(self, scene: Any, level: Any) -> None:
         """A translucent column over the shaft, drawn and never collided with.
 
         Built the way :class:`~openglcontext_marble_demo.mechanisms.water.Water`

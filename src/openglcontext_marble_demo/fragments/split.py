@@ -16,6 +16,8 @@ just as well, and is how a board rewards the plank with more than time.
 The room in front of the fork is walled on every side but the way in and the two
 ways out, so a marble that takes neither ends up back in front of them.
 """
+from typing import Any
+
 from openglcontext_marble_demo import pieces
 from openglcontext_marble_demo.fragments import fragment
 from openglcontext_marble_demo.pieces import Piece, Port
@@ -28,7 +30,9 @@ FORK = 3
 
 #: Variants: the material, how long the plank is, and how far round the long way
 #: goes in cells sideways.
-_VARIANTS = {
+#: What each variant sets, by name. Values of every kind, which is what a
+#: variant is: the knob a fragment reads by that name.
+_VARIANTS: dict[str, dict[str, Any]] = {
     'plain': {'theme': 'stone', 'plank': 4, 'detour': 5},
     'long': {'theme': 'stone', 'plank': 6, 'detour': 6},
     'foundry': {'theme': 'foundry', 'plank': 4, 'detour': 8},
@@ -43,8 +47,8 @@ MIN_DETOUR = 4
 @fragment('split', tags=('aim', 'place'), cost=5.0,
           rule='take the plank or pay for the long way round',
           variants=tuple(_VARIANTS))
-def split(rng, entry, variant='plain', theme=None, plank=None, detour=None,
-          side=None):
+def split(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, plank: Any=None, detour: Any=None,
+          side: Any=None) -> Any:
     """A room with two ways out: ``ok`` over the plank, ``long`` round the side.
 
     ``side`` is which way round the long one goes, ``1`` or ``-1`` across the

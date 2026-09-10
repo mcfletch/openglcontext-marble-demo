@@ -18,6 +18,8 @@ have crossed it.
     >>> 'ok' in piece.exits
     True
 """
+from typing import Any
+
 from openglcontext_marble_demo.fragments import fragment
 from openglcontext_marble_demo.level import Ramp
 from openglcontext_marble_demo.pieces import LANE, Piece, Port, _lay, _rails
@@ -29,7 +31,9 @@ RULE = 'the belt sets the speed you leave at, however you arrived'
 #: ``speed`` is what the belt brings a marble up to, in metres a second, and
 #: ``length`` how many cells of it there are.  A longer belt is not faster; it is
 #: more ground spent on being sure.
-VARIANTS = {
+#: What each variant sets, by name. Values of every kind, which is what a
+#: variant is: the knob a fragment reads by that name.
+VARIANTS: dict[str, dict[str, Any]] = {
     'plain': {'theme': 'foundry', 'speed': 12.0, 'length': 4},
     'fast': {'theme': 'foundry', 'speed': 18.0, 'length': 4},
     'long': {'theme': 'stone', 'speed': 12.0, 'length': 7},
@@ -39,7 +43,7 @@ VARIANTS = {
 
 @fragment('conveyor', tags=('speed', 'run-up'), rule=RULE, cost=4.0,
           variants=tuple(VARIANTS))
-def conveyor(rng, entry, variant='plain', theme=None, speed=None, length=None):
+def conveyor(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, speed: Any=None, length: Any=None) -> Any:
     """A run of boosting tiles along the lane, walled both sides."""
     settings = dict(VARIANTS[variant])
     theme = theme or settings['theme']

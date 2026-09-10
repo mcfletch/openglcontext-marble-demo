@@ -18,6 +18,8 @@ with a force painted on.
     >>> 'ok' in piece.exits
     True
 """
+from typing import Any
+
 from openglcontext_marble_demo.fragments import fragment
 from openglcontext_marble_demo.mechanisms.magnet import Magnet
 from openglcontext_marble_demo.pieces import LANE, Piece, Port, _lay, _rails
@@ -36,7 +38,9 @@ RULE = 'lean away from the posts, or be walked into the wall'
 #: cell size is 8 metres, so a reach short of that is a field the lane never
 #: enters and a piece that does nothing.  Twelve leaves 3 m/s/s of pull on the
 #: middle line at the plain strength, and the full 9 against the wall.
-VARIANTS = {
+#: What each variant sets, by name. Values of every kind, which is what a
+#: variant is: the knob a fragment reads by that name.
+VARIANTS: dict[str, dict[str, Any]] = {
     'plain': {'theme': 'foundry', 'posts': 3, 'spacing': 3, 'strength': 9.0,
               'reach': 12.0, 'repel': False},
     'strong': {'theme': 'foundry', 'posts': 3, 'spacing': 3, 'strength': 14.0,
@@ -50,8 +54,8 @@ VARIANTS = {
 
 @fragment('lodestone', tags=('aim',), rule=RULE, cost=5.0,
           variants=tuple(VARIANTS))
-def lodestone(rng, entry, variant='plain', theme=None, posts=None, spacing=None,
-              strength=None, reach=None, repel=None):
+def lodestone(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, posts: Any=None, spacing: Any=None,
+              strength: Any=None, reach: Any=None, repel: Any=None) -> Any:
     """A walled run with magnets set alternately down either side of it."""
     settings = dict(VARIANTS[variant])
     theme = theme or settings['theme']

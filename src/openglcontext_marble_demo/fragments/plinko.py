@@ -18,6 +18,8 @@ next chapter's business.
     >>> 'ok' in piece.exits
     True
 """
+from typing import Any
+
 from openglcontext_marble_demo.fragments import fragment
 from openglcontext_marble_demo.mechanisms.pegs import PegBoard
 from openglcontext_marble_demo.pieces import LANE, Piece, Port, _lay, _rails
@@ -28,7 +30,9 @@ RULE = 'aim for the fast slot; the pegs will argue about it'
 
 #: ``width`` is how many slots, ``length`` how many rows of pegs, ``drop`` how
 #: far the board falls over them, and ``fast_slot`` which slot pays.
-VARIANTS = {
+#: What each variant sets, by name. Values of every kind, which is what a
+#: variant is: the knob a fragment reads by that name.
+VARIANTS: dict[str, dict[str, Any]] = {
     'plain': {'theme': 'foundry', 'width': 3, 'length': 4, 'drop': 3.5,
               'fast_slot': 1},
     'broad': {'theme': 'foundry', 'width': 5, 'length': 5, 'drop': 4.5,
@@ -42,8 +46,8 @@ VARIANTS = {
 
 @fragment('plinko', tags=('luck', 'speed'), rule=RULE, cost=4.0,
           variants=tuple(VARIANTS))
-def plinko(rng, entry, variant='plain', theme=None, width=None, length=None,
-           drop=None, fast_slot=None):
+def plinko(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, width: Any=None, length: Any=None,
+           drop: Any=None, fast_slot: Any=None) -> Any:
     """A mouth, a peg board, and a landing that gathers the slots back."""
     settings = dict(VARIANTS[variant])
     theme = theme or settings['theme']

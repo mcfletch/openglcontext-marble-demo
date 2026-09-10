@@ -44,6 +44,8 @@ story can afford to send the two exits somewhere genuinely different.
     >>> sorted(piece.exits)
     ['ok', 'short']
 """
+from typing import Any
+
 from openglcontext_marble_demo.level import Ramp, Wall
 from openglcontext_marble_demo.pieces import _SIDE_OF, LANE, Piece, Port, _lay, _rails
 
@@ -70,7 +72,9 @@ RISE = 0.9
 #: the last lane is always the one that goes furthest and stays open.  ``rows``
 #: is sized against the distance a lane throws a marble at up to 12 m/s, so
 #: nothing built here throws a marble past its own far wall.
-VARIANTS = {
+#: What each variant sets, by name. Values of every kind, which is what a
+#: variant is: the knob a fragment reads by that name.
+VARIANTS: dict[str, dict[str, Any]] = {
     'twin': {'theme': 'stone',
              'lanes': ((0.20, 6), (0.45, 8))},
     'triple': {'theme': 'foundry',
@@ -84,7 +88,7 @@ VARIANTS = {
 
 @fragment('cannon', tags=('aim', 'speed'), rule=RULE, cost=6.0,
           variants=tuple(VARIANTS))
-def cannon(rng, entry, variant='twin', theme=None, lanes=None):
+def cannon(rng: Any, entry: Any, variant: Any='twin', theme: Any=None, lanes: Any=None) -> Any:
     """A mouth, one launch ramp per lane, and a wall behind every lane but the
     strongest.
 

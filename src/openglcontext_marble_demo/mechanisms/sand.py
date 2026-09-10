@@ -30,7 +30,9 @@ damping to where that body is, which is what lets it work on a marble that did
 not exist when the level was built -- the game spawns the marble after the
 level, and swaps it for another mid-run.
 """
+from collections.abc import Sequence
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 
@@ -61,7 +63,7 @@ class SandDrag:
     for the few bodies actually near the sand.
     """
 
-    def __init__(self, world, ceilings, cell_size, linear_drag, angular_drag):
+    def __init__(self, world: Any, ceilings: Any, cell_size: float, linear_drag: Any, angular_drag: Any) -> None:
         self.world = world
         self.ceilings = dict(ceilings)
         self.cell_size = float(cell_size)
@@ -78,7 +80,7 @@ class SandDrag:
         self._south = max(rows) * self.cell_size + half
         self._top = max(self.ceilings.values())
 
-    def holds(self, point):
+    def holds(self, point: Any) -> Any:
         """Is world ``point`` down in the sand?
 
         The cell edge is the whole of the boundary: a hand's breadth outside it,
@@ -89,7 +91,7 @@ class SandDrag:
         ceiling = self.ceilings.get(cell)
         return ceiling is not None and y < ceiling
 
-    def bodies_inside(self):
+    def bodies_inside(self) -> Any:
         """The indices of the dynamic bodies currently in the sand."""
         world = self.world
         position = world.position
@@ -101,7 +103,7 @@ class SandDrag:
                 & (z >= self._north) & (z <= self._south))
         return [int(i) for i in np.flatnonzero(near) if self.holds(position[i])]
 
-    def update(self, dt=0.0):
+    def update(self, dt: float=0.0) -> None:
         """Match each body's damping to whether it is in the sand this frame."""
         inside = set(self.bodies_inside())
         for index in set(self.caught) - inside:
@@ -109,7 +111,7 @@ class SandDrag:
         for index in inside - set(self.caught):
             self._catch(index)
 
-    def _catch(self, index):
+    def _catch(self, index: Any) -> None:
         world = self.world
         linear = float(world.linear_damping[index])
         angular = float(world.angular_damping[index])
@@ -117,7 +119,7 @@ class SandDrag:
         world.linear_damping[index] = linear + self.linear_drag
         world.angular_damping[index] = angular + self.angular_drag
 
-    def _release(self, index):
+    def _release(self, index: Any) -> None:
         linear, angular = self.caught.pop(index)
         self.world.linear_damping[index] = linear
         self.world.angular_damping[index] = angular
@@ -142,20 +144,23 @@ class Sand:
     The field covers those of ``cells`` the level has track for; sand needs a
     floor to lie on, and the track is what says where there is one.
     """
-    cells: tuple[tuple[int, int], ...]
+    #: The cells this covers, as `(col, row)` pairs. Taken as any sequence
+    #: of them, because a level gives tuples and a file gives back lists;
+    #: `__post_init__` settles it to tuples so the two are one board.
+    cells: Sequence[Sequence[int]]
     linear_drag: float = 2.0
     angular_drag: float = 3.0
     catch_height: float = 1.0
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         # A file gives back lists where a level gave tuples; one spelling here
         # means a board that has been through the file format is the same board.
         self.cells = tuple((int(col), int(row)) for col, row in self.cells)
 
-    def owned_cells(self):
+    def owned_cells(self) -> Any:
         return set(self.cells)
 
-    def build(self, scene, level, index, result):
+    def build(self, scene: Any, level: Any, index: Any, result: Any) -> None:
         material = scene.world.add_material(materials.physics_material(SAND))
         appearance = render.surface_appearance(SAND)
         ceilings = {}

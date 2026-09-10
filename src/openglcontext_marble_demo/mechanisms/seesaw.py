@@ -36,6 +36,7 @@ are on it at once.
 """
 import math
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 from omi_physics import mathutil, model
@@ -56,7 +57,7 @@ _UP = np.array([0.0, 1.0, 0.0])
 _COLOUR = (0.62, 0.46, 0.28)
 
 
-def _footprint(cell, facing, length, width):
+def _footprint(cell: Any, facing: Any, length: Any, width: Any) -> Any:
     """Every grid cell the plank covers: ``length`` rows by ``width`` across.
 
     ``cell`` is the row nearest the entry, matching
@@ -70,7 +71,7 @@ def _footprint(cell, facing, length, width):
            for row in range(length) for offset in range(-half, width - half)}
 
 
-def _kinematic_box(scene, size, position, color, material_index):
+def _kinematic_box(scene: Any, size: Any, position: Any, color: Any, material_index: Any) -> Any:
     """Add a kinematic box to a ``DemoScene``: render ``Transform`` plus body.
 
     ``DemoScene`` offers only static and dynamic bodies; a plank the mechanism
@@ -103,8 +104,8 @@ class _Plank:
     with it.
     """
 
-    def __init__(self, world, hinge, along, length, half_width,
-                max_tilt, response):
+    def __init__(self, world: Any, hinge: Any, along: Any, length: Any, half_width: Any,
+                max_tilt: Any, response: Any) -> None:
         self.world = world
         self.hinge = np.asarray(hinge, dtype='d')
         self.along = along
@@ -126,12 +127,12 @@ class _Plank:
         self.tilt = 0.0
         self._t = 0.0
 
-    def reset(self, world=None):
+    def reset(self, world: Any=None) -> None:
         """Level the plank, so a restarted run meets it flat again."""
         self.tilt = 0.0
         self._t = 0.0
 
-    def _target(self):
+    def _target(self) -> Any:
         """How far the plank should dip, from how far its load still has to
         go to reach the hinge; always zero or positive."""
         world = self.world
@@ -154,7 +155,7 @@ class _Plank:
         share = -float(np.mean(along[held])) / self.length
         return max(0.0, min(1.0, share)) * self.max_tilt
 
-    def pose(self, t):
+    def pose(self, t: float) -> Any:
         """Where the plank is at animator time ``t``: ``(position, quaternion)``."""
         dt = t - self._t
         self._t = t
@@ -188,14 +189,14 @@ class Seesaw:
     facing: tuple[int, int] = (0, 1)
     length: int = 5
     width: int = 3
-    max_tilt: float = 14.0
+    max_tilt: Any = 14.0
     response: float = 0.5
     thickness: float = 0.5
 
-    def owned_cells(self):
+    def owned_cells(self) -> Any:
         return _footprint(self.cell, self.facing, self.length, self.width)
 
-    def build(self, scene, level, index, result):
+    def build(self, scene: Any, level: Any, index: Any, result: Any) -> None:
         cs = level.cell_size
         base = level.cells[self.cell]
         along = np.array([self.facing[0], 0.0, self.facing[1]], dtype='d')

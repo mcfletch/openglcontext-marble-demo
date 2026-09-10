@@ -9,6 +9,8 @@ speed for the piece after it, so a chimney's difficulty is decided by whatever a
 player did *before* they got here: a conveyor or a fast plinko slot two chapters
 back is what gets you up this one.
 """
+from typing import Any
+
 from openglcontext_marble_demo.fragments import fragment
 from openglcontext_marble_demo.pieces import LANE, Piece, Port, _lay, _rails, _slope
 
@@ -18,7 +20,9 @@ RULE = 'arrive fast enough to climb it, or roll back and try again'
 
 #: ``rise`` is how far the shaft climbs; the slope decides how many cells it
 #: needs, since a slope may only rise so fast.
-VARIANTS = {
+#: What each variant sets, by name. Values of every kind, which is what a
+#: variant is: the knob a fragment reads by that name.
+VARIANTS: dict[str, dict[str, Any]] = {
     'plain': {'theme': 'stone', 'rise': 2.7, 'run': 4},
     'tall': {'theme': 'stone', 'rise': 4.5, 'run': 6},
     'foundry': {'theme': 'foundry', 'rise': 3.6, 'run': 5},
@@ -28,7 +32,7 @@ VARIANTS = {
 
 @fragment('chimney', tags=('speed', 'gate'), rule=RULE, cost=6.0,
           variants=tuple(VARIANTS))
-def chimney(rng, entry, variant='plain', theme=None, rise=None, run=None):
+def chimney(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, rise: Any=None, run: Any=None) -> Any:
     """A walled rising slope, with a shelf at the top to arrive on."""
     settings = dict(VARIANTS[variant])
     theme = theme or settings['theme']

@@ -78,7 +78,7 @@ CAMERA_PULL_BACK = 0.30
 CAMERA_PULL_BACK_SPEED = 9.0
 
 
-def _say_where_the_journal_is(context):
+def _say_where_the_journal_is(context: Any) -> None:
     """Print the session journal's path, if this session is being recorded.
 
     Printed rather than logged: it is the one thing a player needs to be able to
@@ -91,15 +91,15 @@ def _say_where_the_journal_is(context):
         print('Recording this session to %s' % (path,))
 
 
-def camera_offset(distance=CAMERA_DISTANCE, elevation=CAMERA_ELEVATION,
-                  yaw=CAMERA_YAW):
+def camera_offset(distance: Any=CAMERA_DISTANCE, elevation: Any=CAMERA_ELEVATION,
+                  yaw: Any=CAMERA_YAW) -> Any:
     """The camera's fixed offset from the marble, for a distance and two angles."""
     ground = distance * math.cos(elevation)
     return (ground * math.sin(yaw), distance * math.sin(elevation),
             ground * math.cos(yaw))
 
 
-def steering_frame(offset):
+def steering_frame(offset: Any) -> Any:
     """Ground-plane forward/right axes aligned with the camera's screen.
 
     "Forward" (up arrow) is up-screen — the horizontal direction from the camera
@@ -170,14 +170,18 @@ class MarbleContext(RecordingMixin, BaseContext):
     camera_distance = CAMERA_DISTANCE
     damping = ROLL_DAMPING
 
-    def OnInit(self):
+    def OnInit(self) -> None:
         disable_vsync()
         _say_where_the_journal_is(self)
 
         # The follow camera is the sole driver of context.platform, so unbind the
         # default free-fly movement manager or the two fight over the camera.
-        if self.movementManager is not None:
-            self.movementManager.unbind(self)
+        # Read through the class this mixes with rather than off `self`:
+        # a checker settles an attribute's type from the first assignment
+        # it sees, and the one below is `None`.
+        manager: Any = getattr(self, 'movementManager', None)
+        if manager is not None:
+            manager.unbind(self)
             self.movementManager = None
         self.view_offset = camera_offset(self.camera_distance)
         self.camera = FollowCamera(self.platform, offset=self.view_offset,
@@ -209,14 +213,15 @@ class MarbleContext(RecordingMixin, BaseContext):
         self._falls = 0
         #: When the run ended, so the demo can hold on the result before moving
         #: on; None while one is being played.
-        self._ended_at = None
+        #: When the run ended, or None while it is being played.
+        self._ended_at: float | None = None
         self._last = systemTime()
         if self.record_path:
             self.setupRecording(self.record_path, **self.record_options)
         print(CONTROLS)
 
     # -- game/scene -----------------------------------------------------
-    def _build_game(self):
+    def _build_game(self) -> None:
         level = self._level()
         forward, right = steering_frame(self.view_offset)
         self.game = MarbleGame(level, marble_material=self.marble_name,
@@ -249,18 +254,18 @@ class MarbleContext(RecordingMixin, BaseContext):
         print(f"Level {self.level_number} ({level.name}): {len(level.cells)} tiles, "
               f"{level.time_limit:.0f}s limit, {self.control} control")
 
-    def _level(self):
+    def _level(self) -> Any:
         """The board to play: the file that was named, else a generated one."""
         if self.board_path:
             return levelfile.load(self.board_path)
         return generator.generate(seed=self.seed, difficulty=self.difficulty)
 
     # -- overlay hook (called by the FlatPass after the scene draws) ----
-    def renderShaderOverlay(self, flatpass):
+    def renderShaderOverlay(self, flatpass: Any) -> None:
         self.hud.render(flatpass, self)
 
     # -- input ----------------------------------------------------------
-    def _lean_demand(self):
+    def _lean_demand(self) -> Any:
         """What the player is asking of the board right now, in [-1, 1] per axis.
 
         Read from the engine's sampled input state rather than from key events, so
@@ -271,20 +276,20 @@ class MarbleContext(RecordingMixin, BaseContext):
         return (state.axis(FORWARD_KEYS, BACKWARD_KEYS),
                 state.axis(RIGHT_KEYS, LEFT_KEYS))
 
-    def _on_toggle_demo(self, event):
+    def _on_toggle_demo(self, event: Any) -> None:
         """Hand the board to the autopilot, or take it back."""
         self.demo = not self.demo
         print('demo: %s' % ('on' if self.demo else 'off'))
         self.mark('demo', on=bool(self.demo))
         self.triggerRedraw(1)
 
-    def _on_arrow(self, event):
+    def _on_arrow(self, event: Any) -> None:
         """One spin kick — the spin model only; the lean is sampled, not evented."""
         if self.game.control == SPIN:
             self.game.kick(*ARROW_DIRECTION[event.name])
             self.triggerRedraw(1)
 
-    def _demand(self):
+    def _demand(self) -> Any:
         """Who is steering: the autopilot, or whoever is holding the keys."""
         if not self.demo:
             return self._lean_demand()
@@ -293,11 +298,11 @@ class MarbleContext(RecordingMixin, BaseContext):
         return self.pilot.lean(world.position[index],
                                world.linear_velocity[index])
 
-    def _on_reset(self, event):
+    def _on_reset(self, event: Any) -> None:
         self.game.reset()
         self.triggerRedraw(1)
 
-    def _on_next(self, event):
+    def _on_next(self, event: Any) -> None:
         """Advance to the next generated level, leaving any named board behind."""
         self.board_path = None
         self.seed += 1
@@ -306,13 +311,13 @@ class MarbleContext(RecordingMixin, BaseContext):
         self._build_game()
         self.triggerRedraw(1)
 
-    def _on_cycle_material(self, event):
+    def _on_cycle_material(self, event: Any) -> None:
         self._marble_i = (self._marble_i + 1) % len(MARBLE_CYCLE)
         self.marble_name = MARBLE_CYCLE[self._marble_i]
         self.game.set_marble_material(self.marble_name)
         self.triggerRedraw(1)
 
-    def _on_cycle_control(self, event):
+    def _on_cycle_control(self, event: Any) -> None:
         """Switch control model on the spot, so the two can be felt back to back.
 
         Bounding the rig's player lean at zero *is* the spin model, so the switch
@@ -327,7 +332,7 @@ class MarbleContext(RecordingMixin, BaseContext):
         print(f"control: {self.control}")
         self.triggerRedraw(1)
 
-    def presentFrame(self):
+    def presentFrame(self) -> Any:
         """Present the frame, and give it to the recording first.
 
         The back buffer holds the finished frame only until it is swapped away,
@@ -338,7 +343,7 @@ class MarbleContext(RecordingMixin, BaseContext):
         return super().presentFrame()
 
     # -- loop -----------------------------------------------------------
-    def OnIdle(self, *args):
+    def OnIdle(self, *args: Any) -> Any:
         # The engine's clock, not `time.time()`.  It is the same wall clock for
         # an ordinary run, and it is the *recorded* one under a replay and a
         # fixed step per frame under a recording -- so a run that is a function
@@ -378,7 +383,7 @@ class MarbleContext(RecordingMixin, BaseContext):
         return 1
 
 
-def build_parser():
+def build_parser() -> Any:
     parser = argparse.ArgumentParser(description="Marble Madness demo for OpenGLContext")
     parser.add_argument("--marble", default="steel", choices=sorted(materials.MARBLES),
                         help="marble material to start with")
@@ -443,7 +448,7 @@ def build_parser():
     return parser
 
 
-def main(argv=None):
+def main(argv: Any=None) -> None:
     args = build_parser().parse_args(argv)
     # Telemetry is read from the environment by the context before OnInit, so
     # the flags are the environment: one way in, whichever the caller used.

@@ -21,6 +21,7 @@ what is actually the thing turning them.
 """
 import math
 from dataclasses import dataclass
+from typing import Any
 
 from OpenGLContext.scenegraph import basenodes
 from OpenGLContext.scenegraph.transform import Transform
@@ -53,26 +54,26 @@ class Turntable:
     kept well under it so the two never meet.
     """
     cell: tuple[int, int]
-    radius: float = 2.0
+    radius: Any = 2.0
     rpm: float = 20.0
     bar_thickness: float = 0.3
     clearance: float = 0.3
     disc_thickness: float = 0.12
 
-    def owned_cells(self):
+    def owned_cells(self) -> Any:
         return set()
 
-    def build(self, scene, level, index, result):
+    def build(self, scene: Any, level: Any, index: Any, result: Any) -> None:
         self._disc(scene, level, result)
         RotatingArm(cell=self.cell, length=self._span(level), rpm=self.rpm,
                     thickness=self.bar_thickness,
                     clearance=self.clearance).build(scene, level, index, result)
 
-    def _span(self, level):
+    def _span(self, level: Any) -> Any:
         """How far the bar and the disc reach, in metres -- twice the radius."""
         return self.radius * 2.0 * level.cell_size
 
-    def _disc(self, scene, level, result):
+    def _disc(self, scene: Any, level: Any, result: Any) -> None:
         """The platform, turning at the bar's own rate: drawn, not collided with.
 
         Undriven, the way the water in
@@ -103,11 +104,11 @@ class _Spin:
     level, and this along with it.
     """
 
-    def __init__(self, transform, rate):
+    def __init__(self, transform: Any, rate: Any) -> None:
         self.transform = transform
         self.rate = rate
         self.time = 0.0
 
-    def update(self, dt):
+    def update(self, dt: float) -> None:
         self.time += dt
         self.transform.rotation = (0.0, 1.0, 0.0, self.rate * self.time)

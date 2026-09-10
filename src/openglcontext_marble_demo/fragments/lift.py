@@ -19,6 +19,8 @@ arrived -- and it sits there until the platform comes home rather than
 falling anywhere. Once aboard, every landing is either level with the
 platform or a step *down* from it, which a marble takes without being hurt.
 """
+from typing import Any
+
 from openglcontext_marble_demo import pieces
 from openglcontext_marble_demo.fragments import fragment
 from openglcontext_marble_demo.level import Elevator, Wall
@@ -45,7 +47,9 @@ WALL_MARGIN = 2.0
 #: :data:`~openglcontext_marble_demo.pieces.MAX_STEP` above the lane's own
 #: resting height, which is what keeps the fragment inside the slope budget
 #: without a ramp ever being drawn -- the platform is the ramp.
-_VARIANTS = {
+#: What each variant sets, by name. Values of every kind, which is what a
+#: variant is: the knob a fragment reads by that name.
+_VARIANTS: dict[str, dict[str, Any]] = {
     'plain':   {'theme': 'stone',   'travel': 1.0, 'period': 3.0, 'gains': (0.6,)},
     'brisk':   {'theme': 'ice',     'travel': 1.0, 'period': 1.8, 'gains': (0.6,)},
     'foundry': {'theme': 'foundry', 'travel': 1.3, 'period': 4.0, 'gains': (0.85,)},
@@ -57,8 +61,8 @@ _VARIANTS = {
           rule="step off while a platform is level with somewhere -- "
                "wait longer and you go higher",
           variants=tuple(_VARIANTS))
-def lift(rng, entry, variant='plain', theme=None, travel=None, period=None,
-         gains=None):
+def lift(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, travel: Any=None, period: Any=None,
+         gains: Any=None) -> Any:
     """A wide approach into parallel lanes: one flat, the rest riding lifts.
 
     ``gains`` is read in the order the lanes sit away from the always-open
@@ -91,7 +95,7 @@ def lift(rng, entry, variant='plain', theme=None, travel=None, period=None,
     lead_end = pieces._lay(cells, entry, LEAD, width=entry.width)
     row0 = lead_end.ahead(1)
 
-    def lane_cell(offset, ahead):
+    def lane_cell(offset: Any, ahead: Any) -> Any:
         return (row0.cell[0] + entry.facing[0] * ahead + across[0] * offset,
                 row0.cell[1] + entry.facing[1] * ahead + across[1] * offset)
 

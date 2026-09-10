@@ -25,6 +25,8 @@ afford: :mod:`tests/mechanisms/test_turntable.py` holds the lane clear of it.
 does: starting the bar part way round its turn, which is the same question as a
 marble reaching the hub part way through it.
 """
+from typing import Any
+
 from openglcontext_marble_demo import pieces
 from openglcontext_marble_demo.fragments import fragment
 from openglcontext_marble_demo.mechanisms.turntable import Turntable
@@ -51,7 +53,9 @@ RUN_OUT = 2
 #: mistimed marble was found to be carried round and round the rim by the bar's
 #: own sweep, never released into any mouth at all -- spinning forever rather
 #: than being delayed, which the piece must never do.
-_VARIANTS = {
+#: What each variant sets, by name. Values of every kind, which is what a
+#: variant is: the knob a fragment reads by that name.
+_VARIANTS: dict[str, dict[str, Any]] = {
     'plain': {'theme': 'stone', 'hub': 1, 'rpm': 20.0,
               'exits': ('ok', 'left', 'right')},
     'brisk': {'theme': 'ice', 'hub': 1, 'rpm': 30.0,
@@ -62,7 +66,7 @@ _VARIANTS = {
 }
 
 
-def _side_port(hub_cell, across, side, radius, height):
+def _side_port(hub_cell: Any, across: Any, side: Any, radius: Any, height: Any) -> Any:
     """The mouth ``radius`` cells off the hub in ``across`` turned by ``side``.
 
     ``side`` is ``-1`` or ``1``; the facing it comes out with points away from
@@ -76,8 +80,8 @@ def _side_port(hub_cell, across, side, radius, height):
 
 @fragment('turntable', tags=('aim', 'luck'), cost=4.0, rule=RULE,
           variants=tuple(_VARIANTS))
-def turntable(rng, entry, variant='plain', theme=None, hub=None, rpm=None,
-              exits=None):
+def turntable(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, hub: Any=None, rpm: Any=None,
+              exits: Any=None) -> Any:
     """A lead-in lane, a hub with a spinning bar in it, and a mouth per way off."""
     settings = _VARIANTS[variant]
     theme = theme or settings['theme']

@@ -33,7 +33,9 @@ whichever moment that is.
     set()
 """
 import math
+from collections.abc import Sequence
 from dataclasses import dataclass
+from typing import Any
 
 from omi_physics import model
 from omi_physics.kinematic import KinematicAnimator
@@ -93,7 +95,10 @@ class Crusher:
     what keeps a wide press a gate rather than, narrowed on the wrong axis, a
     pillar with a way round it on either side.
     """
-    cells: tuple[tuple[int, int], ...]
+    #: The cells this covers, as `(col, row)` pairs. Taken as any sequence
+    #: of them, because a level gives tuples and a file gives back lists;
+    #: `__post_init__` settles it to tuples so the two are one board.
+    cells: Sequence[Sequence[int]]
     period: float = 3.0
     strike: float = 0.25
     dwell: float = 0.4
@@ -104,15 +109,15 @@ class Crusher:
     depth: float | None = 0.6
     travel: tuple[int, int] = (0, 1)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         # A file gives back lists where a level gave tuples; one spelling here
         # means a board that has been through the file format is the same board.
         self.cells = tuple((int(col), int(row)) for col, row in self.cells)
 
-    def owned_cells(self):
+    def owned_cells(self) -> Any:
         return set()
 
-    def build(self, scene, level, index, result):
+    def build(self, scene: Any, level: Any, index: Any, result: Any) -> None:
         present = [cell for cell in self.cells if cell in level.cells]
         if not present:
             return
@@ -141,7 +146,7 @@ class Crusher:
 
         body = _kinematic_box(scene, size, (x, top, z), index[level.surface])
 
-        def pose(t):
+        def pose(t: float) -> Any:
             y = _height(t % period, period, strike, dwell, top, bottom)
             return (x, y, z), (0.0, 0.0, 0.0, 1.0)
 
@@ -150,7 +155,7 @@ class Crusher:
         result.feature_bodies.append(body)
 
 
-def _height(frac, period, strike, dwell, top, bottom):
+def _height(frac: Any, period: Any, strike: Any, dwell: Any, top: Any, bottom: Any) -> Any:
     """The press's height at ``frac`` seconds into its cycle.
 
     Raised for most of the period; the stroke down, the dwell at the bottom,
@@ -170,11 +175,11 @@ def _height(frac, period, strike, dwell, top, bottom):
     return top
 
 
-def _ease(phase):
+def _ease(phase: Any) -> Any:
     return 0.5 * (1.0 - math.cos(math.pi * phase))
 
 
-def _kinematic_box(scene, size, position, material_index):
+def _kinematic_box(scene: Any, size: Any, position: Any, material_index: Any) -> Any:
     """Add a kinematic box to a ``DemoScene``: render Transform plus physics body.
 
     ``DemoScene`` offers static and dynamic bodies; a press that drives its own

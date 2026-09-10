@@ -34,6 +34,7 @@ plain data, with no scene built.
 import math
 import random
 from dataclasses import dataclass
+from typing import Any
 
 from omi_physics import model
 from OpenGLContext.scenegraph import basenodes
@@ -120,7 +121,7 @@ class Rockfall:
     seed: int = 0
     density: float = 1.5
 
-    def cells(self):
+    def cells(self) -> Any:
         """Every cell of the run, top row first and across before along."""
         dcol, drow = self.direction
         acol, arow = -drow, dcol            # one step across the way down
@@ -130,12 +131,12 @@ class Rockfall:
                 for step in range(self.length)
                 for offset in range(-half, self.width - half)]
 
-    def owned_cells(self):
+    def owned_cells(self) -> Any:
         """The rockfall lays its own tilted tiles, so the flat ones are not built."""
         return set(self.cells())
 
     # -- the rock, as data ----------------------------------------------
-    def rocks(self, level):
+    def rocks(self, level: Any) -> Any:
         """Where every slab lies on ``level``, in world metres.
 
         A pure function of :attr:`seed` and the level's heights, so a board is
@@ -171,7 +172,7 @@ class Rockfall:
                      origin_z + down[2] * run + across[2] * beside)))
         return placed
 
-    def _cell_at(self, step, beside, cell_size):
+    def _cell_at(self, step: Any, beside: Any, cell_size: float) -> Any:
         """The cell ``step`` rows down the run and ``beside`` metres off its middle."""
         dcol, drow = self.direction
         half = self.width // 2
@@ -180,7 +181,7 @@ class Rockfall:
         return (self.cell[0] + dcol * step - drow * offset,
                 self.cell[1] + drow * step + dcol * offset)
 
-    def _one_rock(self, rng, level, cell, in_cell, where):
+    def _one_rock(self, rng: Any, level: Any, cell: Any, in_cell: Any, where: Any) -> Any:
         """One slab standing at ``where`` (an x, z pair), lying however the rng says.
 
         ``in_cell`` is how far down its own cell the slab sits, which with
@@ -197,7 +198,7 @@ class Rockfall:
                     size=size, axis=(math.cos(lie), 0.0, math.sin(lie)),
                     angle=angle, stand=stand)
 
-    def _surface_at(self, level, cell, along):
+    def _surface_at(self, level: Any, cell: Any, along: Any) -> Any:
         """The height of the tilted tile of ``cell``, ``along`` metres down it.
 
         A cell's height is the height of its uphill edge and the tile falls
@@ -207,14 +208,14 @@ class Rockfall:
         base = level.cells[cell]
         return base + (0.5 + along / level.cell_size) * self._fall(level, cell)
 
-    def _fall(self, level, cell):
+    def _fall(self, level: Any, cell: Any) -> Any:
         """How far the tile of ``cell`` drops across itself (negative downhill)."""
         dcol, drow = self.direction
         ahead = (cell[0] + dcol, cell[1] + drow)
         return level.cells.get(ahead, level.cells[cell]) - level.cells[cell]
 
     # -- building -------------------------------------------------------
-    def build(self, scene, level, index, result):
+    def build(self, scene: Any, level: Any, index: Any, result: Any) -> None:
         cs = level.cell_size
         down, _ = _ground_axes(self.direction)
         # Tilt about the horizontal axis across the way down (up x down).
@@ -256,14 +257,14 @@ class Rockfall:
             result.feature_bodies.append(body)
 
 
-def _ground_axes(direction):
+def _ground_axes(direction: Any) -> Any:
     """The way down and the way across it, as unit vectors in the XZ plane."""
     length = math.hypot(direction[0], direction[1]) or 1.0
     down = (direction[0] / length, 0.0, direction[1] / length)
     return down, (-down[2], 0.0, down[0])
 
 
-def _reach(size, lie, angle):
+def _reach(size: Any, lie: Any, angle: Any) -> Any:
     """How far the highest corner of a slab reaches above its own centre.
 
     ``size`` is (width, thickness, depth); the slab is turned by ``angle`` about

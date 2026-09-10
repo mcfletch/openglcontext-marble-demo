@@ -24,6 +24,7 @@ through this piece gets a marble across; what differs is how many seconds it
 costs.
 """
 import math
+from typing import Any
 
 from openglcontext_marble_demo.fragments import fragment
 from openglcontext_marble_demo.mechanisms.updraft import Updraft
@@ -53,7 +54,9 @@ UNDERPASS = 3
 #: The three axes a variant bundles: the material (grip as much as colour), the
 #: layout (how wide the gap is), and the effect (how strong the draft is and how
 #: far up the shaft it reaches).
-VARIANTS = {
+#: What each variant sets, by name. Values of every kind, which is what a
+#: variant is: the knob a fragment reads by that name.
+VARIANTS: dict[str, dict[str, Any]] = {
     'plain': {'theme': 'stone', 'gap': 4, 'strength': 9.2, 'depth': 6.0,
               'reach': 7.5},
     'wide': {'theme': 'stone', 'gap': 6, 'strength': 9.5, 'depth': 6.3,
@@ -67,7 +70,7 @@ VARIANTS = {
 
 @fragment('updraft', tags=('speed', 'hazard'), cost=8.0, rule=RULE,
           variants=tuple(VARIANTS))
-def updraft(rng, entry, variant='plain', **named):
+def updraft(rng: Any, entry: Any, variant: Any='plain', **named: Any) -> Any:
     """A run-up, a gap with a shaft of rising air over it, and two ways down.
 
     ``gap`` is how many cells wide the open span is. ``strength`` is the
@@ -83,8 +86,8 @@ def updraft(rng, entry, variant='plain', **named):
     return _updraft(rng, entry, theme=theme, **settings)
 
 
-def _updraft(rng, entry, theme='stone', gap=4, strength=9.2, depth=6.0, reach=7.5,
-             width=None):
+def _updraft(rng: Any, entry: Any, theme: Any='stone', gap: Any=4, strength: Any=9.2, depth: Any=6.0, reach: Any=7.5,
+             width: Any=None) -> Any:
     width = entry.width if width is None else width
     half = width // 2
     cells: dict = {}

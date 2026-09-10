@@ -33,6 +33,8 @@ ledge that steps down around the gap, which is how a marble that will not commit
 still gets to the bottom.  It is one cell wide with the pit beside it, so it is
 slow and it is not free.
 """
+from typing import Any
+
 from openglcontext_marble_demo import pieces
 from openglcontext_marble_demo.fragments import fragment
 from openglcontext_marble_demo.level import Ramp
@@ -44,7 +46,9 @@ __all__ = ['drop']
 #: cells, and how many cells deep the landing is.  ``drop`` is bounded by the
 #: ledge, which has ``gap + 2`` cells to get down in and may not step further
 #: than :data:`~openglcontext_marble_demo.pieces.MAX_STEP` in any of them.
-_VARIANTS = {
+#: What each variant sets, by name. Values of every kind, which is what a
+#: variant is: the knob a fragment reads by that name.
+_VARIANTS: dict[str, dict[str, Any]] = {
     'plain': {'theme': 'stone', 'fall': 2.7, 'gap': 1, 'landing': 1},
     'wide': {'theme': 'foundry', 'fall': 2.7, 'gap': 1, 'landing': 2},
     'long': {'theme': 'stone', 'fall': 3.6, 'gap': 2, 'landing': 2},
@@ -60,8 +64,8 @@ RUN_UP = 2
 @fragment('drop', tags=('speed', 'hazard'), cost=7.0,
           rule='leave the lip fast enough to reach the landing, and no faster',
           variants=tuple(_VARIANTS))
-def drop(rng, entry, variant='plain', theme=None, fall=None, gap=None,
-         landing=None, side=None):
+def drop(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, fall: Any=None, gap: Any=None,
+         landing: Any=None, side: Any=None) -> Any:
     """A lip, a gap, and a pad to come down on.
 
     ``side`` is which side of the run-up the ledge steps down, ``1`` or ``-1``

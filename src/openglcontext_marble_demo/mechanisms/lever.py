@@ -35,6 +35,7 @@ down a couple of squares builds up.
 """
 import math
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 from omi_physics import mathutil
@@ -57,16 +58,16 @@ class Channel:
     lists first is not something either of them has to know.
     """
 
-    def __init__(self, name):
+    def __init__(self, name: str) -> None:
         self.name = name
         #: Whether any lever on this channel has gone over.
         self.thrown = False
         #: Body indices of the doors listening, in the order they were built.
-        self.doors = []
-        self._opening = []
-        self._shutting = []
+        self.doors: list[Any] = []
+        self._opening: list[Any] = []
+        self._shutting: list[Any] = []
 
-    def add_door(self, body_index, opening, shutting=None):
+    def add_door(self, body_index: Any, opening: Any, shutting: Any=None) -> None:
         """Register a door: ``opening()`` runs when the channel is thrown.
 
         ``shutting()`` puts it back where it was, which is what a restarted run
@@ -76,14 +77,14 @@ class Channel:
         self._opening.append(opening)
         self._shutting.append(shutting)
 
-    def reset(self, world=None):
+    def reset(self, world: Any=None) -> None:
         """Shut every door and let the levers be thrown again."""
         for shutting in self._shutting:
             if shutting is not None:
                 shutting()
         self.thrown = False
 
-    def throw(self):
+    def throw(self) -> Any:
         """Open every door on the channel; True the first time, False after."""
         if self.thrown:
             return False
@@ -92,12 +93,12 @@ class Channel:
             opening()
         return True
 
-    def __repr__(self):
+    def __repr__(self) -> Any:
         return '<Channel %r %s, %d door(s)>' % (
             self.name, 'thrown' if self.thrown else 'set', len(self.doors))
 
 
-def channels(result):
+def channels(result: Any) -> Any:
     """Every channel in one build, by name.
 
     ``result`` is what :meth:`~openglcontext_marble_demo.level.Level.build_into`
@@ -109,7 +110,7 @@ def channels(result):
     return result.channels
 
 
-def _channel(result, name):
+def _channel(result: Any, name: str) -> Any:
     """The channel called ``name`` in ``result``, made if it is new."""
     table = channels(result)
     if name not in table:
@@ -117,7 +118,7 @@ def _channel(result, name):
     return table[name]
 
 
-def _facing(step):
+def _facing(step: Any) -> Any:
     """A grid ``(dcol, drow)`` step as a unit world vector in the XZ plane."""
     vector = np.array([step[0], 0.0, step[1]], dtype='d')
     length = np.linalg.norm(vector)
@@ -150,10 +151,10 @@ class Lever:
     #: Brass, so an upright lever reads as the one thing on the cell to hit.
     COLOUR = (0.85, 0.62, 0.15)
 
-    def owned_cells(self):
+    def owned_cells(self) -> Any:
         return set()
 
-    def build(self, scene, level, index, result):
+    def build(self, scene: Any, level: Any, index: Any, result: Any) -> None:
         x, z = level.cell_center(self.cell)
         base = level.cells[self.cell]
         facing = _facing(self.facing)
@@ -174,13 +175,13 @@ class Lever:
         result.effects[trigger.index] = self._effect(
             body.index, _channel(result, self.channel), (x, base, z), facing)
 
-    def _effect(self, lever, channel, foot, facing):
+    def _effect(self, lever: Any, channel: Any, foot: Any, facing: Any) -> Any:
         """The trigger effect: weigh the blow, and go over if it is hard enough."""
         hardness = self.hardness
         going_over = self._going_over(foot, facing)
         state = {'over': False}
 
-        def effect(world, marble):
+        def effect(world: Any, marble: Any) -> None:
             if state['over']:
                 return
             # Trigger events are dispatched after the step's contacts are
@@ -192,7 +193,7 @@ class Lever:
             channel.throw()
         return effect
 
-    def _going_over(self, foot, facing):
+    def _going_over(self, foot: Any, facing: Any) -> Any:
         """A call that lays the paddle over about its foot, toward ``facing``."""
         angle = math.radians(self.throw)
         axis = np.cross(_UP, facing)
@@ -204,7 +205,7 @@ class Lever:
                        + (math.cos(angle) * _UP + math.sin(angle) * facing)
                        * (self.height / 2.0))
 
-        def over(world, index):
+        def over(world: Any, index: Any) -> None:
             world.place_body(index, position=middle, orientation=quaternion)
         return over
 
@@ -232,10 +233,10 @@ class Door:
     #: that is opened do not look alike.
     COLOUR = (0.30, 0.45, 0.58)
 
-    def owned_cells(self):
+    def owned_cells(self) -> Any:
         return set()
 
-    def build(self, scene, level, index, result):
+    def build(self, scene: Any, level: Any, index: Any, result: Any) -> None:
         x, z = level.cell_center(self.cell)
         base = level.cells[self.cell]
         cs = level.cell_size
@@ -257,10 +258,10 @@ class Door:
         sunk = (px, base - 1.0 - self.height / 2.0, pz)
         shut = tuple(float(value) for value in world.position[leaf])
 
-        def open_the_door():
+        def open_the_door() -> None:
             world.place_body(leaf, position=sunk)
 
-        def shut_the_door():
+        def shut_the_door() -> None:
             world.place_body(leaf, position=shut)
 
         channel = _channel(result, self.channel)

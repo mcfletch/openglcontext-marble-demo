@@ -24,6 +24,7 @@ round, which is the same question as a marble reaching the mouth part way
 through their turn.
 """
 import math
+from typing import Any
 
 from openglcontext_marble_demo import pieces
 from openglcontext_marble_demo.fragments import fragment
@@ -51,7 +52,9 @@ MIN_RATE = 3.5
 #: out for in metres a second, and how long each bar is in metres.  A bar shorter
 #: than a cell leaves a gap between neighbours that a marble can be steered
 #: through whatever the timing, which is what ``sparse`` is.
-_VARIANTS = {
+#: What each variant sets, by name. Values of every kind, which is what a
+#: variant is: the knob a fragment reads by that name.
+_VARIANTS: dict[str, dict[str, Any]] = {
     'plain': {'theme': 'stone', 'rows': 3, 'pace': 3.4, 'bar': 3.6},
     'foundry': {'theme': 'foundry', 'rows': 4, 'pace': 3.4, 'bar': 3.6},
     'brisk': {'theme': 'ice', 'rows': 3, 'pace': 4.5, 'bar': 3.6},
@@ -59,7 +62,7 @@ _VARIANTS = {
 }
 
 
-def rates(rows, pace, facing, cell_size=CELL_SIZE):
+def rates(rows: Any, pace: Any, facing: Any, cell_size: float=CELL_SIZE) -> Any:
     """The turn rate for each row of arms, in rpm.
 
     An arm points along its own +X at rest and turns about the vertical, so a
@@ -83,8 +86,8 @@ def rates(rows, pace, facing, cell_size=CELL_SIZE):
 @fragment('gauntlet', tags=('gate', 'hazard'), cost=5.0,
           rule='go through when the arms are lying along the lane, not across it',
           variants=tuple(_VARIANTS))
-def gauntlet(rng, entry, variant='plain', theme=None, rows=None, pace=None,
-             bar=None):
+def gauntlet(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, rows: Any=None, pace: Any=None,
+             bar: Any=None) -> Any:
     """A walled straight with ``rows`` rows of arms sweeping across it."""
     settings = _VARIANTS[variant]
     theme = theme or settings['theme']

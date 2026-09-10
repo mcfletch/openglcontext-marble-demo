@@ -59,21 +59,21 @@ class Entry:
     cost: float = 0.0
 
 
-def fragment(name, tags=('place',), rule='', variants=('plain',), cost=0.0):
+def fragment(name: str, tags: Any=('place',), rule: Any='', variants: Any=('plain',), cost: Any=0.0) -> Any:
     """Register the decorated builder as a fragment of the library.
 
     The builder is ``f(rng, entry, variant=None, **named) -> Piece``, and it must
     put its cells down relative to ``entry`` and answer with a piece whose
     ``exits`` has at least an ``'ok'``.
     """
-    def register(builder):
+    def register(builder: Any) -> Any:
         _LIBRARY[name] = Entry(name=name, build=builder, tags=tuple(tags),
                                rule=rule, variants=tuple(variants), cost=cost)
         return builder
     return register
 
 
-def _load():
+def _load() -> None:
     """Import every module beside this one, which is what registers them."""
     global _LOADED
     if _LOADED:
@@ -84,20 +84,20 @@ def _load():
             importlib.import_module('%s.%s' % (__name__, found.name))
 
 
-def library():
+def library() -> Any:
     """Every fragment, by name."""
     _load()
     return dict(_LIBRARY)
 
 
-def tagged(*tags):
+def tagged(*tags: Any) -> Any:
     """The fragments carrying any of ``tags`` — how a generator asks for a kind."""
     wanted = set(tags)
     return {name: entry for name, entry in library().items()
             if wanted & set(entry.tags)}
 
 
-def build(name, rng, entry, variant=None, **named):
+def build(name: str, rng: Any, entry: Any, variant: Any=None, **named: Any) -> Any:
     """Build fragment ``name`` at ``entry``; raise :exc:`KeyError` if unknown.
 
     An unknown variant is an error rather than a fallback to the plain one: a
