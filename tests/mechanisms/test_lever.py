@@ -2,9 +2,9 @@
 
 The threshold is the mechanism, so it is what these measure: the same board,
 the same marble, the same place, and only the speed of arrival different.  It
-runs on the real physics through :class:`MarbleGame`, which is what dispatches
-the trigger the lever listens on, so what is asserted is the blow the solver
-recorded rather than a number handed to the effect by the test.
+runs on the real physics through :class:`MarbleGame`, whose world reports the
+blow to the lever's contact listener, so what is asserted is the blow the
+solver recorded rather than a number handed to the lever by the test.
 """
 import numpy as np
 import pytest

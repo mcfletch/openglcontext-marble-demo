@@ -12,7 +12,7 @@ than :attr:`~openglcontext_marble_demo.controller.MarbleController.crush_time`,
 is destroyed with cause
 :data:`~openglcontext_marble_demo.controller.CRUSHED` --
 :meth:`~openglcontext_marble_demo.controller.MarbleController._held_too_long`
-reads it straight off this step's contacts, floor against press, the same way
+reads it off the marble's contacts, floor against press, the same way
 it would read any two surfaces that closed on the marble. Nothing here calls
 :meth:`~openglcontext_marble_demo.controller.MarbleController.destroy`; the
 press only has to arrive and dwell, and :attr:`dwell` is set with margin over

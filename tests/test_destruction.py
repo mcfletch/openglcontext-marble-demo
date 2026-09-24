@@ -360,3 +360,22 @@ def test_a_restarted_run_forgets_the_marble_it_lost():
     assert game.state == PLAYING
     assert game.controller.state == ACTIVE
     assert not any('LOST' in line for line in hud.hud_lines(game))
+
+
+def test_a_lethal_blow_in_an_early_step_of_a_slow_frame_still_destroys():
+    """At 15 fps a frame is eight physics steps, and the blow lands in one of them.
+
+    Closing speed is read on the step the marble strikes and on no other, so
+    the controller has to hear every step rather than look at the last one.
+    """
+    world, index = _world()
+    world.fixed_dt = 1 / 120.0
+    _wall(world, index, 8.0)
+    i = _marble(world, index, velocity=(30.0, 0.0, 0.0))
+    ctrl = _controller(world, i)
+    frame = 1 / 15.0
+    for _ in range(30):
+        world.advance(frame)
+        if ctrl.update(frame) != ACTIVE:
+            break
+    assert ctrl.state == DESTROYED and ctrl.last_loss == STRUCK

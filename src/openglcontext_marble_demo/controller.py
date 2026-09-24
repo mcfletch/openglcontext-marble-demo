@@ -69,11 +69,15 @@ UP = np.array([0.0, 1.0, 0.0])
 
 
 class Touch(NamedTuple):
-    """One of this step's contacts, read from the marble's point of view.
+    """Something the marble touched this frame, read from the marble's side.
 
-    The solver's own normal runs from body ``a`` toward body ``b``, so which way
-    it points depends on which of the pair the marble happens to be.  Flipped
+    The world's normal runs from body ``a`` toward body ``b``, so which way it
+    points depends on which of the pair the marble happens to be.  Flipped
     once here, every rule below can read it as *the way out of the marble*.
+
+    A frame is several physics steps.  ``approach`` and ``impulse`` are the
+    hardest of the frame's steps, since a blow is measured on the step it
+    lands and on no other; ``normal`` and ``depth`` are the latest.
     """
     #: The body on the other side of the contact.
     other: int
@@ -83,7 +87,8 @@ class Touch(NamedTuple):
     #: The solver records this before it resolves anything, which is the only
     #: moment it can be read.
     approach: float
-    #: The impulse the solver applied, per unit of the marble's mass.
+    #: The impulse the solver applied, per unit of the marble's mass.  A marble
+    #: is a sphere, so it meets anything at one point and this is that point's.
     impulse: float
     #: How far the two overlap, in metres.
     depth: float
@@ -173,6 +178,12 @@ class MarbleController:
 
         self.state = ACTIVE
         self.respawn_timer = 0.0
+        #: What the marble has touched since the last update, by the other body.
+        self._touched: dict[int, Touch] = {}
+        #: What the last update read, and the step it was read after.
+        self._last_touches: list[Touch] = []
+        self._read_at = -1
+        self._listen(world)
         self.fall_count = 0
         #: How many marbles this run has lost, and what the last one was lost
         #: to -- one of :data:`STRUCK`, :data:`DROPPED`, :data:`CRUSHED`,
@@ -313,16 +324,46 @@ class MarbleController:
             self._begin_fall()
         return self.state
 
+    def _listen(self, world: Any) -> None:
+        """Have the world report every step of the marble's contacts to :meth:`_touch`.
+
+        Only the marble's pairs are recorded, and each of them on every step
+        it lasts: a squeeze is a pair of contacts held, not a pair that began.
+        """
+        world.report_contacts(self.index)
+        if world.contact_reporting == 'off':
+            world.contact_reporting = 'flagged'
+        world.report_persist = True
+        world.add_contact_listener(self._touch)
+
+    def _touch(self, event: Any) -> None:
+        """Keep one step's contact on the marble, the hardest blow of the frame kept."""
+        i = self.index
+        if event.phase == 'end' or i not in (event.a.index, event.b.index):
+            return
+        mine = event.a.index == i
+        other = event.b.index if mine else event.a.index
+        approach = event.approach
+        impulse = event.impulse / max(float(self.world.mass[i]), 1e-6)
+        earlier = self._touched.get(other)
+        if earlier is not None:
+            approach = max(approach, earlier.approach)
+            impulse = max(impulse, earlier.impulse)
+        self._touched[other] = Touch(other, event.normal if mine else -event.normal,
+                                     approach, impulse, event.depth)
+
     def _touches(self) -> Any:
-        """This step's contacts on the marble, as :class:`Touch` records."""
-        world, i = self.world, self.index
-        mass = max(float(world.mass[i]), 1e-6)
-        return [Touch(contact.b if contact.a == i else contact.a,
-                      contact.normal if contact.a == i else -contact.normal,
-                      float(contact.approach),
-                      float(contact.normal_impulse) / mass,
-                      float(contact.depth))
-                for contact in world.contacts if i in (contact.a, contact.b)]
+        """What the marble touched over the steps since the last update.
+
+        An update with no step since the one before sees what that one saw:
+        nothing has moved, so the marble is held exactly as it was.
+        """
+        if self.world.step_count == self._read_at:
+            return self._last_touches
+        self._read_at = self.world.step_count
+        self._last_touches = list(self._touched.values())
+        self._touched.clear()
+        return self._last_touches
 
     def _watch_the_air(self, grounded: Any, clearance: Any) -> Any:
         """Remember how far above the surface the marble has been, and when.

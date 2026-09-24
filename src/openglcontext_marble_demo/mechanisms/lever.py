@@ -26,8 +26,8 @@ on ``'vault'`` all go down together, and any lever on ``'vault'`` opens them.
 
 **How hard is hard enough.**  ``hardness`` is a closing speed in metres a
 second: how fast the marble and the paddle were coming together along the
-contact normal at the moment they met.  The solver records that on the contact
-and :meth:`omi_physics.world.PhysicsWorld.impact_on` answers with it, so the
+contact normal at the moment they met.  The world reports it on the step the
+blow lands, as the ``approach`` of a contact event on the paddle, so the
 number a designer writes is the speed the marble has to arrive at, and it can
 be compared with the marble's own speed on the HUD.  The default, 4 m/s, is
 above a marble that has trickled down onto the cell and inside what a free roll
@@ -165,33 +165,34 @@ class Lever:
                              color=self.COLOUR, dynamic=False, material=index['metal'])
         body.transform.children[0].appearance = render.color_appearance(
             self.COLOUR, metallic=0.8, roughness=0.3)
-        # The sensor is what gets the game to look at this step's contacts; the
-        # blow itself is measured on the paddle.
-        trigger = scene.add_trigger_box(
-            size=(level.cell_size * 0.9, 2.0, level.cell_size * 0.9),
-            position=(x, base + 1.0, z), color=self.COLOUR)
         result.feature_bodies.append(body)
-        result.feature_bodies.append(trigger)
-        result.effects[trigger.index] = self._effect(
-            body.index, _channel(result, self.channel), (x, base, z), facing)
+        world = scene.world
+        world.report_contacts(body.index)
+        if world.contact_reporting == 'off':
+            world.contact_reporting = 'flagged'
+        world.add_contact_listener(self._struck(
+            world, body.index, _channel(result, self.channel), (x, base, z), facing))
 
-    def _effect(self, lever: Any, channel: Any, foot: Any, facing: Any) -> Any:
-        """The trigger effect: weigh the blow, and go over if it is hard enough."""
+    def _struck(self, world: Any, lever: Any, channel: Any, foot: Any,
+                facing: Any) -> Any:
+        """The paddle's contact listener: weigh each blow, and go over for a hard one.
+
+        It runs inside the physics step that the blow lands on, so the paddle
+        is laid over before the next step and the marble carries on past it.
+        """
         hardness = self.hardness
         going_over = self._going_over(foot, facing)
         state = {'over': False}
 
-        def effect(world: Any, marble: Any) -> None:
-            if state['over']:
-                return
-            # Trigger events are dispatched after the step's contacts are
-            # solved, so the blow being weighed is the one struck this step.
-            if world.impact_on(marble, above=hardness, among=(lever,)) is None:
+        def struck(event: Any) -> None:
+            if (state['over'] or event.phase == 'end'
+                    or lever not in (event.a.index, event.b.index)
+                    or event.approach <= hardness):
                 return
             state['over'] = True
             going_over(world, lever)
             channel.throw()
-        return effect
+        return struck
 
     def _going_over(self, foot: Any, facing: Any) -> Any:
         """A call that lays the paddle over about its foot, toward ``facing``."""

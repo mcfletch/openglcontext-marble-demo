@@ -2,7 +2,7 @@
 
 The mechanism does no crushing of its own -- it swings a kinematic slab up and
 down, and :class:`~openglcontext_marble_demo.controller.MarbleController` reads
-the squeeze straight off this step's contacts, exactly as it would for a marble
+the squeeze off the marble's contacts, exactly as it would for a marble
 caught between any two closing surfaces.  So what these tests hold the press to
 is the same rhythm as ``tests/mechanisms/test_burner.py`` holds the fire to:
 build the real board, run the real physics, and show both halves of the rule
