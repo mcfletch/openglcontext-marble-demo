@@ -63,7 +63,7 @@ def main(argv=None):
           f"marble={args.marble} -> {out}")
 
     # Import after the env is set so the backend/renderer choice takes effect.
-    from openglcontext_marble_demo.run import MarbleContext
+    from openglcontext_marble_demo.run import MarbleContext  # noqa: PLC0415 reads the env set above
     MarbleContext.seed = args.seed
     MarbleContext.difficulty = args.difficulty
     MarbleContext.marble_name = args.marble

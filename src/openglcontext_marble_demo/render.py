@@ -18,6 +18,7 @@ import os
 from typing import Any
 
 import numpy as np
+from OpenGL.GL import GL_REPEAT
 from OpenGLContext.scenegraph import basenodes
 from OpenGLContext.scenegraph.pbrmaterial import PBRMaterial, PBRTexture
 from OpenGLContext.scenegraph.pbrmesh import PBRMesh
@@ -143,8 +144,8 @@ def _grout_texture(key: Any, path: str, srgb: Any) -> Any:
     if key in _grout_cache:
         return _grout_cache[key]
     try:
-        from OpenGL.GL import GL_REPEAT
-        from PIL import Image
+        # Pillow is not a dependency: without it the floor renders without grout.
+        from PIL import Image  # noqa: PLC0415 Pillow is optional
         image = Image.open(path).convert("RGB")
         texture = PBRTexture(image, srgb=srgb, wrap_s=GL_REPEAT, wrap_t=GL_REPEAT)
     except (ImportError, OSError):

@@ -13,6 +13,8 @@ import random
 import pytest
 
 from openglcontext_marble_demo import fragments, pieces
+from openglcontext_marble_demo.game import MarbleGame
+from openglcontext_marble_demo.level import Ramp
 from openglcontext_marble_demo.mechanisms.sand import Sand
 
 CELL = 4.0
@@ -31,7 +33,6 @@ def _cross(piece, speed, offset=0.0, seconds=14.0):
     in the pit when the time was up — which is the sand doing its job rather
     than a failure to measure.
     """
-    from openglcontext_marble_demo.game import MarbleGame
     level = piece.level(time_limit=900.0, goal=False) \
         if 'goal' in piece.level.__code__.co_varnames else piece.level(time_limit=900.0)
     game = MarbleGame(level)
@@ -111,7 +112,6 @@ def test_the_ramp_is_the_quick_way_and_the_shoulder_is_the_safe_one():
 def test_the_ramp_does_not_cover_the_shoulder():
     """A ramp across the whole mouth launches a marble whatever it does, and the
     pit becomes scenery under it."""
-    from openglcontext_marble_demo.level import Ramp
     piece = _built()
     ramps = {f.cell for f in piece.features if isinstance(f, Ramp)}
     sand = {tuple(c) for f in piece.features if isinstance(f, Sand) for c in f.cells}

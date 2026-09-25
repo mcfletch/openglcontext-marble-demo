@@ -12,7 +12,7 @@ import pytest
 
 from openglcontext_marble_demo import fragments, pieces
 from openglcontext_marble_demo.game import MarbleGame
-from openglcontext_marble_demo.level import Finish
+from openglcontext_marble_demo.level import Finish, Wall
 
 STEP = 1 / 120.0
 
@@ -70,7 +70,6 @@ def test_a_chimney_climbs_and_every_step_of_it_is_one_a_marble_can_roll(variant)
 
 def test_the_shaft_is_walled_down_both_sides():
     """The point of a chimney is that there is nowhere to go but up it."""
-    from openglcontext_marble_demo.level import Wall
     piece = _built()
     sides = {wall.side for wall in piece.features if isinstance(wall, Wall)}
     assert {'E', 'W'} <= sides, 'the shaft is open at the side: %r' % (sorted(sides),)

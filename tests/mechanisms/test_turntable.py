@@ -11,7 +11,7 @@ from omi_physics import mathutil, model
 from omi_physics.kinematic import KinematicAnimator
 from OpenGLContext.physics.demo import DemoScene
 
-from openglcontext_marble_demo import levelfile, materials
+from openglcontext_marble_demo import levelfile, materials, mechanisms
 from openglcontext_marble_demo.level import CELL_SIZE, Finish, Level
 from openglcontext_marble_demo.mechanisms.turntable import Turntable, _Spin
 
@@ -156,7 +156,6 @@ def test_a_marble_within_reach_is_carried():
 # -- registration and the file format --------------------------------------------
 
 def test_a_turntable_is_a_mechanism_the_registry_knows():
-    from openglcontext_marble_demo import mechanisms
     assert mechanisms.registry().get('turntable') is Turntable
     assert levelfile.FEATURES.get('turntable') is Turntable
 

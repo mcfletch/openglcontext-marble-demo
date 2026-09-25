@@ -40,6 +40,7 @@ scenery.
     True
 """
 import math
+import random
 from collections import deque
 from dataclasses import dataclass, field
 from typing import Any
@@ -555,7 +556,6 @@ def chain(seed: int, names: Any, entry: Any=None, themes: Any=None) -> Any:
     whatever each piece prefers -- so a story can say *this room is ice* without
     the piece having to know it will ever be.
     """
-    import random
     rng = random.Random(seed)
     where = entry or Port(cell=(0, 0), facing=(0, 1), height=0.0, width=LANE)
     if isinstance(themes, str):

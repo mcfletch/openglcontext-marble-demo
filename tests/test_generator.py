@@ -8,8 +8,8 @@ difficulty scaling.
 """
 from collections import deque
 
-from openglcontext_marble_demo import generator
-from openglcontext_marble_demo.level import Level
+from openglcontext_marble_demo import boards, generator
+from openglcontext_marble_demo.level import Bumper, Level, RotatingArm, SpringTrap
 
 
 def _reachable(level):
@@ -66,7 +66,6 @@ def test_higher_difficulty_makes_a_tighter_board_rather_than_a_longer_one():
     clock follows the route, so a shorter board gets less of it.
     """
     def route(level):
-        from openglcontext_marble_demo import boards
         return boards.distances(set(level.cells), level.start_cell)[level.finish_cell]
 
     easy = [generator.generate(seed=s, difficulty=1) for s in range(12)]
@@ -76,7 +75,6 @@ def test_higher_difficulty_makes_a_tighter_board_rather_than_a_longer_one():
 
 
 def test_harder_boards_carry_more_hazards():
-    from openglcontext_marble_demo.level import Bumper, RotatingArm, SpringTrap
 
     def hazards(difficulty):
         return sum(sum(isinstance(f, (Bumper, RotatingArm, SpringTrap))

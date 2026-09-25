@@ -9,12 +9,15 @@ same level — every cell, every height, every surface, and every field of every
 feature — because anything that quietly does not survive the trip is work a
 designer loses without being told.
 """
+import dataclasses
 import json
 import math
 
 import pytest
 
 from openglcontext_marble_demo import generator, levelfile
+from openglcontext_marble_demo import level as level_module
+from openglcontext_marble_demo.game import PLAYING, MarbleGame
 from openglcontext_marble_demo.level import (
     Bumper,
     Elevator,
@@ -127,9 +130,7 @@ def test_every_feature_class_the_game_has_can_be_written():
     what is asserted here is the one a person can still get wrong, which is
     writing a feature class into ``level.py`` and forgetting to name it.
     """
-    import dataclasses
 
-    from openglcontext_marble_demo import level as level_module
     authorable = {
         obj for obj in vars(level_module).values()
         if dataclasses.is_dataclass(obj) and isinstance(obj, type)
@@ -226,7 +227,6 @@ def test_loading_something_that_is_not_a_level_says_so(tmp_path):
 
 def test_a_level_loaded_from_a_file_builds_and_plays(tmp_path):
     """The point of the format: the game can play what the editor wrote."""
-    from openglcontext_marble_demo.game import PLAYING, MarbleGame
     path = tmp_path / 'board.marble'
     levelfile.save(generator.generate(seed=4, difficulty=2), str(path))
     game = MarbleGame(levelfile.load(str(path)))

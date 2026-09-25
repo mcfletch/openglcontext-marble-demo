@@ -14,6 +14,8 @@ import importlib
 import pkgutil
 from typing import Any
 
+from openglcontext_marble_demo import levelfile
+
 __all__ = ['mechanism', 'registry']
 
 _REGISTRY: dict = {}
@@ -28,7 +30,6 @@ def mechanism(name: str) -> Any:
     is one act rather than two and no way to do half of it.
     """
     def register(cls: Any) -> Any:
-        from openglcontext_marble_demo import levelfile
         _REGISTRY[name] = cls
         levelfile.register_feature(name, cls)
         return cls

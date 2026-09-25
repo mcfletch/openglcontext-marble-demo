@@ -8,9 +8,15 @@ What a test can hold that to is that a module dropped into the directory is
 found without anything else being edited, and that the things found declare
 enough about themselves to be chosen between.
 """
+import random
+import subprocess
+import sys
+import tempfile
+import textwrap
+
 import pytest
 
-from openglcontext_marble_demo import fragments, mechanisms, pieces
+from openglcontext_marble_demo import fragments, levelfile, mechanisms, pieces
 
 # -- discovery ------------------------------------------------------------------
 
@@ -50,7 +56,6 @@ def test_every_fragment_offers_at_least_one_variant():
 
 
 def test_a_variant_can_be_asked_for_by_name():
-    import random
     for entry in fragments.library().values():
         for variant in entry.variants:
             piece = fragments.build(entry.name, random.Random(1), _port(),
@@ -59,7 +64,6 @@ def test_a_variant_can_be_asked_for_by_name():
 
 
 def test_asking_for_a_variant_that_is_not_there_says_so():
-    import random
     name = sorted(fragments.library())[0]
     with pytest.raises(KeyError, match='nonesuch'):
         fragments.build(name, random.Random(1), _port(), variant='nonesuch')
@@ -67,7 +71,6 @@ def test_asking_for_a_variant_that_is_not_there_says_so():
 
 def test_variants_of_one_fragment_differ_from_each_other():
     """Two variants that build the same thing are one variant."""
-    import random
     for entry in fragments.library().values():
         if len(entry.variants) < 2:
             continue
@@ -80,7 +83,6 @@ def test_variants_of_one_fragment_differ_from_each_other():
 # -- what every fragment has to be ----------------------------------------------
 
 def test_every_fragment_builds_a_piece_with_an_ok_exit():
-    import random
     for entry in fragments.library().values():
         piece = fragments.build(entry.name, random.Random(3), _port())
         assert 'ok' in piece.exits, entry.name
@@ -88,7 +90,6 @@ def test_every_fragment_builds_a_piece_with_an_ok_exit():
 
 
 def test_every_fragment_can_be_crossed_from_its_entry_to_its_ok_exit():
-    import random
     for entry in fragments.library().values():
         piece = fragments.build(entry.name, random.Random(3), _port())
         assert pieces.joined(piece.cells, piece.entry.cell,
@@ -96,7 +97,6 @@ def test_every_fragment_can_be_crossed_from_its_entry_to_its_ok_exit():
 
 
 def test_every_fragment_holds_the_slope_budget():
-    import random
     for entry in fragments.library().values():
         piece = fragments.build(entry.name, random.Random(3), _port())
         for (col, row), height in piece.cells.items():
@@ -108,7 +108,6 @@ def test_every_fragment_holds_the_slope_budget():
 
 
 def test_a_fragment_is_the_same_fragment_for_the_same_seed():
-    import random
     for entry in fragments.library().values():
         first = fragments.build(entry.name, random.Random(5), _port())
         again = fragments.build(entry.name, random.Random(5), _port())
@@ -122,7 +121,6 @@ def test_the_mechanism_registry_finds_what_is_in_its_directory():
 
 
 def test_every_mechanism_is_a_feature_the_file_format_can_write():
-    from openglcontext_marble_demo import levelfile
     for name, factory in mechanisms.registry().items():
         assert levelfile.FEATURES.get(name) is factory, name
 
@@ -159,10 +157,6 @@ def test_a_board_with_a_mechanism_loads_without_anything_importing_it_first():
     Run in a subprocess, because by the time this suite has collected, every
     mechanism module is already imported and the failure cannot happen.
     """
-    import subprocess
-    import sys
-    import tempfile
-    import textwrap
 
     with tempfile.TemporaryDirectory() as room:
         path = '%s/board.marble' % room

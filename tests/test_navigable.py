@@ -14,8 +14,9 @@ from collections import deque
 
 import pytest
 
-from openglcontext_marble_demo import pieces, storygen
-from openglcontext_marble_demo.level import Wall
+from openglcontext_marble_demo import pieces, pilot, storygen
+from openglcontext_marble_demo.game import MarbleGame
+from openglcontext_marble_demo.level import Finish, Level, Wall
 
 NEIGHBOURS = ((1, 0), (-1, 0), (0, 1), (0, -1))
 
@@ -58,7 +59,6 @@ def test_the_engine_offers_a_walled_reachability_check():
 
 def test_a_wall_across_a_lane_makes_it_unnavigable():
     """The check has to be able to *fail*, or it is not a check."""
-    from openglcontext_marble_demo.level import Finish, Level
     cells = {(0, row): 0.0 for row in range(5)}
     level = Level(name='blocked', cells=cells, start_cell=(0, 0),
                   finish_cell=(0, 4), time_limit=60.0,
@@ -68,7 +68,6 @@ def test_a_wall_across_a_lane_makes_it_unnavigable():
 
 
 def test_an_unwalled_lane_is_navigable():
-    from openglcontext_marble_demo.level import Finish, Level
     cells = {(0, row): 0.0 for row in range(5)}
     level = Level(name='clear', cells=cells, start_cell=(0, 0),
                   finish_cell=(0, 4), time_limit=60.0, features=[Finish((0, 4))])
@@ -77,7 +76,6 @@ def test_an_unwalled_lane_is_navigable():
 
 def test_a_rail_along_the_side_does_not_block_anything():
     """Rails face outward: they keep a marble on the board, not off it."""
-    from openglcontext_marble_demo.level import Finish, Level
     cells = {(col, row): 0.0 for col in (-1, 0, 1) for row in range(5)}
     rails = [Wall(cell=(-1, row), side='W') for row in range(5)]
     rails += [Wall(cell=(1, row), side='E') for row in range(5)]
@@ -131,8 +129,6 @@ def test_the_autopilot_gets_across_a_generated_board():
     This is the acceptance test for a generated board: the game's own pilot,
     playing it the way a player would, reaching the end.
     """
-    from openglcontext_marble_demo import pilot
-    from openglcontext_marble_demo.game import MarbleGame
 
     finished = []
     for seed in range(6):

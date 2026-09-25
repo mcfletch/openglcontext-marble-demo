@@ -11,7 +11,7 @@ import numpy as np
 from omi_physics import model
 from OpenGLContext.physics.demo import DemoScene
 
-from openglcontext_marble_demo import fragments, levelfile, materials
+from openglcontext_marble_demo import fragments, levelfile, materials, mechanisms
 from openglcontext_marble_demo.game import GRAVITY, ROLL_DAMPING
 from openglcontext_marble_demo.level import Finish, Level
 from openglcontext_marble_demo.mechanisms.seesaw import Seesaw
@@ -173,7 +173,6 @@ def test_owned_cells_is_the_whole_footprint():
 
 
 def test_the_registry_knows_it():
-    from openglcontext_marble_demo import mechanisms
     assert mechanisms.registry()['seesaw'] is Seesaw
 
 

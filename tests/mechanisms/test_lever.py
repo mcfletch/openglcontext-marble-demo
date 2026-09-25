@@ -9,7 +9,7 @@ solver recorded rather than a number handed to the lever by the test.
 import numpy as np
 import pytest
 
-from openglcontext_marble_demo import levelfile
+from openglcontext_marble_demo import levelfile, mechanisms
 from openglcontext_marble_demo.game import MARBLE_RADIUS, SPIN, MarbleGame
 from openglcontext_marble_demo.level import Finish, Level
 from openglcontext_marble_demo.mechanisms.lever import Door, Lever, channels
@@ -157,7 +157,6 @@ def test_a_lever_and_its_door_round_trip_through_a_file():
 
 
 def test_the_registry_knows_both_of_them():
-    from openglcontext_marble_demo import mechanisms
     assert mechanisms.registry()['lever'] is Lever
     assert mechanisms.registry()['door'] is Door
 

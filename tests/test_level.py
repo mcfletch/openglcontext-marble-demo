@@ -8,7 +8,8 @@ resulting world, so no window is needed.
 from OpenGLContext.physics.demo import DemoScene
 
 from openglcontext_marble_demo import materials
-from openglcontext_marble_demo.level import Finish, Level
+from openglcontext_marble_demo.game import MarbleGame
+from openglcontext_marble_demo.level import KILL_MARGIN, Finish, Level
 from openglcontext_marble_demo.track import TrackMap
 
 
@@ -71,7 +72,6 @@ def test_the_kill_plane_goes_under_the_deepest_tile():
     every one a tile a player can see, stand on, and be killed for standing on,
     with no way to tell why.
     """
-    from openglcontext_marble_demo.level import KILL_MARGIN, Level
     deep = {(col, row): -0.9 * row for col in range(-1, 2) for row in range(20)}
     level = Level(name='deep', cells=deep, start_cell=(0, 0), finish_cell=(0, 19),
                   time_limit=90.0)
@@ -85,7 +85,6 @@ def test_the_kill_plane_goes_under_the_deepest_tile():
 def test_a_shallow_board_keeps_the_plane_where_it_was():
     """Under the board, not glued to it: a marble that goes over the edge of a
     flat board still has somewhere to fall before it is caught."""
-    from openglcontext_marble_demo.level import Level
     flat = {(col, row): 0.0 for col in range(-1, 2) for row in range(4)}
     level = Level(name='flat', cells=flat, start_cell=(0, 0), finish_cell=(0, 3),
                   time_limit=90.0)
@@ -93,7 +92,6 @@ def test_a_shallow_board_keeps_the_plane_where_it_was():
 
 
 def test_a_board_may_ask_for_a_lower_plane_than_its_own_depth():
-    from openglcontext_marble_demo.level import Level
     flat = {(col, row): 0.0 for col in range(-1, 2) for row in range(4)}
     level = Level(name='flat', cells=flat, start_cell=(0, 0), finish_cell=(0, 3),
                   time_limit=90.0, kill_y=-40.0)
@@ -103,7 +101,6 @@ def test_a_board_may_ask_for_a_lower_plane_than_its_own_depth():
 def test_a_marble_resting_on_the_deepest_tile_has_not_fallen():
     """Which is what the plane being above it meant: the board you were standing
     on was outside the world."""
-    from openglcontext_marble_demo.game import MarbleGame
     deep = {(col, row): -0.9 * row for col in range(-1, 2) for row in range(20)}
     level = Level(name='deep', cells=deep, start_cell=(0, 0), finish_cell=(0, 19),
                   time_limit=90.0)

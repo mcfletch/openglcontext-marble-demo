@@ -29,6 +29,7 @@ import pytest
 from openglcontext_marble_demo import fragments, levelfile
 from openglcontext_marble_demo.game import MarbleGame
 from openglcontext_marble_demo.level import Finish, Level
+from openglcontext_marble_demo.mechanisms import rockfall
 from openglcontext_marble_demo.mechanisms.rockfall import Rockfall
 
 CELL = 4.0
@@ -186,7 +187,6 @@ def test_the_rock_lies_at_angles_rather_than_square_to_the_slope():
 def test_the_rock_is_hard_enough_that_the_crash_rule_lets_it_alone():
     """Hard rock returns a marble's speed, and the crash rule exempts surfaces
     that do -- which is what keeps a field of rock a scatter rather than a stop."""
-    from openglcontext_marble_demo.mechanisms import rockfall
     exempt_above = MarbleGame(_level(), debug_flags=0).controller.elastic_restitution
     assert rockfall.ROCK.restitution >= exempt_above
 

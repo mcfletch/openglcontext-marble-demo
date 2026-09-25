@@ -4,8 +4,10 @@ The HUD's *drawing* is GL (verified by the rendered captures); its *content* —
 the timer, speed, material, and status lines say for a given game state — is pure
 string formatting and is unit tested here.
 """
+import math
+
 from openglcontext_marble_demo import hud
-from openglcontext_marble_demo.game import MarbleGame
+from openglcontext_marble_demo.game import LOST, SPIN, TILT, WON, MarbleGame
 from openglcontext_marble_demo.level import Finish, Level
 
 
@@ -35,7 +37,6 @@ def test_timer_line_is_marked_urgent_when_low():
 
 
 def test_won_state_shows_a_win_banner():
-    from openglcontext_marble_demo.game import WON
     game = _game()
     game.state = WON
     assert hud.banner(game) is not None
@@ -43,7 +44,6 @@ def test_won_state_shows_a_win_banner():
 
 
 def test_lost_state_shows_a_lose_banner():
-    from openglcontext_marble_demo.game import LOST
     game = _game()
     game.state = LOST
     assert hud.banner(game) is not None
@@ -59,7 +59,6 @@ def test_no_banner_while_playing():
 
 def test_the_lean_line_reports_the_board_and_the_control_model():
     """Judging a control model means seeing what it is doing."""
-    import math
     game = _game()
     game.tilt.roll = math.radians(17)
     line = [l for l in hud.hud_lines(game) if "LEAN" in l]
@@ -67,7 +66,6 @@ def test_the_lean_line_reports_the_board_and_the_control_model():
 
 
 def test_the_lean_line_says_which_model_is_driving():
-    from openglcontext_marble_demo.game import SPIN, TILT
     assert any(TILT in l.lower() for l in hud.hud_lines(_game()))
     spun = _game()
     spun.control = SPIN

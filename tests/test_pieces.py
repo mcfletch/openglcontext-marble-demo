@@ -12,10 +12,14 @@ measurable: put a marble on it slowly and it must fail, put it on fast and it
 must pass.
 """
 
+import random
+
+import numpy as np
 import pytest
 
 from openglcontext_marble_demo import pieces
-from openglcontext_marble_demo.level import Level, Wall
+from openglcontext_marble_demo.game import PLAYING, MarbleGame
+from openglcontext_marble_demo.level import Bumper, Finish, Level, Wall
 
 CELL = 4.0
 NORTH, SOUTH, EAST, WEST = (0, -1), (0, 1), (1, 0), (-1, 0)
@@ -26,7 +30,6 @@ def _entry(cell=(0, 0), facing=SOUTH, height=0.0, width=3):
 
 
 def _built(builder, entry=None, seed=3, **named):
-    import random
     return builder(random.Random(seed), entry or _entry(), **named)
 
 
@@ -140,7 +143,6 @@ def test_a_chain_holds_the_slope_budget_across_the_joins_too():
 
 
 def test_a_chain_becomes_a_level_the_game_can_play():
-    from openglcontext_marble_demo.game import PLAYING, MarbleGame
     level = pieces.chain(4, ['plateau', 'ramp_down', 'plateau']).level()
     assert isinstance(level, Level)
     game = MarbleGame(level)
@@ -176,10 +178,7 @@ def _furthest(piece, speed, seconds=5.0, goal=True):
     happens *past* its exit cannot be asked about it while a pad sitting on that
     exit ends the run first.
     """
-    import numpy as np
 
-    from openglcontext_marble_demo.game import MarbleGame
-    from openglcontext_marble_demo.level import Finish
     level = piece.level(time_limit=600.0)
     if not goal:
         level.features = [f for f in level.features if not isinstance(f, Finish)]
@@ -276,7 +275,6 @@ def test_a_narrow_bridge_is_one_cell_across():
 
 
 def test_a_scatter_is_a_field_of_things_to_bounce_off():
-    from openglcontext_marble_demo.level import Bumper
     piece = _built(pieces.scatter)
     assert sum(isinstance(f, Bumper) for f in piece.features) >= 4
 

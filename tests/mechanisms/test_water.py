@@ -14,7 +14,7 @@ from omi_physics import model
 from omi_physics.kinematic import KinematicAnimator
 from OpenGLContext.physics.demo import DemoScene
 
-from openglcontext_marble_demo import levelfile, materials
+from openglcontext_marble_demo import levelfile, materials, mechanisms
 from openglcontext_marble_demo.level import Finish, Level
 from openglcontext_marble_demo.mechanisms.water import Plug, Water
 
@@ -201,6 +201,5 @@ def test_a_pool_round_trips_through_the_file_format():
 
 
 def test_the_pool_is_a_mechanism_the_registry_knows():
-    from openglcontext_marble_demo import mechanisms
     assert mechanisms.registry().get('water') is Water
     assert levelfile.FEATURES.get('water') is Water

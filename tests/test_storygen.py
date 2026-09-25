@@ -12,6 +12,7 @@ separates an assembled board from a sprinkled one.
 """
 
 from openglcontext_marble_demo import fragments, storygen
+from openglcontext_marble_demo.game import PLAYING, MarbleGame
 
 
 def _story(seed=1, **named):
@@ -198,7 +199,6 @@ def test_every_way_round_leads_somewhere_that_exists():
 
 
 def test_a_composed_board_can_be_played():
-    from openglcontext_marble_demo.game import PLAYING, MarbleGame
     level = _story(4, chapters=8).build(4).level()
     game = MarbleGame(level)
     for _ in range(300):

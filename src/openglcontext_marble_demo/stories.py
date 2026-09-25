@@ -29,6 +29,7 @@ Where two ways meet again, the second to arrive is **joined** to the first by a
 short run of cells rather than being laid on top of it: what makes a rejoin a
 rejoin is that both ways reach the same place.
 """
+import random
 from collections import deque
 from dataclasses import dataclass, field
 from typing import Any
@@ -114,7 +115,6 @@ class Story:
     # -- laying it out --------------------------------------------------
     def build(self, seed: int=0, entry: Any=None) -> Any:
         """Lay the story out into a :class:`Told`."""
-        import random
         self.check()
         rng = random.Random(seed)
         where = entry or Port(cell=(0, 0), facing=(0, 1), height=0.0,

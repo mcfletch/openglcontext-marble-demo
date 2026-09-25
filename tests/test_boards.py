@@ -18,6 +18,7 @@ the short one.
 Every check runs over a spread of seeds, because a property that holds for one
 board and not the next is not a property.
 """
+import random
 from collections import deque
 
 import pytest
@@ -122,7 +123,6 @@ def test_braiding_gives_a_way_round_that_is_not_just_the_next_lane():
     a board a choice is a way round that is genuinely longer or shorter, and
     that is what a strand is: taking the scenic one costs real cells.
     """
-    import random
     different = 0
     boards_with_a_scenic_way = 0
     for seed in SEEDS:
@@ -140,7 +140,6 @@ def test_braiding_gives_a_way_round_that_is_not_just_the_next_lane():
 
 
 def test_a_shortcut_strand_really_is_shorter_than_the_spine_it_bypasses():
-    import random
     found = 0
     for seed in SEEDS:
         board = boards.build(random.Random(seed), length=15, difficulty=3)
@@ -285,7 +284,6 @@ def test_ramps_point_along_a_way_the_marble_can_go():
 # -- the pieces, on their own --------------------------------------------------
 
 def test_a_spine_advances_and_never_crosses_itself():
-    import random
     for seed in SEEDS:
         spine = boards.carve_spine(random.Random(seed), length=16)
         assert len(set(spine)) == len(spine)
@@ -293,7 +291,6 @@ def test_a_spine_advances_and_never_crosses_itself():
 
 
 def test_widening_keeps_every_spine_cell():
-    import random
     rng = random.Random(3)
     spine = boards.carve_spine(rng, length=14)
     widened = boards.widen(spine, radius=1)
@@ -301,7 +298,6 @@ def test_widening_keeps_every_spine_cell():
 
 
 def test_heights_terrace_downward_from_the_start():
-    import random
     rng = random.Random(3)
     spine = boards.carve_spine(rng, length=14)
     cells = boards.widen(spine, radius=1)

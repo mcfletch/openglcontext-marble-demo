@@ -1,5 +1,6 @@
 """The generator decorates tracks with ramps/rails — deterministically and safely."""
 from openglcontext_marble_demo import generator
+from openglcontext_marble_demo.game import PLAYING, MarbleGame
 from openglcontext_marble_demo.level import (
     Bumper,
     Elevator,
@@ -48,7 +49,6 @@ def test_generated_levels_include_mechanisms():
 
 def test_generated_level_builds_and_is_playable_headlessly():
     """A generated level with mechanisms builds into a game and advances cleanly."""
-    from openglcontext_marble_demo.game import PLAYING, MarbleGame
     level = generator.generate(seed=4, difficulty=4)
     game = MarbleGame(level)
     for _ in range(120):

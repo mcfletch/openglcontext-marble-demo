@@ -7,11 +7,14 @@ impact and, on a non-elastic surface, bleeds the horizontal speed — leaving el
 surfaces to the physics (restitution already returns their energy).
 """
 
+import random
+
 from omi_physics import model
 from omi_physics.world import PhysicsWorld
 
-from openglcontext_marble_demo import materials
+from openglcontext_marble_demo import materials, pieces
 from openglcontext_marble_demo.controller import MarbleController
+from openglcontext_marble_demo.game import MarbleGame
 from openglcontext_marble_demo.track import TrackMap
 
 
@@ -103,10 +106,7 @@ def test_rolling_down_a_slope_and_up_again_keeps_its_speed():
     through, which is the whole of what a kicker asks -- so what it keys on is
     whether the marble was in the air, not how hard the floor pushed back.
     """
-    import random
 
-    from openglcontext_marble_demo import pieces
-    from openglcontext_marble_demo.game import MarbleGame
 
     piece = pieces.kicker(random.Random(3),
                           pieces.Port(cell=(0, 0), facing=(0, 1), height=0.0,

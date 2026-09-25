@@ -12,6 +12,7 @@ on top of the main line.
 import pytest
 
 from openglcontext_marble_demo import pieces, stories
+from openglcontext_marble_demo.game import PLAYING, MarbleGame
 
 
 def _linear():
@@ -136,7 +137,6 @@ def test_different_seeds_give_different_boards():
 # -- what comes out -------------------------------------------------------------
 
 def test_a_story_becomes_a_level_the_game_can_play():
-    from openglcontext_marble_demo.game import PLAYING, MarbleGame
     level = _branching().build(3).level()
     game = MarbleGame(level)
     for _ in range(240):

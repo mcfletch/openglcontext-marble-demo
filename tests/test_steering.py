@@ -29,6 +29,7 @@ import pytest
 from openglcontext_marble_demo import pilot
 from openglcontext_marble_demo.game import MarbleGame
 from openglcontext_marble_demo.level import Finish, Level
+from openglcontext_marble_demo.tilt import TiltRig
 
 DT = 1 / 120.0
 CELL = 4.0
@@ -126,7 +127,6 @@ def test_every_marble_can_be_aimed(marble):
 
 def test_the_board_answers_a_lean_within_a_fraction_of_a_second():
     """A control that takes half a second to begin is one a player fights."""
-    from openglcontext_marble_demo.tilt import TiltRig
     rig = TiltRig()
     for _ in range(int(0.2 / DT)):
         rig.update(DT, 0.0, 1.0)

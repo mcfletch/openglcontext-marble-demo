@@ -13,16 +13,15 @@ import math
 import numpy as np
 import pytest
 
-from openglcontext_marble_demo import boards, generator, pilot
+from openglcontext_marble_demo import boards, generator, pieces, pilot
 from openglcontext_marble_demo.game import WON, MarbleGame
-from openglcontext_marble_demo.level import Level
+from openglcontext_marble_demo.level import Finish, Level
 
 FORWARD = np.array([0.0, 0.0, -1.0])
 RIGHT = np.array([1.0, 0.0, 0.0])
 
 
 def _straight(depth=8, width=3):
-    from openglcontext_marble_demo.level import Finish
     cells = {(col, row): 0.0
              for col in range(-(width // 2), width - width // 2)
              for row in range(depth)}
@@ -44,7 +43,6 @@ def _corner(arm=5):
     one that catches a pilot out: two cells along the route from the corner is a
     cell the marble cannot get to in a straight line.
     """
-    from openglcontext_marble_demo.level import Finish
     cells = {(col, 0): 0.0 for col in range(arm)}
     cells.update({(arm - 1, row): 0.0 for row in range(arm)})
     finish = (arm - 1, arm - 1)
@@ -149,8 +147,6 @@ def test_it_never_aims_across_a_place_the_marble_cannot_go():
 def test_a_route_never_climbs_a_step_a_marble_cannot_roll_up():
     """The board is a grid of heights, and a step taller than the slope budget
     is a wall however open the cells either side of it look."""
-    from openglcontext_marble_demo import pieces
-    from openglcontext_marble_demo.level import Finish
     # A straight run with a cliff across it, and a way round one cell wide.
     cells = {(col, row): 0.0 for col in range(3) for row in range(6)}
     for col in range(2):                        # the cliff, four metres up

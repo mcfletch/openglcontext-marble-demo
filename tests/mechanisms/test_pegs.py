@@ -28,6 +28,7 @@ from openglcontext_marble_demo import fragments, levelfile, materials, mechanism
 from openglcontext_marble_demo.game import MarbleGame
 from openglcontext_marble_demo.level import Finish, Level
 from openglcontext_marble_demo.mechanisms.pegs import PegBoard
+from openglcontext_marble_demo.pieces import MAX_STEP
 
 DT = 1 / 120.0
 
@@ -170,7 +171,6 @@ def test_a_board_descends_from_its_entry_to_its_slots():
 
 
 def test_no_row_steps_further_than_a_marble_can_roll():
-    from openglcontext_marble_demo.pieces import MAX_STEP
     assert abs(_board().step()) <= MAX_STEP
 
 

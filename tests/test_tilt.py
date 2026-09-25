@@ -9,6 +9,7 @@ import math
 
 import numpy as np
 import pytest
+from vrml.vrml97 import transformmatrix
 
 from openglcontext_marble_demo.tilt import TiltRig
 
@@ -185,7 +186,6 @@ def _drawn_normal(rig):
     ``Transform.localMatrix`` makes -- rather than an assumed axis-angle
     convention, because what matters is which way the board tips on screen.
     """
-    from vrml.vrml97 import transformmatrix
     matrix = transformmatrix.transformMatrix(rotation=rig.board_rotation())
     return (np.array([0.0, 1.0, 0.0, 0.0]) @ matrix)[:3]
 
@@ -201,7 +201,6 @@ def _drawn_height(rig, point):
     tests agreed with each other and with the code, and the board was drawn
     tipping away from the direction the marble accelerates.
     """
-    from vrml.vrml97 import transformmatrix
     matrix = transformmatrix.transformMatrix(rotation=rig.board_rotation())
     return float((np.array([point[0], point[1], point[2], 1.0]) @ matrix)[1])
 

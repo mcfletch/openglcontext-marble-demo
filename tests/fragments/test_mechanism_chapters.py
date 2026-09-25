@@ -10,8 +10,10 @@ import random
 
 import pytest
 
-from openglcontext_marble_demo import fragments, pieces
-from openglcontext_marble_demo.mechanisms.lever import Door, Lever
+from openglcontext_marble_demo import fragments, pieces, storygen
+from openglcontext_marble_demo.game import PLAYING, MarbleGame
+from openglcontext_marble_demo.mechanisms import registry
+from openglcontext_marble_demo.mechanisms.lever import Door, Lever, channels
 from openglcontext_marble_demo.mechanisms.pegs import PegBoard
 from openglcontext_marble_demo.mechanisms.rockfall import Rockfall
 from openglcontext_marble_demo.mechanisms.water import Water
@@ -44,8 +46,6 @@ def test_every_variant_carries_it_too(name):
 def test_a_generated_board_can_now_hold_a_mechanism():
     """The point of the four: the generator draws from the library, so a
     mechanism in the library is a mechanism a generated board can contain."""
-    from openglcontext_marble_demo import storygen
-    from openglcontext_marble_demo.mechanisms import registry
     kinds = tuple(registry().values())
     seen = set()
     for seed in range(20):
@@ -76,8 +76,6 @@ def test_a_locked_room_gives_you_room_to_get_a_run_at_it():
 @pytest.mark.slow
 def test_the_door_opens_when_the_lever_is_thrown():
     """End to end, through the game: the door is a wall until it is not."""
-    from openglcontext_marble_demo.game import MarbleGame
-    from openglcontext_marble_demo.mechanisms.lever import channels
     game = MarbleGame(_built('locked_room').level(time_limit=900.0))
     channel = list(channels(game.build).values())[0]
     shut = [float(game.scene.world.position[door][1]) for door in channel.doors]
@@ -128,7 +126,6 @@ def test_a_scree_lands_you_somewhere_wide():
 
 @pytest.mark.parametrize('name', sorted(CHAPTERS))
 def test_the_chapter_plays(name):
-    from openglcontext_marble_demo.game import PLAYING, MarbleGame
     game = MarbleGame(_built(name).level(time_limit=900.0))
     for _ in range(240):
         game.advance(1 / 120.0)

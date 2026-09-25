@@ -158,7 +158,7 @@ def _load_mechanisms() -> None:
     rather than at the top of the module because ``mechanisms`` imports this one
     to register into it.
     """
-    from . import mechanisms
+    from . import mechanisms  # noqa: PLC0415 mechanisms imports levelfile to register into it
     mechanisms.registry()
 
 

@@ -9,6 +9,7 @@ import math
 
 import numpy as np
 import pytest
+from OpenGLContext.scenegraph import basenodes
 
 from openglcontext_marble_demo.game import SPIN, TILT, MarbleGame
 from openglcontext_marble_demo.level import Level
@@ -185,7 +186,6 @@ def test_the_scene_graph_hangs_the_world_off_the_leaning_board():
 def test_the_light_and_the_sky_do_not_lean_with_the_board():
     """A sun that swung across the sky on every steer would be the board's lean
     read as the world's."""
-    from OpenGLContext.scenegraph import basenodes
     game = _game()
     sun = basenodes.DirectionalLight(direction=(-0.4, -1, -0.5))
     graph = game.scene_graph(extra=[sun])
@@ -214,7 +214,6 @@ def test_less_damping_carries_the_marble_further():
     both dampings carry it exactly as far: nought.  Damping is a brake, and a
     brake is only measurable against something driving.
     """
-    from openglcontext_marble_demo.level import Level
     slow = MarbleGame(_plain_board(rows=14), damping=(0.3, 1.5))
     quick = MarbleGame(_plain_board(rows=14), damping=(0.05, 0.2))
     far = _run(quick, forward=-1.0, seconds=4.0)[2]

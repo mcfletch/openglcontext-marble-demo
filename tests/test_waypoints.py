@@ -9,6 +9,9 @@ The rule is one sentence: **the finish refuses until every gate has been passed*
 and the game says how many are left so a player is never guessing.
 """
 
+import json
+
+from openglcontext_marble_demo import hud, levelfile
 from openglcontext_marble_demo.game import PLAYING, WON, MarbleGame
 from openglcontext_marble_demo.level import Finish, Gate, Level
 
@@ -102,7 +105,6 @@ def test_running_out_of_time_still_loses_whatever_the_gates_say():
 # -- what the player is told ----------------------------------------------------
 
 def test_the_hud_says_how_many_are_left():
-    from openglcontext_marble_demo import hud
     game = MarbleGame(_board(gates=[(0, 3), (0, 6)]))
     assert any('2' in line for line in hud.hud_lines(game) if 'GATE' in line)
     _walk(game, [(0, 3)])
@@ -111,7 +113,6 @@ def test_the_hud_says_how_many_are_left():
 
 def test_the_hud_leaves_the_line_out_when_a_board_has_no_gates():
     """A read-out that always says zero is a read-out nobody reads."""
-    from openglcontext_marble_demo import hud
     assert not [line for line in hud.hud_lines(MarbleGame(_board()))
                 if 'GATE' in line]
 
@@ -119,9 +120,7 @@ def test_the_hud_leaves_the_line_out_when_a_board_has_no_gates():
 # -- the file format ------------------------------------------------------------
 
 def test_a_gate_survives_being_saved_and_read_back():
-    import json
 
-    from openglcontext_marble_demo import levelfile
     before = _board(gates=[(0, 3), (0, 6)])
     after = levelfile.from_json(json.loads(json.dumps(levelfile.to_json(before))))
     assert after.features == before.features
@@ -129,5 +128,4 @@ def test_a_gate_survives_being_saved_and_read_back():
 
 def test_a_gate_is_placeable_in_the_editor():
     """A waypoint a designer cannot put down is a waypoint no board has."""
-    from openglcontext_marble_demo import levelfile
     assert 'gate' in levelfile.FEATURES
