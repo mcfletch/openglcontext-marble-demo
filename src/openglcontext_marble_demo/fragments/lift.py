@@ -61,7 +61,7 @@ VARIANTS: dict[str, dict[str, Any]] = {
           rule="step off while a platform is level with somewhere -- "
                "wait longer and you go higher",
           variants=tuple(VARIANTS))
-def lift(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, travel: Any=None, period: Any=None,
+def lift(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, travel: Any=None, period: Any=None,  # noqa: ARG001 the fragment builder protocol passes rng, and this fragment makes no random choice
          gains: Any=None) -> Any:
     """A wide approach into parallel lanes: one flat, the rest riding lifts.
 

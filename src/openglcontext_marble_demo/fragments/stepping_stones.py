@@ -41,7 +41,7 @@ VARIANTS: dict[str, dict[str, Any]] = {
 
 @fragment('stepping_stones', tags=('speed', 'hazard'), cost=8.0, rule=RULE,
           variants=tuple(VARIANTS))
-def stepping_stones(rng: Any, entry: Any, variant: Any='plain', **named: Any) -> Any:
+def stepping_stones(rng: Any, entry: Any, variant: Any='plain', **named: Any) -> Any:  # noqa: ARG001 the fragment builder protocol passes rng, and this fragment makes no random choice
     """A run of stones with gaps between them, each stone a terrace lower.
 
     ``stones`` is how many there are and ``run`` how many cells long each is --

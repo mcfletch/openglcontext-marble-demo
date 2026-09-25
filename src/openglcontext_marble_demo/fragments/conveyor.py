@@ -43,7 +43,7 @@ VARIANTS: dict[str, dict[str, Any]] = {
 
 @fragment('conveyor', tags=('speed', 'run-up'), rule=RULE, cost=4.0,
           variants=tuple(VARIANTS))
-def conveyor(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, speed: Any=None, length: Any=None) -> Any:
+def conveyor(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, speed: Any=None, length: Any=None) -> Any:  # noqa: ARG001 the fragment builder protocol passes rng, and this fragment makes no random choice
     """A run of boosting tiles along the lane, walled both sides."""
     settings = dict(VARIANTS[variant])
     theme = theme or settings['theme']

@@ -15,7 +15,7 @@ from openglcontext_marble_demo.controller import MarbleController
 from openglcontext_marble_demo.track import TrackMap
 
 
-def _world(surface="stone"):
+def _world():
     world = PhysicsWorld(gravity=model.Gravity(gravity=9.81, direction=(0, -1, 0)),
                          sleep_enabled=False)
     index = materials.register_materials(world)

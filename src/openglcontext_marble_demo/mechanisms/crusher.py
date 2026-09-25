@@ -147,7 +147,7 @@ class Crusher:
         body = _kinematic_box(scene, size, (x, top, z), index[level.surface])
 
         def pose(t: float) -> Any:
-            y = _height(t % period, period, strike, dwell, top, bottom)
+            y = _height(t % period, strike, dwell, top, bottom)
             return (x, y, z), (0.0, 0.0, 0.0, 1.0)
 
         result.animators.append(
@@ -155,7 +155,7 @@ class Crusher:
         result.feature_bodies.append(body)
 
 
-def _height(frac: Any, period: Any, strike: Any, dwell: Any, top: Any, bottom: Any) -> Any:
+def _height(frac: Any, strike: Any, dwell: Any, top: Any, bottom: Any) -> Any:
     """The press's height at ``frac`` seconds into its cycle.
 
     Raised for most of the period; the stroke down, the dwell at the bottom,

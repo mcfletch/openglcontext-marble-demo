@@ -127,7 +127,7 @@ class _Plank:
         self.tilt = 0.0
         self._t = 0.0
 
-    def reset(self, world: Any=None) -> None:
+    def reset(self, world: Any=None) -> None:  # noqa: ARG002 the resettable protocol passes the world to reset()
         """Level the plank, so a restarted run meets it flat again."""
         self.tilt = 0.0
         self._t = 0.0

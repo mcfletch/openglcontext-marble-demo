@@ -50,7 +50,7 @@ VARIANTS: dict[str, dict[str, Any]] = {
 
 @fragment('banked_turn', tags=('speed', 'aim'), cost=2.0, rule=RULE,
           variants=tuple(VARIANTS))
-def banked_turn(rng: Any, entry: Any, variant: Any='plain', **named: Any) -> Any:
+def banked_turn(rng: Any, entry: Any, variant: Any='plain', **named: Any) -> Any:  # noqa: ARG001 the fragment builder protocol passes rng, and this fragment makes no random choice
     """A right-angle whose outside is built up into a bank.
 
     ``run`` is how long each leg is, ``turn`` which way the corner goes (``1``

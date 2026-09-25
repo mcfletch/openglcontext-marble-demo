@@ -46,7 +46,7 @@ VARIANTS: dict[str, dict[str, Any]] = {
 
 @fragment('plinko', tags=('luck', 'speed'), rule=RULE, cost=4.0,
           variants=tuple(VARIANTS))
-def plinko(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, width: Any=None, length: Any=None,
+def plinko(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, width: Any=None, length: Any=None,  # noqa: ARG001 the fragment builder protocol passes rng, and this fragment makes no random choice
            drop: Any=None, fast_slot: Any=None) -> Any:
     """A mouth, a peg board, and a landing that gathers the slots back."""
     settings = dict(VARIANTS[variant])

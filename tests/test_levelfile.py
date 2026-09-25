@@ -208,7 +208,7 @@ def test_a_failed_write_leaves_the_previous_file_alone(tmp_path, monkeypatch):
     path = tmp_path / 'board.marble'
     levelfile.save(_level(name='original'), str(path))
 
-    def explode(*args, **named):
+    def explode(_source, _destination):
         raise OSError('disk full')
     monkeypatch.setattr(levelfile.os, 'replace', explode)
     with pytest.raises(OSError):

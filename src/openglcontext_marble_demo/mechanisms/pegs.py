@@ -254,7 +254,7 @@ class PegBoard:
     def build(self, scene: Any, level: Any, index: Any, result: Any) -> None:
         self._require_cells(level)
         self._tiles(scene, level, index, result)
-        self._pegs(scene, level, index, result)
+        self._pegs(scene, level, result)
         self._walls(scene, level, index, result)
 
     def _require_cells(self, level: Any) -> None:
@@ -337,7 +337,7 @@ class PegBoard:
         base = level.cells[self.cell_at(row, offset)]
         return base + self._rise(level, row, offset) * (along / cell_size - row + 0.5)
 
-    def _pegs(self, scene: Any, level: Any, index: Any, result: Any) -> None:
+    def _pegs(self, scene: Any, level: Any, result: Any) -> None:
         """The posts themselves, on a material of their own rather than a surface's."""
         material = scene.raw_material(model.Material(
             staticFriction=self.peg_friction + 0.1,

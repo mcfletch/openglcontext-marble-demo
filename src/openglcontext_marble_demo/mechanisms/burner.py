@@ -142,7 +142,7 @@ class BurnerHeat:
         del self.heat[body]
         return BURNED
 
-    def reset(self, world: Any=None) -> None:
+    def reset(self, world: Any=None) -> None:  # noqa: ARG002 the resettable protocol passes the world to reset()
         """Put the fire out on everything: a restarted run starts cold."""
         self.heat.clear()
 
@@ -185,7 +185,7 @@ class Burner:
     def owned_cells(self) -> Any:
         return set(self.cells)
 
-    def build(self, scene: Any, level: Any, index: Any, result: Any) -> None:
+    def build(self, scene: Any, level: Any, index: Any, result: Any) -> None:  # noqa: ARG002 the feature protocol passes the material index to build()
         material = scene.world.add_material(materials.physics_material(EMBER))
         appearance = _ember_appearance()
         ceilings = {}

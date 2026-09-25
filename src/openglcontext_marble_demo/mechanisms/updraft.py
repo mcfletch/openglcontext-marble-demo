@@ -139,7 +139,7 @@ class Updraft:
     def owned_cells(self) -> Any:
         return set()
 
-    def build(self, scene: Any, level: Any, index: Any, result: Any) -> None:
+    def build(self, scene: Any, level: Any, index: Any, result: Any) -> None:  # noqa: ARG002 the feature protocol passes the material index to build()
         if not self.cells:
             return
         self._draw(scene, level)

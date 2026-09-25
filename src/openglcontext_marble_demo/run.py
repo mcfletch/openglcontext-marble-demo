@@ -278,7 +278,7 @@ class MarbleContext(RecordingMixin, BaseContext):
         return (state.axis(FORWARD_KEYS, BACKWARD_KEYS),
                 state.axis(RIGHT_KEYS, LEFT_KEYS))
 
-    def _on_toggle_demo(self, event: Any) -> None:
+    def _on_toggle_demo(self, event: Any) -> None:  # noqa: ARG002 OpenGLContext key-event callback signature
         """Hand the board to the autopilot, or take it back."""
         self.demo = not self.demo
         print('demo: %s' % ('on' if self.demo else 'off'))
@@ -300,11 +300,11 @@ class MarbleContext(RecordingMixin, BaseContext):
         return self.pilot.lean(world.position[index],
                                world.linear_velocity[index])
 
-    def _on_reset(self, event: Any) -> None:
+    def _on_reset(self, event: Any) -> None:  # noqa: ARG002 OpenGLContext key-event callback signature
         self.game.reset()
         self.triggerRedraw(1)
 
-    def _on_next(self, event: Any) -> None:
+    def _on_next(self, event: Any) -> None:  # noqa: ARG002 OpenGLContext key-event callback signature
         """Advance to the next generated level, leaving any named board behind."""
         self.board_path = None
         self.seed += 1
@@ -313,13 +313,13 @@ class MarbleContext(RecordingMixin, BaseContext):
         self._build_game()
         self.triggerRedraw(1)
 
-    def _on_cycle_material(self, event: Any) -> None:
+    def _on_cycle_material(self, event: Any) -> None:  # noqa: ARG002 OpenGLContext key-event callback signature
         self._marble_i = (self._marble_i + 1) % len(MARBLE_CYCLE)
         self.marble_name = MARBLE_CYCLE[self._marble_i]
         self.game.set_marble_material(self.marble_name)
         self.triggerRedraw(1)
 
-    def _on_cycle_control(self, event: Any) -> None:
+    def _on_cycle_control(self, event: Any) -> None:  # noqa: ARG002 OpenGLContext key-event callback signature
         """Switch control model on the spot, so the two can be felt back to back.
 
         Bounding the rig's player lean at zero *is* the spin model, so the switch
@@ -345,7 +345,7 @@ class MarbleContext(RecordingMixin, BaseContext):
         return super().presentFrame()
 
     # -- loop -----------------------------------------------------------
-    def OnIdle(self, *args: Any) -> Any:
+    def OnIdle(self, *args: Any) -> Any:  # noqa: ARG002 OpenGLContext OnIdle callback signature
         # The engine's clock, not `time.time()`.  It is the same wall clock for
         # an ordinary run, and it is the *recorded* one under a replay and a
         # fixed step per frame under a recording -- so a run that is a function

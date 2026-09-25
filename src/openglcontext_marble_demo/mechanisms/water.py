@@ -223,7 +223,7 @@ class _Pool:
         """True while ``position`` is inside the pool, plus the dry margin."""
         return bool(np.all(position >= self.low) and np.all(position <= self.high))
 
-    def update(self, dt: float) -> None:
+    def update(self, dt: float) -> None:  # noqa: ARG002 the animator protocol passes the frame step to update()
         """Give back what the water took from anything that has left it."""
         for body in [b for b in self.held if not self.holds(self.world.position[b])]:
             gravity_factor, damping = self.held.pop(body)
@@ -250,7 +250,7 @@ class Plug:
         self.released_at: float | None = None
         self._now = 0.0
 
-    def reset(self, world: Any=None) -> None:
+    def reset(self, world: Any=None) -> None:  # noqa: ARG002 the resettable protocol passes the world to reset()
         """Shut the flap again, so a restarted run meets the same surprise."""
         self.released_at = None
 

@@ -42,7 +42,7 @@ VARIANTS: dict[str, dict[str, Any]] = {
 
 @fragment('chicane', tags=('aim', 'speed'), cost=4.0, rule=RULE,
           variants=tuple(VARIANTS))
-def chicane(rng: Any, entry: Any, variant: Any='plain', **named: Any) -> Any:
+def chicane(rng: Any, entry: Any, variant: Any='plain', **named: Any) -> Any:  # noqa: ARG001 the fragment builder protocol passes rng, and this fragment makes no random choice
     """A lane that steps across the board and back again.
 
     ``leg`` is how many cells of lane lie between one bend and the next, which

@@ -55,7 +55,7 @@ VARIANTS: dict[str, dict[str, Any]] = {
 @fragment('crusher', tags=('gate', 'hazard'), cost=8.0,
           rule='go under the press between blows; stopping there is what it catches',
           variants=tuple(VARIANTS))
-def crusher(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, presses: Any=None, width: Any=None,
+def crusher(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, presses: Any=None, width: Any=None,  # noqa: ARG001 the fragment builder protocol passes rng, and this fragment makes no random choice
            period: Any=None, strike: Any=None, dwell: Any=None) -> Any:
     """A walled lane with ``presses`` presses striking across it in turn."""
     settings = VARIANTS[variant]

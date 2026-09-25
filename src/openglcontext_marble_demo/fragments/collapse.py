@@ -67,7 +67,7 @@ def _steps(cells: Any, port: Any, drop: Any, width: Any) -> Any:
 
 @fragment('collapse', tags=('hazard', 'gate'), rule=RULE, cost=5.0,
           variants=tuple(VARIANTS))
-def collapse(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, length: Any=None, hold_time: Any=None,
+def collapse(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, length: Any=None, hold_time: Any=None,  # noqa: ARG001 the fragment builder protocol passes rng, and this fragment makes no random choice
             below: Any=None) -> Any:
     """An approach, a floor that only holds a moment, and a way down past it."""
     settings = dict(VARIANTS[variant])

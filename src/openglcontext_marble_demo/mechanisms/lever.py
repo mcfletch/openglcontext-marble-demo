@@ -77,7 +77,7 @@ class Channel:
         self._opening.append(opening)
         self._shutting.append(shutting)
 
-    def reset(self, world: Any=None) -> None:
+    def reset(self, world: Any=None) -> None:  # noqa: ARG002 the resettable protocol passes the world to reset()
         """Shut every door and let the levers be thrown again."""
         for shutting in self._shutting:
             if shutting is not None:
@@ -224,7 +224,7 @@ class _Paddle:
         self.going_over(self.world, self.index)
         self.channel.throw()
 
-    def reset(self, world: Any = None) -> None:
+    def reset(self, world: Any = None) -> None:  # noqa: ARG002 the resettable protocol passes the world to reset()
         """Stand the paddle up where it was built, ready to be thrown again."""
         position, orientation = self._upright
         self.world.place_body(self.index, position=position, orientation=orientation)

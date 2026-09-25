@@ -35,7 +35,7 @@ VARIANTS: dict[str, dict[str, Any]] = {
 
 @fragment('one_way', tags=('gate', 'place'), rule=RULE, cost=1.0,
           variants=tuple(VARIANTS))
-def one_way(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, lip: Any=None, before: Any=None,
+def one_way(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, lip: Any=None, before: Any=None,  # noqa: ARG001 the fragment builder protocol passes rng, and this fragment makes no random choice
             after: Any=None) -> Any:
     """A shelf, a lip that cannot be climbed, and the floor below it."""
     settings = dict(VARIANTS[variant])

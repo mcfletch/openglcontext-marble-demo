@@ -88,7 +88,7 @@ VARIANTS: dict[str, dict[str, Any]] = {
 
 @fragment('cannon', tags=('aim', 'speed'), rule=RULE, cost=6.0,
           variants=tuple(VARIANTS))
-def cannon(rng: Any, entry: Any, variant: Any='twin', theme: Any=None, lanes: Any=None) -> Any:
+def cannon(rng: Any, entry: Any, variant: Any='twin', theme: Any=None, lanes: Any=None) -> Any:  # noqa: ARG001 the fragment builder protocol passes rng, and this fragment makes no random choice
     """A mouth, one launch ramp per lane, and a wall behind every lane but the
     strongest.
 

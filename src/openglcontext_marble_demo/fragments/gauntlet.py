@@ -86,7 +86,7 @@ def rates(rows: Any, pace: Any, facing: Any, cell_size: float=CELL_SIZE) -> Any:
 @fragment('gauntlet', tags=('gate', 'hazard'), cost=5.0,
           rule='go through when the arms are lying along the lane, not across it',
           variants=tuple(VARIANTS))
-def gauntlet(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, rows: Any=None, pace: Any=None,
+def gauntlet(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, rows: Any=None, pace: Any=None,  # noqa: ARG001 the fragment builder protocol passes rng, and this fragment makes no random choice
              bar: Any=None) -> Any:
     """A walled straight with ``rows`` rows of arms sweeping across it."""
     settings = VARIANTS[variant]

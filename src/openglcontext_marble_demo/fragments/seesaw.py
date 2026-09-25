@@ -53,7 +53,7 @@ VARIANTS: dict[str, dict[str, Any]] = {
 
 @fragment('seesaw', tags=('speed', 'gate'), rule=RULE, cost=6.0,
           variants=tuple(VARIANTS))
-def seesaw(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, length: Any=None, width: Any=None,
+def seesaw(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, length: Any=None, width: Any=None,  # noqa: ARG001 the fragment builder protocol passes rng, and this fragment makes no random choice
            max_tilt: Any=None, response: Any=None) -> Any:
     """A mouth, a plank hinged at its far row, and a landing beyond it."""
     settings = dict(VARIANTS[variant])

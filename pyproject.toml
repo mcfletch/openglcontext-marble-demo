@@ -96,6 +96,7 @@ select = [
     "RUF100",  # every noqa silences something
     "RUF012",  # a mutable class attribute is declared ClassVar
     "SLF001",  # a private name is used only by the module that owns it
+    "ARG",  # every parameter is used, or is fixed by the protocol that calls it
     "S112", "E722", "TRY400",  # an error is neither skipped past nor logged without its traceback
     "DTZ",  # datetimes carry their timezone
     "S102", "S202", "S301", "S307", "S310",  # no exec, eval, pickle, unchecked tar extraction or url opening

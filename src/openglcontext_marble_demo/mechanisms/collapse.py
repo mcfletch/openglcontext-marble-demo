@@ -198,7 +198,7 @@ class CollapseWatch:
             else:
                 self.held[index] = eased
 
-    def reset(self, world: Any=None) -> None:
+    def reset(self, world: Any=None) -> None:  # noqa: ARG002 the resettable protocol passes the world to reset()
         """Nothing has stood on the floor yet: a restarted run starts clean."""
         self.held.clear()
 
@@ -225,7 +225,7 @@ class _Panel:
         self.released_at: float | None = None
         self._now = 0.0
 
-    def reset(self, world: Any=None) -> None:
+    def reset(self, world: Any=None) -> None:  # noqa: ARG002 the resettable protocol passes the world to reset()
         """Shut the floor again, so a restarted run meets the same surprise."""
         self.released_at = None
 

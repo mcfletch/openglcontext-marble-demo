@@ -39,7 +39,7 @@ VARIANTS: dict[str, dict[str, Any]] = {
 
 @fragment('narrows', tags=('aim', 'gate'), cost=5.0, rule=RULE,
           variants=tuple(VARIANTS))
-def narrows(rng: Any, entry: Any, variant: Any='plain', **named: Any) -> Any:
+def narrows(rng: Any, entry: Any, variant: Any='plain', **named: Any) -> Any:  # noqa: ARG001 the fragment builder protocol passes rng, and this fragment makes no random choice
     """A converging hall with a one-cell throat in the middle of it.
 
     ``mouth`` is how wide it starts (and so how far off line a marble may

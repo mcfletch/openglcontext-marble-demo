@@ -103,7 +103,7 @@ class SandDrag:
                 & (z >= self._north) & (z <= self._south))
         return [int(i) for i in np.flatnonzero(near) if self.holds(position[i])]
 
-    def update(self, dt: float=0.0) -> None:
+    def update(self, dt: float=0.0) -> None:  # noqa: ARG002 the animator protocol passes the frame step to update()
         """Match each body's damping to whether it is in the sand this frame."""
         inside = set(self.bodies_inside())
         for index in set(self.caught) - inside:
@@ -160,7 +160,7 @@ class Sand:
     def owned_cells(self) -> Any:
         return set(self.cells)
 
-    def build(self, scene: Any, level: Any, index: Any, result: Any) -> None:
+    def build(self, scene: Any, level: Any, index: Any, result: Any) -> None:  # noqa: ARG002 the feature protocol passes the material index to build()
         material = scene.world.add_material(materials.physics_material(SAND))
         appearance = render.surface_appearance(SAND)
         ceilings = {}

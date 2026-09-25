@@ -80,7 +80,7 @@ def _side_port(hub_cell: Any, across: Any, side: Any, radius: Any, height: Any) 
 
 @fragment('turntable', tags=('aim', 'luck'), cost=4.0, rule=RULE,
           variants=tuple(VARIANTS))
-def turntable(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, hub: Any=None, rpm: Any=None,
+def turntable(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, hub: Any=None, rpm: Any=None,  # noqa: ARG001 the fragment builder protocol passes rng, and this fragment makes no random choice
               exits: Any=None) -> Any:
     """A lead-in lane, a hub with a spinning bar in it, and a mouth per way off."""
     settings = VARIANTS[variant]
