@@ -93,6 +93,10 @@ select = [
     "PGH003", "PGH004",  # a type: ignore or noqa names the codes it silences
     "PLE0604", "PLE0605",  # __all__ is a list or tuple of strings
     "TID251",  # the raw forms the engine has an API for (banned-api, below)
+    "RUF100",  # every noqa silences something
+    "S112", "E722", "TRY400",  # an error is neither skipped past nor logged without its traceback
+    "DTZ",  # datetimes carry their timezone
+    "S102", "S202", "S301", "S307", "S310",  # no exec, eval, pickle, unchecked tar extraction or url opening
 ]
 ignore = [
     "E501",   # line too long -- kept readable by hand, as in the engine
