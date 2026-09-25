@@ -225,6 +225,20 @@ def test_loading_something_that_is_not_a_level_says_so(tmp_path):
         levelfile.load(str(path))
 
 
+@pytest.mark.parametrize('change, complaint', [
+    (lambda doc: doc['cells'].append([0, 0, 'high']), "cell height is 'high'"),
+    (lambda doc: doc['cells'].append([0.5, 0, 1.0]), 'cell column is 0.5'),
+    (lambda doc: doc.__setitem__('start_cell', 'here'), "start_cell is 'here'"),
+    (lambda doc: doc.__setitem__('cells', {'a': 1}), 'cells is'),
+    (lambda doc: doc['features'].append('ramp'), "a feature is 'ramp'"),
+])
+def test_a_board_with_a_value_of_the_wrong_kind_is_refused_naming_it(change, complaint):
+    document = levelfile.to_json(_level())
+    change(document)
+    with pytest.raises(ValueError, match=complaint):
+        levelfile.from_json(document)
+
+
 def test_a_level_loaded_from_a_file_builds_and_plays(tmp_path):
     """The point of the format: the game can play what the editor wrote."""
     path = tmp_path / 'board.marble'

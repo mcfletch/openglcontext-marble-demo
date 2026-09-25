@@ -30,6 +30,18 @@ import tempfile
 import typing
 from typing import Any
 
+from OpenGLContext.loaders.documentvalues import (
+    DocumentError,
+    JSONObject,
+    parse_object,
+    require_array,
+    require_number,
+    require_object,
+    require_text,
+    require_whole,
+)
+from OpenGLContext.loaders.resolver import contained_source
+
 from .level import Bumper, Elevator, Finish, Gate, Level, Ramp, RotatingArm, SpringTrap, Wall
 
 __all__ = ['VERSION', 'GENERATOR', 'FEATURES', 'SUFFIX', 'register_feature',
@@ -73,10 +85,25 @@ _PLAIN = ('name', 'time_limit', 'cell_size', 'kill_y', 'respawn_delay',
           'surface', 'seed', 'difficulty')
 
 
-def _cell(value: Any) -> Any:
+def _seed(value: object, what: str) -> int | None:
+    return None if value is None else require_whole(value, what)
+
+
+#: How each of :data:`_PLAIN` is read, since each is the type Level declares.
+_READ: dict[str, Any] = {
+    'name': require_text, 'time_limit': require_number, 'cell_size': require_number,
+    'kill_y': require_number, 'respawn_delay': require_number,
+    'surface': require_text, 'seed': _seed, 'difficulty': require_whole,
+}
+
+
+def _cell(value: object, what: str) -> tuple[int, int]:
     """A ``(col, row)`` pair from a JSON list, as integers."""
-    col, row = value
-    return (int(col), int(row))
+    pair = require_array(value, what)
+    if len(pair) != 2:
+        raise DocumentError('%s is %r, which is not a column and a row' % (what, value))
+    return (require_whole(pair[0], '%s column' % (what,)),
+            require_whole(pair[1], '%s row' % (what,)))
 
 
 def to_json(level: Any) -> Any:
@@ -96,14 +123,16 @@ def to_json(level: Any) -> Any:
     }
 
 
-def from_json(document: Any) -> Any:
+def from_json(document: JSONObject) -> Any:
     """A :class:`~openglcontext_marble_demo.level.Level` from ``document``.
 
     Raises :exc:`ValueError` for a file from a newer writer or with a version
     that is not a whole number, for a mechanism this game has no class for,
     and for a document that is not a level at all —
     in every case rather than returning something partly built, because a level
-    silently missing its ramps is worse than one that refuses to open.
+    silently missing its ramps is worse than one that refuses to open. A value
+    of the wrong kind is a :class:`~OpenGLContext.loaders.documentvalues.DocumentError`
+    (a ``ValueError``) naming it.
     """
     version = document.get('version', 0)
     if isinstance(version, bool) or not isinstance(version, int):
@@ -118,20 +147,25 @@ def from_json(document: Any) -> Any:
 
     cells = {}
     surfaces = {}
-    for entry in document['cells']:
-        col, row, height = entry[0], entry[1], entry[2]
-        cells[(int(col), int(row))] = float(height)
+    for raw in require_array(document['cells'], 'cells'):
+        entry = require_array(raw, 'a cell')
+        if len(entry) < 3:
+            raise DocumentError('a cell is %r, which is not a column, a row and a '
+                                'height' % (raw,))
+        where = (require_whole(entry[0], 'cell column'), require_whole(entry[1], 'cell row'))
+        cells[where] = require_number(entry[2], 'cell height')
         if len(entry) > 3 and entry[3]:
-            surfaces[(int(col), int(row))] = str(entry[3])
+            surfaces[where] = require_text(entry[3], 'cell surface')
 
-    plain = {name: document[name] for name in _PLAIN if name in document}
+    plain = {name: _READ[name](document[name], name)
+             for name in _PLAIN if name in document}
     return Level(
         cells=cells,
         cell_surfaces=surfaces,
-        start_cell=_cell(document['start_cell']),
-        finish_cell=_cell(document['finish_cell']),
-        features=[_feature_from_json(entry)
-                  for entry in document.get('features', ())],
+        start_cell=_cell(document['start_cell'], 'start_cell'),
+        finish_cell=_cell(document.get('finish_cell'), 'finish_cell'),
+        features=[_feature_from_json(require_object(entry, 'a feature'))
+                  for entry in require_array(document.get('features', ()), 'features')],
         **plain)
 
 
@@ -162,8 +196,8 @@ def _load_mechanisms() -> None:
     mechanisms.registry()
 
 
-def _feature_from_json(entry: Any) -> Any:
-    kind = entry.get('kind')
+def _feature_from_json(entry: JSONObject) -> Any:
+    kind = require_text(entry.get('kind'), 'feature kind')
     if kind not in FEATURES:
         _load_mechanisms()
     factory = FEATURES.get(kind)
@@ -171,13 +205,13 @@ def _feature_from_json(entry: Any) -> Any:
         raise ValueError('this board wants a %r, which this game has no '
                          'mechanism for' % (kind,))
     hints = typing.get_type_hints(factory)
-    named = {}
+    named: dict[str, object] = {}
     for field in dataclasses.fields(factory):
         if field.name not in entry:
             continue                       # absent: the dataclass default holds
         value = entry[field.name]
         if typing.get_origin(hints.get(field.name)) is tuple:
-            value = tuple(value)
+            value = tuple(require_array(value, '%s %s' % (kind, field.name)))
         named[field.name] = value
     return factory(**named)
 
@@ -246,5 +280,5 @@ def save(level: Any, path: str) -> Any:
 
 def load(path: str) -> Any:
     """Read a level from ``path``."""
-    with open(path, encoding='utf-8') as handle:
-        return from_json(json.load(handle))
+    with open(contained_source(path), 'rb') as handle:
+        return from_json(parse_object(handle.read(), path))
