@@ -65,6 +65,12 @@ openglcontext_marble_demo = ["assets/*"]
 
 # Lint standard: the engine's E/W/F/B base, plus import-order, pyupgrade and
 # blind-except checks, as glisteel and the forest demo use.
+[tool.openglcontext-checks]
+# The OGC rules (openglcontext-checks) this project is clean of, held by
+# the workspace preflight. The others join as the project reaches zero of
+# each; the counts are in openglcontext/plans/DEFECT-PREVENTION.md.
+select = ["OGC131", "OGC141", "OGC201", "OGC221", "OGC222", "OGC223"]
+
 [tool.ruff]
 line-length = 100
 target-version = "py310"
