@@ -225,7 +225,7 @@ def walled_pairs(level: Any) -> Any:
     blocked = set()
     for feature in level.features:
         if isinstance(feature, Wall):
-            step = Wall._OFFSET[feature.side]
+            step = Wall.OFFSET[feature.side]
             beyond = (feature.cell[0] + step[0], feature.cell[1] + step[1])
             blocked.add((feature.cell, beyond))
             blocked.add((beyond, feature.cell))
@@ -275,8 +275,8 @@ def open_the_joins(cells: Any, features: Any) -> Any:
     """
     return [feature for feature in features
             if not (isinstance(feature, Wall)
-                    and (feature.cell[0] + Wall._OFFSET[feature.side][0],
-                         feature.cell[1] + Wall._OFFSET[feature.side][1]) in cells)]
+                    and (feature.cell[0] + Wall.OFFSET[feature.side][0],
+                         feature.cell[1] + Wall.OFFSET[feature.side][1]) in cells)]
 
 
 # -- building blocks ------------------------------------------------------

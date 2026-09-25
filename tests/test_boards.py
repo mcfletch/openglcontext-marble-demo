@@ -267,7 +267,7 @@ def test_rails_only_ever_face_the_void():
         for feature in level.features:
             if isinstance(feature, Wall):
                 col, row = feature.cell
-                dc, dr = Wall._OFFSET[feature.side]
+                dc, dr = Wall.OFFSET[feature.side]
                 assert (col + dc, row + dr) not in level.cells
 
 

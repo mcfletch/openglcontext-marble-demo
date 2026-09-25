@@ -25,7 +25,7 @@ def _walled_pairs(level):
     blocked = set()
     for feature in level.features:
         if isinstance(feature, Wall):
-            step = Wall._OFFSET[feature.side]
+            step = Wall.OFFSET[feature.side]
             beyond = (feature.cell[0] + step[0], feature.cell[1] + step[1])
             blocked.add((feature.cell, beyond))
             blocked.add((beyond, feature.cell))
@@ -100,7 +100,7 @@ def test_no_wall_ever_stands_between_two_cells_of_a_finished_board():
         level = storygen.compose(seed, chapters=8).build(seed).level()
         for feature in level.features:
             if isinstance(feature, Wall):
-                step = Wall._OFFSET[feature.side]
+                step = Wall.OFFSET[feature.side]
                 beyond = (feature.cell[0] + step[0], feature.cell[1] + step[1])
                 assert beyond not in level.cells, \
                     ('seed %d: a wall on %r faces %r, which is board'

@@ -68,5 +68,5 @@ def test_rails_face_the_void():
     for feature in level.features:
         if isinstance(feature, Wall):
             col, row = feature.cell
-            dx, dz = Wall._OFFSET[feature.side]
+            dx, dz = Wall.OFFSET[feature.side]
             assert (col + dx, row + dz) not in level.cells   # rail faces empty space

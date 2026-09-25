@@ -30,7 +30,9 @@ arriving at whatever rate the platform repeats at.
 import argparse
 import math
 import os
-from typing import Any
+from collections.abc import Mapping
+from types import MappingProxyType
+from typing import Any, ClassVar
 
 # Core profile + GLFW + the PBR renderer with image-based lighting give reflective
 # marbles and shadows; set before OpenGLContext imports a backend so it takes effect.
@@ -157,7 +159,7 @@ class MarbleContext(RecordingMixin, BaseContext):
     demo = False
     #: Where to record the run to, and how; None for an ordinary run.
     record_path = None
-    record_options: dict = {}
+    record_options: ClassVar[Mapping[str, Any]] = MappingProxyType({})
     control = TILT
     # From the game's own constants rather than restated here.  Restated, they
     # went stale: the game was retuned to an 8-degree lean and 40 degrees of

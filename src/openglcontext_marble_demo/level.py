@@ -16,8 +16,10 @@ Each feature is a small dataclass with a ``build(scene, level, index, result)``
 method, so adding a mechanism is adding a class — the level just lists it.
 """
 import math
+from collections.abc import Mapping
 from dataclasses import dataclass, field
-from typing import Any
+from types import MappingProxyType
+from typing import Any, ClassVar
 
 import numpy as np
 from omi_physics import mathutil, model
@@ -221,7 +223,9 @@ class Wall:
     thickness: float = 0.3
     material: str = "stone"
 
-    _OFFSET = {"N": (0, -1), "S": (0, 1), "E": (1, 0), "W": (-1, 0)}
+    #: The (column, row) step from a wall's cell to the cell across it, by side.
+    OFFSET: ClassVar[Mapping[str, tuple[int, int]]] = MappingProxyType(
+        {"N": (0, -1), "S": (0, 1), "E": (1, 0), "W": (-1, 0)})
 
     def owned_cells(self) -> Any:
         return set()
@@ -230,7 +234,7 @@ class Wall:
         x, z = level.cell_center(self.cell)
         base = level.cells[self.cell]
         cs = level.cell_size
-        dx, dz = self._OFFSET[self.side]
+        dx, dz = self.OFFSET[self.side]
         px = x + dx * cs / 2.0
         pz = z + dz * cs / 2.0
         if dx:                            # wall runs along Z
@@ -476,7 +480,7 @@ class Level:
         respawned marble down on.
         """
         return frozenset(
-            (feature.cell, Wall._OFFSET[feature.side])
+            (feature.cell, Wall.OFFSET[feature.side])
             for feature in self.features if isinstance(feature, Wall))
 
     def marble_start(self, radius: Any=0.5) -> Any:
