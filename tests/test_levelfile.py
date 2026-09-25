@@ -154,6 +154,15 @@ def test_a_newer_file_is_refused_rather_than_half_read():
         levelfile.from_json(document)
 
 
+@pytest.mark.parametrize('version', [float('inf'), 1.5, 'two', True, [1]])
+def test_a_version_that_is_not_a_whole_number_is_refused(version):
+    """JSON reads ``Infinity``; a version is a count, and anything else is not a board."""
+    document = levelfile.to_json(_level())
+    document['version'] = version
+    with pytest.raises(ValueError, match='version'):
+        levelfile.from_json(document)
+
+
 def test_a_seeded_level_records_the_seed_it_came_from():
     before = generator.generate(seed=12, difficulty=2)
     after = _round_trip(before)

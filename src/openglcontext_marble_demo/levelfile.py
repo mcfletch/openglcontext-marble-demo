@@ -93,12 +93,16 @@ def to_json(level: Any) -> Any:
 def from_json(document: Any) -> Any:
     """A :class:`~openglcontext_marble_demo.level.Level` from ``document``.
 
-    Raises :exc:`ValueError` for a file from a newer writer, for a mechanism
-    this game has no class for, and for a document that is not a level at all —
+    Raises :exc:`ValueError` for a file from a newer writer or with a version
+    that is not a whole number, for a mechanism this game has no class for,
+    and for a document that is not a level at all —
     in every case rather than returning something partly built, because a level
     silently missing its ramps is worse than one that refuses to open.
     """
-    version = int(document.get('version', 0))
+    version = document.get('version', 0)
+    if isinstance(version, bool) or not isinstance(version, int):
+        raise ValueError('not a marble board: its file version is %r, not a whole '
+                         'number' % (version,))
     if version > VERSION:
         raise ValueError(
             'this board was saved by a newer marble (file version %d, this one '
