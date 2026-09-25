@@ -30,8 +30,7 @@ def mechanism(name: str) -> Any:
     def register(cls: Any) -> Any:
         from openglcontext_marble_demo import levelfile
         _REGISTRY[name] = cls
-        levelfile.FEATURES[name] = cls
-        levelfile._KIND_OF[cls] = name
+        levelfile.register_feature(name, cls)
         return cls
     return register
 

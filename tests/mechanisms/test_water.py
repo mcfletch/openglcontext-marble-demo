@@ -16,7 +16,7 @@ from OpenGLContext.physics.demo import DemoScene
 
 from openglcontext_marble_demo import levelfile, materials
 from openglcontext_marble_demo.level import Finish, Level
-from openglcontext_marble_demo.mechanisms.water import Water, _Plug
+from openglcontext_marble_demo.mechanisms.water import Plug, Water
 
 FRAME = 1 / 60.0
 #: The pool used throughout: cell ``(3, 0)`` of the strip below, so its centre is
@@ -148,7 +148,7 @@ def test_the_plug_swings_clear_rather_than_vanishing():
 
 def test_the_flap_turns_about_its_hinge_and_stops_at_a_quarter_turn():
     """The swing on its own, without a world: shut, halfway, hanging, and still."""
-    plug = _Plug(hinge=(0.0, -3.0, 0.0), reach=2.0, duration=0.8)
+    plug = Plug(hinge=(0.0, -3.0, 0.0), reach=2.0, duration=0.8)
     assert plug.pose(0.0)[0] == (2.0, -3.0, 0.0)      # flat, reaching out from the hinge
     plug.release(_Waking(), 0)
     plug.pose(0.4)                                     # halfway through the swing
@@ -160,7 +160,7 @@ def test_the_flap_turns_about_its_hinge_and_stops_at_a_quarter_turn():
 
 
 class _Waking:
-    """Enough of a world for :meth:`_Plug.release`, which wakes what reached it."""
+    """Enough of a world for :meth:`Plug.release`, which wakes what reached it."""
 
     def wake(self, body):
         self.woke = body

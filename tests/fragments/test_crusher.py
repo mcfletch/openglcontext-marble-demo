@@ -150,7 +150,7 @@ def test_every_variant_has_at_least_one_press():
 def test_the_press_spans_the_whole_width_of_its_lane():
     """Every press covers the lane's own width -- a gate, not a post with a
     way round it on either side."""
-    for variant, settings in piece_module._VARIANTS.items():
+    for variant, settings in piece_module.VARIANTS.items():
         piece = _built(variant)
         for press in _presses(piece):
             assert len(press.cells) == settings['width'], \
@@ -166,15 +166,15 @@ def test_the_foundry_variant_puts_two_presses_in_the_lane_where_plain_puts_one()
 
 def test_the_wide_variant_is_wider_than_plain():
     """``width`` is a layout axis distinct from how many presses stand in it."""
-    plain = piece_module._VARIANTS['plain']['width']
-    wide = piece_module._VARIANTS['wide']['width']
+    plain = piece_module.VARIANTS['plain']['width']
+    wide = piece_module.VARIANTS['wide']['width']
     assert wide > plain, 'wide (%d) is not wider than plain (%d)' % (wide, plain)
 
 
 def test_the_brisk_variant_strikes_on_a_shorter_period_than_plain():
     """``period`` is the third axis: the same rule, read faster."""
-    plain = piece_module._VARIANTS['plain']['period']
-    brisk = piece_module._VARIANTS['brisk']['period']
+    plain = piece_module.VARIANTS['plain']['period']
+    brisk = piece_module.VARIANTS['brisk']['period']
     assert brisk < plain, 'brisk (%.1f s) is not faster than plain (%.1f s)' \
         % (brisk, plain)
 

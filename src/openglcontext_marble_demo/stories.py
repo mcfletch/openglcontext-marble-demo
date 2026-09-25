@@ -77,8 +77,8 @@ class Told:
         was past it.
         """
         named.setdefault('name', getattr(self.story, 'name', 'story'))
-        return pieces._level(list(self.placed.values()), self.start, self.finish,
-                             extra_cells=self.cells, **named)
+        return pieces.build_level(list(self.placed.values()), self.start, self.finish,
+                                  extra_cells=self.cells, **named)
 
     def rules(self) -> Any:
         """What this story asks of a player, in the order it asks it."""

@@ -12,7 +12,7 @@ back is what gets you up this one.
 from typing import Any
 
 from openglcontext_marble_demo.fragments import fragment
-from openglcontext_marble_demo.pieces import LANE, Piece, Port, _lay, _rails, _slope
+from openglcontext_marble_demo.pieces import LANE, Piece, Port, lay, rails, slope
 
 __all__ = ['chimney', 'RULE', 'VARIANTS']
 
@@ -41,11 +41,11 @@ def chimney(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, rise: A
 
     cells: dict = {}
     features: list = []
-    approach = _lay(cells, entry, 2, width=LANE)
-    top = _slope(cells, features, approach.ahead(1), run, rise, width=LANE)
-    shelf = _lay(cells, top.ahead(1), 2, height=top.height, width=LANE)
+    approach = lay(cells, entry, 2, width=LANE)
+    top = slope(cells, features, approach.ahead(1), run, rise, width=LANE)
+    shelf = lay(cells, top.ahead(1), 2, height=top.height, width=LANE)
     rows = max(row for _, row in cells) - min(row for _, row in cells) + 1
-    features.extend(_rails(cells, entry, rows, width=LANE))
+    features.extend(rails(cells, entry, rows, width=LANE))
     return Piece(name='chimney', cells=cells, entry=entry,
                  exits={'ok': Port(cell=shelf.cell, facing=entry.facing,
                                    height=top.height, width=LANE)},

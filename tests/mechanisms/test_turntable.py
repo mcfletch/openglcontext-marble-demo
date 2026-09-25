@@ -75,8 +75,8 @@ def test_a_turntable_owns_no_cells():
 
 def test_the_bar_reaches_exactly_twice_its_radius():
     level = _level(Turntable(cell=HUB, radius=2))
-    assert Turntable(cell=HUB, radius=2)._span(level) == 2 * 2 * CELL_SIZE
-    assert Turntable(cell=HUB, radius=3.5)._span(level) == 2 * 3.5 * CELL_SIZE
+    assert Turntable(cell=HUB, radius=2).span(level) == 2 * 2 * CELL_SIZE
+    assert Turntable(cell=HUB, radius=3.5).span(level) == 2 * 3.5 * CELL_SIZE
 
 
 # -- what it builds -------------------------------------------------------------

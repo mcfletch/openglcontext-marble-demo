@@ -267,7 +267,7 @@ class MarbleContext(RecordingMixin, BaseContext):
         self.hud.render(flatpass, self)
 
     # -- input ----------------------------------------------------------
-    def _lean_demand(self) -> Any:
+    def lean_demand(self) -> Any:
         """What the player is asking of the board right now, in [-1, 1] per axis.
 
         Read from the engine's sampled input state rather than from key events, so
@@ -294,7 +294,7 @@ class MarbleContext(RecordingMixin, BaseContext):
     def _demand(self) -> Any:
         """Who is steering: the autopilot, or whoever is holding the keys."""
         if not self.demo:
-            return self._lean_demand()
+            return self.lean_demand()
         world = self.game.scene.world
         index = self.game.marble.index
         return self.pilot.lean(world.position[index],

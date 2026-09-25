@@ -12,7 +12,7 @@ and the decision is a decision.
 from typing import Any
 
 from openglcontext_marble_demo.fragments import fragment
-from openglcontext_marble_demo.pieces import LANE, MAX_STEP, Piece, Port, _lay, _rails
+from openglcontext_marble_demo.pieces import LANE, MAX_STEP, Piece, Port, lay, rails
 
 __all__ = ['one_way', 'RULE', 'VARIANTS']
 
@@ -45,12 +45,12 @@ def one_way(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, lip: An
     after = after or settings['after']
 
     cells: dict = {}
-    above = _lay(cells, entry, before, width=LANE)
+    above = lay(cells, entry, before, width=LANE)
     floor = round(entry.height - lip, 6)
     below = Port(cell=above.ahead(1).cell, facing=entry.facing, height=floor,
                  width=LANE)
-    _lay(cells, below, after, height=floor, width=LANE)
-    features = _rails(cells, entry, before + after + 1, width=LANE)
+    lay(cells, below, after, height=floor, width=LANE)
+    features = rails(cells, entry, before + after + 1, width=LANE)
     return Piece(name='one_way', cells=cells, entry=entry,
                  exits={'ok': Port(cell=below.ahead(after - 1).cell,
                                    facing=entry.facing, height=floor,

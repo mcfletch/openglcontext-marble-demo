@@ -44,7 +44,7 @@ APRON = 2
 #: the crossings are in cells, and how many of each there are.
 #: What each variant sets, by name. Values of every kind, which is what a
 #: variant is: the knob a fragment reads by that name.
-_VARIANTS: dict[str, dict[str, Any]] = {
+VARIANTS: dict[str, dict[str, Any]] = {
     'plain': {'theme': 'stone', 'fall': 2.7, 'run': 3, 'across': 4, 'legs': 2},
     'steep': {'theme': 'foundry', 'fall': 3.6, 'run': 3, 'across': 4, 'legs': 2},
     'slick': {'theme': 'ice', 'fall': 2.7, 'run': 3, 'across': 5, 'legs': 2},
@@ -54,7 +54,7 @@ _VARIANTS: dict[str, dict[str, Any]] = {
 
 @fragment('switchback', tags=('brake', 'speed'), cost=6.0,
           rule='take the corners slowly enough to turn: they are at the foot of the descents',
-          variants=tuple(_VARIANTS))
+          variants=tuple(VARIANTS))
 def switchback(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, fall: Any=None, run: Any=None,
                across: Any=None, legs: Any=None, side: Any=None) -> Any:
     """Descents joined by right-angles, alternating which way they turn.
@@ -62,7 +62,7 @@ def switchback(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, fall
     ``side`` is which way the first corner turns, ``1`` or ``-1`` across the
     facing; left to the rng when it is not asked for.
     """
-    settings = _VARIANTS[variant]
+    settings = VARIANTS[variant]
     theme = theme or settings['theme']
     fall = abs(fall if fall is not None else settings['fall'])
     run = run or settings['run']
@@ -77,17 +77,17 @@ def switchback(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, fall
     corners: set = set()
     where, turning = entry, side
     for _ in range(legs):
-        bottom = pieces._slope(cells, ramps, where, run, -fall)
-        bottom = pieces._lay(cells, bottom.ahead(1), APRON, height=bottom.height)
+        bottom = pieces.slope(cells, ramps, where, run, -fall)
+        bottom = pieces.lay(cells, bottom.ahead(1), APRON, height=bottom.height)
         corners |= set(bottom.cells())
         turn = Port(cell=bottom.cell,
                     facing=(sidestep[0] * turning, sidestep[1] * turning),
                     height=bottom.height, width=entry.width)
-        crossing = pieces._lay(cells, turn.ahead(1), across)
+        crossing = pieces.lay(cells, turn.ahead(1), across)
         where = Port(cell=crossing.cell, facing=entry.facing,
                      height=crossing.height, width=entry.width).ahead(1)
         turning = -turning
-    exit_port = pieces._lay(cells, where, RUN_OUT)
+    exit_port = pieces.lay(cells, where, RUN_OUT)
 
     # Fenced wherever the floor stops, except at the two mouths and straight
     # ahead of each corner.  That opening is the piece: a wall there would take
@@ -96,6 +96,6 @@ def switchback(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, fall
     open_at = set(entry.cells()) | set(exit_port.cells()) | corners
     return Piece(name='switchback', cells=cells, entry=entry,
                  exits={'ok': exit_port},
-                 features=ramps + pieces._ring(cells, set(cells), gaps=open_at),
+                 features=ramps + pieces.ring(cells, set(cells), gaps=open_at),
                  theme=theme,
                  rule='take the corners slowly enough to turn: they are at the foot of the descents')

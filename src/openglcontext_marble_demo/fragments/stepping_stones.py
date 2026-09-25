@@ -21,7 +21,7 @@ way round, and it is the only one: down the middle there is nothing but air.
 from typing import Any
 
 from openglcontext_marble_demo.fragments import fragment
-from openglcontext_marble_demo.pieces import LANE, MAX_STEP, Piece, Port, _lay
+from openglcontext_marble_demo.pieces import LANE, MAX_STEP, Piece, Port, lay
 
 __all__ = ['stepping_stones', 'VARIANTS']
 
@@ -61,7 +61,7 @@ def _stepping_stones(entry: Any, theme: Any='stone', stones: Any=4, run: Any=2, 
     across = entry.across()
     cells: dict = {}
     height = entry.height
-    port = _lay(cells, entry, run, height=height, width=width)
+    port = lay(cells, entry, run, height=height, width=width)
     for index in range(stones - 1):
         # The lip alternates sides, so no lane of the piece runs clear through
         # it: whichever side a player creeps down, the next gap is on the other.
@@ -74,7 +74,7 @@ def _stepping_stones(entry: Any, theme: Any='stone', stones: Any=4, run: Any=2, 
         height = round(height - step, 6)
         landing = Port(cell=port.ahead(gap + 1).cell, facing=entry.facing,
                        height=height, width=width)
-        port = _lay(cells, landing, run, height=height, width=width)
+        port = lay(cells, landing, run, height=height, width=width)
     exit_port = Port(cell=port.cell, facing=entry.facing, height=height,
                      width=min(width, LANE))
     return Piece(name='stepping_stones', cells=cells, entry=entry,

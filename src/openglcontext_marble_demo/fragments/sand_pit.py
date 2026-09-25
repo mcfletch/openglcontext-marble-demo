@@ -26,7 +26,7 @@ from typing import Any
 from openglcontext_marble_demo.fragments import fragment
 from openglcontext_marble_demo.level import Ramp
 from openglcontext_marble_demo.mechanisms.sand import Sand
-from openglcontext_marble_demo.pieces import LANE, Piece, Port, _lay, _rails
+from openglcontext_marble_demo.pieces import LANE, Piece, Port, lay, rails
 
 __all__ = ['sand_pit', 'RULE', 'VARIANTS']
 
@@ -69,10 +69,10 @@ def sand_pit(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, length
     half = width // 2
 
     # A run-up, so a ramp has something to be entered from.
-    approach = _lay(cells, entry, 2, width=width)
+    approach = lay(cells, entry, 2, width=width)
     chamber = Port(cell=approach.ahead(1).cell, facing=entry.facing,
                    height=entry.height, width=width)
-    _lay(cells, chamber, length, width=width)
+    lay(cells, chamber, length, width=width)
 
     # The hard shoulder runs down one side of the chamber -- which side is the
     # rng's, so two pits on one board are not the same pit -- and the sand fills
@@ -106,10 +106,10 @@ def sand_pit(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, length
                                          rise=0.9, boost_speed=11.0,
                                          launch=True, launch_up=5.5))
 
-    landing = _lay(cells, chamber.ahead(length), 2, width=width)
+    landing = lay(cells, chamber.ahead(length), 2, width=width)
     # Walled all round the chamber: being in the sand is slow, and being in the
     # sand *and* off the board is a different piece.
-    features.extend(_rails(cells, entry, length + 4, width=width))
+    features.extend(rails(cells, entry, length + 4, width=width))
     return Piece(name='sand_pit', cells=cells, entry=entry,
                  exits={'ok': Port(cell=landing.cell, facing=entry.facing,
                                    height=entry.height, width=LANE)},

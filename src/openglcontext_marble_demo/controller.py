@@ -210,7 +210,6 @@ class MarbleController:
         self._since_air = self.LANDING_GRACE + 1
         start_cell = track.cell_of(world.position[index][0], world.position[index][2])
         self.checkpoint = start_cell
-        self._checkpoint_surface = track.cells.get(start_cell, 0.0)
         #: The height of the last ground the marble stood on, whether or not it
         #: was somewhere worth coming back to.  Kept apart from the checkpoint's
         #: height because the two answer different questions: this one is *how
@@ -221,6 +220,20 @@ class MarbleController:
         self._ground_surface = self._checkpoint_surface
 
     # -- where a fallen marble comes back ---------------------------------
+    @property
+    def checkpoint(self) -> Any:
+        """The ``(column, row)`` cell a fallen marble comes back to.
+
+        Setting it records that cell's floor height with it (0.0 for a cell off
+        the board), which is the height :meth:`respawn` sets the marble down on.
+        """
+        return self._checkpoint
+
+    @checkpoint.setter
+    def checkpoint(self, cell: Any) -> None:
+        self._checkpoint = cell
+        self._checkpoint_surface = self.track.cells.get(cell, 0.0)
+
     #: The four cells a checkpoint has to have floor in.
     _AROUND = ((1, 0), (-1, 0), (0, 1), (0, -1))
 
@@ -297,7 +310,6 @@ class MarbleController:
         grounded = on_track and self._is_grounded(position, self.track.cells[cell])
         if grounded and self._somewhere_to_come_back_to(cell):
             self.checkpoint = cell
-            self._checkpoint_surface = self.track.cells[cell]
         if grounded:
             self._ground_surface = self.track.cells[cell]
         surface = self.track.cells[cell] if on_track else self._ground_surface
@@ -390,6 +402,11 @@ class MarbleController:
             return 0.0
         self._fell_from = self._peak_clearance
         self._peak_clearance = 0.0
+        return self._fell_from
+
+    @property
+    def fell_from(self) -> float:
+        """The height, in metres, of the last drop the marble landed from."""
         return self._fell_from
 
     @property
@@ -525,9 +542,10 @@ class MarbleController:
     def _update_respawn(self, dt: float) -> None:
         self.respawn_timer += dt
         if self.respawn_timer >= self.wait_to_return:
-            self._respawn()
+            self.respawn()
 
-    def _respawn(self) -> None:
+    def respawn(self) -> None:
+        """Put the marble back at rest on its checkpoint, playing again."""
         was_lost = self.state == DESTROYED
         center_x, center_z = self.track.cell_center(*self.checkpoint)
         self._ground_surface = self._checkpoint_surface

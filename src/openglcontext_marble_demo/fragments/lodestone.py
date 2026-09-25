@@ -22,7 +22,7 @@ from typing import Any
 
 from openglcontext_marble_demo.fragments import fragment
 from openglcontext_marble_demo.mechanisms.magnet import Magnet
-from openglcontext_marble_demo.pieces import LANE, Piece, Port, _lay, _rails
+from openglcontext_marble_demo.pieces import LANE, Piece, Port, lay, rails
 
 __all__ = ['lodestone', 'RULE', 'VARIANTS']
 
@@ -68,11 +68,11 @@ def lodestone(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, posts
     width = LANE + 2                    # room to be pulled off the middle in
     cells: dict = {}
     features: list = []
-    run = _lay(cells, entry, 1, width=width)
+    run = lay(cells, entry, 1, width=width)
     corridor = Port(cell=run.ahead(1).cell, facing=entry.facing,
                     height=entry.height, width=width)
     length = posts * spacing + 1
-    _lay(cells, corridor, length, width=width)
+    lay(cells, corridor, length, width=width)
 
     across = entry.across()
     edge = width // 2
@@ -88,8 +88,8 @@ def lodestone(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, posts
                   cell[1] + across[1] * side * edge),
             strength=pull, radius=reach, axis=across))
 
-    end = _lay(cells, corridor.ahead(length), 2, width=width)
-    features.extend(_rails(cells, entry, length + 3, width=width))
+    end = lay(cells, corridor.ahead(length), 2, width=width)
+    features.extend(rails(cells, entry, length + 3, width=width))
     return Piece(name='lodestone', cells=cells, entry=entry,
                  exits={'ok': Port(cell=end.cell, facing=entry.facing,
                                    height=entry.height, width=LANE)},

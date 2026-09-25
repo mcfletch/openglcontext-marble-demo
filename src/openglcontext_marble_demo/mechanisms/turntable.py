@@ -65,11 +65,11 @@ class Turntable:
 
     def build(self, scene: Any, level: Any, index: Any, result: Any) -> None:
         self._disc(scene, level, result)
-        RotatingArm(cell=self.cell, length=self._span(level), rpm=self.rpm,
+        RotatingArm(cell=self.cell, length=self.span(level), rpm=self.rpm,
                     thickness=self.bar_thickness,
                     clearance=self.clearance).build(scene, level, index, result)
 
-    def _span(self, level: Any) -> Any:
+    def span(self, level: Any) -> Any:
         """How far the bar and the disc reach, in metres -- twice the radius."""
         return self.radius * 2.0 * level.cell_size
 
@@ -84,7 +84,7 @@ class Turntable:
         """
         x, z = level.cell_center(self.cell)
         base = level.cells[self.cell]
-        span = self._span(level) * DISC_MARGIN
+        span = self.span(level) * DISC_MARGIN
         transform = Transform(
             translation=(x, base + self.disc_thickness / 2.0, z),
             children=[basenodes.Shape(

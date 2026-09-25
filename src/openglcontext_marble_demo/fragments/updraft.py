@@ -28,7 +28,7 @@ from typing import Any
 
 from openglcontext_marble_demo.fragments import fragment
 from openglcontext_marble_demo.mechanisms.updraft import Updraft
-from openglcontext_marble_demo.pieces import LANE, MAX_STEP, Piece, Port, _lay, _rails, _slope
+from openglcontext_marble_demo.pieces import LANE, MAX_STEP, Piece, Port, lay, rails, slope
 
 __all__ = ['updraft', 'RULE', 'VARIANTS']
 
@@ -93,7 +93,7 @@ def _updraft(rng: Any, entry: Any, theme: Any='stone', gap: Any=4, strength: Any
     cells: dict = {}
     features: list = []
 
-    lip = _lay(cells, entry, RUN_UP, width=width)
+    lip = lay(cells, entry, RUN_UP, width=width)
 
     # The gap itself: never laid, so it carries no floor at all -- a marble
     # over it is off the track exactly as it would be over any other void.
@@ -103,12 +103,12 @@ def _updraft(rng: Any, entry: Any, theme: Any='stone', gap: Any=4, strength: Any
     landing_height = entry.height - LANDING_DROP
     landing_entry = Port(cell=lip.ahead(gap + 1).cell, facing=entry.facing,
                          height=landing_height, width=width)
-    landing = _lay(cells, landing_entry, LANDING, height=landing_height, width=width)
+    landing = lay(cells, landing_entry, LANDING, height=landing_height, width=width)
 
     features.append(Updraft(cells=shaft_cells, strength=strength,
                             floor=entry.height - depth, reach=reach))
-    features.extend(_rails(cells, entry, RUN_UP, width=width))
-    features.extend(_rails(cells, landing_entry, LANDING, width=width))
+    features.extend(rails(cells, entry, RUN_UP, width=width))
+    features.extend(rails(cells, landing_entry, LANDING, width=width))
 
     across = entry.across()
     hand = rng.choice((-1, 1))
@@ -122,9 +122,9 @@ def _updraft(rng: Any, entry: Any, theme: Any='stone', gap: Any=4, strength: Any
     bridge_start = Port(cell=(lip.cell[0] + across[0] * hand * (half + 1),
                               lip.cell[1]),
                         facing=entry.facing, height=entry.height, width=1)
-    _slope(cells, features, bridge_start, gap + 2, -LANDING_DROP, width=1)
-    features.extend(_rails(cells, bridge_start, gap + 2,
-                           sides=('left', 'right'), width=1))
+    slope(cells, features, bridge_start, gap + 2, -LANDING_DROP, width=1)
+    features.extend(rails(cells, bridge_start, gap + 2,
+                          sides=('left', 'right'), width=1))
 
     # The stair down to the shaft's own floor: on the *other* side, so it never
     # shares a column with the bridge, and stood two cells clear of the lane
@@ -137,15 +137,15 @@ def _updraft(rng: Any, entry: Any, theme: Any='stone', gap: Any=4, strength: Any
     cells[elbow_far] = entry.height
     stair_start = Port(cell=elbow_far, facing=entry.facing, height=entry.height,
                        width=1)
-    foot = _slope(cells, features, stair_start, gap, -depth, width=1)
-    # ``_slope`` may lengthen the run past ``gap`` to hold the slope budget;
+    foot = slope(cells, features, stair_start, gap, -depth, width=1)
+    # ``slope`` may lengthen the run past ``gap`` to hold the slope budget;
     # this is the same rule it uses to decide how many steps that took.
     descent_steps = max(gap, math.ceil(depth / MAX_STEP) + 1, 2)
-    features.extend(_rails(cells, stair_start, descent_steps,
-                           sides=('left', 'right'), width=1))
-    stair_end = _lay(cells, foot.ahead(1), UNDERPASS, height=foot.height, width=1)
-    features.extend(_rails(cells, foot.ahead(1), UNDERPASS,
-                           sides=('left', 'right'), width=1))
+    features.extend(rails(cells, stair_start, descent_steps,
+                          sides=('left', 'right'), width=1))
+    stair_end = lay(cells, foot.ahead(1), UNDERPASS, height=foot.height, width=1)
+    features.extend(rails(cells, foot.ahead(1), UNDERPASS,
+                          sides=('left', 'right'), width=1))
     sunk_exit = Port(cell=stair_end.cell, facing=entry.facing,
                      height=foot.height, width=1)
 

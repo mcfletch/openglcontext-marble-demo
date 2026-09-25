@@ -22,7 +22,7 @@ from typing import Any
 
 from openglcontext_marble_demo.fragments import fragment
 from openglcontext_marble_demo.level import Ramp
-from openglcontext_marble_demo.pieces import LANE, Piece, Port, _lay, _rails
+from openglcontext_marble_demo.pieces import LANE, Piece, Port, lay, rails
 
 __all__ = ['conveyor', 'RULE', 'VARIANTS']
 
@@ -52,9 +52,9 @@ def conveyor(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, speed:
 
     cells: dict = {}
     features: list = []
-    mouth = _lay(cells, entry, 1, width=LANE)
+    mouth = lay(cells, entry, 1, width=LANE)
     belt = mouth.ahead(1)
-    _lay(cells, belt, length, width=LANE)
+    lay(cells, belt, length, width=LANE)
     for step in range(length):
         for cell in belt.ahead(step).cells():
             # ``rise=0``: the tile is flat, and all the belt does is the boost.
@@ -62,8 +62,8 @@ def conveyor(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, speed:
             # sloped one would be a hill as well as a belt.
             features.append(Ramp(cell=cell, direction=entry.facing, rise=0.0,
                                  boost_speed=speed))
-    end = _lay(cells, belt.ahead(length), 2, width=LANE)
-    features.extend(_rails(cells, entry, length + 3, width=LANE))
+    end = lay(cells, belt.ahead(length), 2, width=LANE)
+    features.extend(rails(cells, entry, length + 3, width=LANE))
     return Piece(name='conveyor', cells=cells, entry=entry,
                  exits={'ok': Port(cell=end.cell, facing=entry.facing,
                                    height=entry.height, width=LANE)},

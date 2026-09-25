@@ -54,7 +54,7 @@ MIN_RATE = 3.5
 #: through whatever the timing, which is what ``sparse`` is.
 #: What each variant sets, by name. Values of every kind, which is what a
 #: variant is: the knob a fragment reads by that name.
-_VARIANTS: dict[str, dict[str, Any]] = {
+VARIANTS: dict[str, dict[str, Any]] = {
     'plain': {'theme': 'stone', 'rows': 3, 'pace': 3.4, 'bar': 3.6},
     'foundry': {'theme': 'foundry', 'rows': 4, 'pace': 3.4, 'bar': 3.6},
     'brisk': {'theme': 'ice', 'rows': 3, 'pace': 4.5, 'bar': 3.6},
@@ -85,11 +85,11 @@ def rates(rows: Any, pace: Any, facing: Any, cell_size: float=CELL_SIZE) -> Any:
 
 @fragment('gauntlet', tags=('gate', 'hazard'), cost=5.0,
           rule='go through when the arms are lying along the lane, not across it',
-          variants=tuple(_VARIANTS))
+          variants=tuple(VARIANTS))
 def gauntlet(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, rows: Any=None, pace: Any=None,
              bar: Any=None) -> Any:
     """A walled straight with ``rows`` rows of arms sweeping across it."""
-    settings = _VARIANTS[variant]
+    settings = VARIANTS[variant]
     theme = theme or settings['theme']
     rows = rows or settings['rows']
     pace = pace or settings['pace']
@@ -97,13 +97,13 @@ def gauntlet(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, rows: 
 
     length = LEAD + (rows - 1) * SPACING + RUN_OUT + 1
     cells: dict = {}
-    end = pieces._lay(cells, entry, length)
+    end = pieces.lay(cells, entry, length)
     arms = []
     for row, rpm in enumerate(rates(rows, pace, entry.facing)):
         at = entry.ahead(LEAD + row * SPACING)
         for cell in at.cells():
             arms.append(RotatingArm(cell=cell, length=bar, rpm=rpm))
     return Piece(name='gauntlet', cells=cells, entry=entry, exits={'ok': end},
-                 features=arms + pieces._rails(cells, entry, length),
+                 features=arms + pieces.rails(cells, entry, length),
                  theme=theme,
                  rule='go through when the arms are lying along the lane, not across it')

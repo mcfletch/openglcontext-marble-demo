@@ -15,7 +15,7 @@ from openglcontext_marble_demo import fragments, pieces
 from openglcontext_marble_demo.fragments.seesaw import VARIANTS
 from openglcontext_marble_demo.game import MarbleGame
 from openglcontext_marble_demo.level import CELL_SIZE, Finish
-from openglcontext_marble_demo.pieces import LANE, Piece, Port, _lay, _rails
+from openglcontext_marble_demo.pieces import LANE, Piece, Port, lay, rails
 
 STEP = 1 / 120.0
 
@@ -36,11 +36,11 @@ def _bare(length, width):
     """A flat corridor the same shape as the piece, with no plank in it."""
     entry = _entry()
     cells: dict = {}
-    mouth = _lay(cells, entry, 2, width=width)
+    mouth = lay(cells, entry, 2, width=width)
     start = mouth.ahead(1)
-    end = _lay(cells, start, length, width=width)
-    landing = _lay(cells, end.ahead(1), 2, width=width)
-    walls = _rails(cells, entry, length + 4, width=width)
+    end = lay(cells, start, length, width=width)
+    landing = lay(cells, end.ahead(1), 2, width=width)
+    walls = rails(cells, entry, length + 4, width=width)
     return Piece(name='bare', cells=cells, entry=entry,
                 exits={'ok': Port(cell=landing.cell, facing=entry.facing,
                                   height=entry.height, width=LANE)},

@@ -21,7 +21,7 @@ the difference between the variants: ``leg`` is the time a player is given.
 from typing import Any
 
 from openglcontext_marble_demo.fragments import fragment
-from openglcontext_marble_demo.pieces import LANE, Piece, Port, _lay, _ring
+from openglcontext_marble_demo.pieces import LANE, Piece, Port, lay, ring
 
 __all__ = ['chicane', 'VARIANTS']
 
@@ -60,7 +60,7 @@ def _chicane(entry: Any, theme: Any='stone', leg: Any=4, bends: Any=(3,), width:
     width = entry.width if width is None else width
     across = entry.across()
     cells: dict = {}
-    port = _lay(cells, entry, leg, width=width)
+    port = lay(cells, entry, leg, width=width)
     at = 0
     for offset in tuple(bends) + (0,):
         while at != offset:
@@ -69,11 +69,11 @@ def _chicane(entry: Any, theme: Any='stone', leg: Any=4, bends: Any=(3,), width:
             moved = Port(cell=(port.cell[0] + across[0] * way,
                                port.cell[1] + across[1] * way),
                          facing=entry.facing, height=entry.height, width=width)
-            port = _lay(cells, moved.ahead(1), 1, width=width)
-        port = _lay(cells, port.ahead(1), leg, width=width)
+            port = lay(cells, moved.ahead(1), 1, width=width)
+        port = lay(cells, port.ahead(1), leg, width=width)
     exit_port = Port(cell=port.cell, facing=entry.facing, height=entry.height,
                      width=min(width, LANE))
     ways_out = set(entry.cells()) | set(exit_port.cells())
     return Piece(name='chicane', cells=cells, entry=entry, exits={'ok': exit_port},
-                 features=_ring(cells, set(cells), gaps=ways_out), theme=theme,
+                 features=ring(cells, set(cells), gaps=ways_out), theme=theme,
                  rule=RULE)

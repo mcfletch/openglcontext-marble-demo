@@ -145,7 +145,7 @@ def _drop(height):
         world.step(DT)
         if ctrl.update(DT) != ACTIVE:
             break
-    return ctrl, ctrl._fell_from
+    return ctrl, ctrl.fell_from
 
 
 def test_a_long_drop_onto_the_board_is_survivable():
@@ -290,7 +290,6 @@ def test_a_loss_waits_longer_than_a_fall_and_comes_back_at_the_checkpoint():
         'being destroyed waits %.1f s and falling off waits %.1f s: the player '
         'cannot tell the two apart' % (ctrl.destroy_delay, ctrl.respawn_delay))
     ctrl.checkpoint = (2, 0)
-    ctrl._checkpoint_surface = 0.0
     ctrl.destroy(CRUSHED)
     for _ in range(int((ctrl.respawn_delay + 0.5) / DT)):
         game.advance(DT)

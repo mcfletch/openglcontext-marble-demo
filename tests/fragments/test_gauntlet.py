@@ -126,7 +126,7 @@ def test_the_sparse_row_leaves_a_way_between_the_bars():
 @pytest.mark.parametrize('variant',
                          sorted(fragments.library()['gauntlet'].variants))
 def test_every_row_turns_fast_enough_to_be_worth_timing(variant):
-    settings = piece_module._VARIANTS[variant]
+    settings = piece_module.VARIANTS[variant]
     for rpm in piece_module.rates(settings['rows'], settings['pace'], (0, 1)):
         assert rpm * math.pi / 30.0 >= piece_module.MIN_RATE - 1e-9, \
             '%s has a row at %.1f rpm' % (variant, rpm)
@@ -134,8 +134,8 @@ def test_every_row_turns_fast_enough_to_be_worth_timing(variant):
 
 def test_a_row_lies_along_the_lane_when_a_marble_at_the_design_pace_reaches_it():
     """Which is the phasing: the rate is chosen for the moment of arrival."""
-    pace = piece_module._VARIANTS['plain']['pace']
-    rows = piece_module._VARIANTS['plain']['rows']
+    pace = piece_module.VARIANTS['plain']['pace']
+    rows = piece_module.VARIANTS['plain']['rows']
     for facing, open_at in (((0, 1), math.pi / 2.0), ((1, 0), 0.0)):
         for row, rpm in enumerate(piece_module.rates(rows, pace, facing)):
             arrive = ((piece_module.LEAD + row * piece_module.SPACING)

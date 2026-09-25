@@ -162,6 +162,19 @@ def test_a_rail_makes_a_cell_somewhere_to_come_back_to():
         'a railed cell is not being counted as somewhere to come back to'
 
 
+def test_a_checkpoint_named_by_the_game_is_come_back_to_at_its_own_height():
+    """Naming a checkpoint carries its floor height with it, so a marble put back
+    there rests on that floor rather than on the one it last stood on."""
+    world, i, track, ctrl = _world_with_marble(
+        cells={(0, 0): 0.0, (1, 0): 0.0, (2, 0): 3.0, (3, 0): 0.0})
+    ctrl.checkpoint = (2, 0)
+    ctrl.respawn()
+    x, y, _z = world.position[i]
+    assert track.cell_of(x, 0.0) == (2, 0)
+    assert abs(y - (3.0 + ctrl.radius)) < 0.1, \
+        'put back at height %.2f over a floor at 3.0' % y
+
+
 # -- fall vs jump --------------------------------------------------------
 
 def test_falling_off_the_side_triggers_respawn_state():

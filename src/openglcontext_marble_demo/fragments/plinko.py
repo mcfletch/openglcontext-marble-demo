@@ -22,7 +22,7 @@ from typing import Any
 
 from openglcontext_marble_demo.fragments import fragment
 from openglcontext_marble_demo.mechanisms.pegs import PegBoard
-from openglcontext_marble_demo.pieces import LANE, Piece, Port, _lay, _rails
+from openglcontext_marble_demo.pieces import LANE, Piece, Port, lay, rails
 
 __all__ = ['plinko', 'RULE', 'VARIANTS']
 
@@ -60,7 +60,7 @@ def plinko(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, width: A
     features: list = []
 
     # A mouth as wide as the board, so where a player enters is a choice.
-    mouth = _lay(cells, entry, 2, width=width)
+    mouth = lay(cells, entry, 2, width=width)
 
     board = PegBoard(cell=mouth.ahead(1).cell, facing=entry.facing, width=width,
                      length=length, drop=drop, top=entry.height,
@@ -73,8 +73,8 @@ def plinko(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, width: A
     rows = max(row for _, row in board.cells())
     landing = Port(cell=(entry.cell[0], rows + 1), facing=entry.facing,
                    height=bottom, width=width)
-    _lay(cells, landing, 2, height=bottom, width=width)
-    features.extend(_rails(cells, entry, length + 6, width=width))
+    lay(cells, landing, 2, height=bottom, width=width)
+    features.extend(rails(cells, entry, length + 6, width=width))
     return Piece(name='plinko', cells=cells, entry=entry,
                  exits={'ok': Port(cell=landing.ahead(1).cell,
                                    facing=entry.facing, height=bottom,

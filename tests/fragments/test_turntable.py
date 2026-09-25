@@ -170,7 +170,7 @@ def test_every_variant_lets_a_marble_go_at_every_phase_sampled(variant):
 # -- the four variants, and the three axes they differ on -----------------------
 
 def test_the_variants_differ_in_material_layout_and_effect():
-    settings = piece_module._VARIANTS
+    settings = piece_module.VARIANTS
     themes = {name: value['theme'] for name, value in settings.items()}
     assert len(set(themes.values())) >= 3, \
         'only %d distinct materials among the variants: %s' % (

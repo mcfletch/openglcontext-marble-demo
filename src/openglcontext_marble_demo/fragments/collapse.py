@@ -25,7 +25,7 @@ from typing import Any
 
 from openglcontext_marble_demo.fragments import fragment
 from openglcontext_marble_demo.mechanisms.collapse import Collapse
-from openglcontext_marble_demo.pieces import LANE, MAX_STEP, Piece, Port, _lay, _rails
+from openglcontext_marble_demo.pieces import LANE, MAX_STEP, Piece, Port, lay, rails
 
 __all__ = ['collapse', 'RULE', 'VARIANTS']
 
@@ -49,7 +49,7 @@ def _steps(cells: Any, port: Any, drop: Any, width: Any) -> Any:
     A stepped slope rolls downhill and cannot be climbed -- a riser is a wall
     in front of whatever meets it going up -- which is exactly what a floor
     with no going back wants of the way past it. Unramped rather than built
-    with :func:`~openglcontext_marble_demo.pieces._slope`, whose ramp tiles
+    with :func:`~openglcontext_marble_demo.pieces.slope`, whose ramp tiles
     are thin, tilted slabs: a body carried across the collapsed floor lands on
     whichever one of these full blocks its fall first reaches, and a thin
     slab is a worse target to hit than a block a metre deep.
@@ -79,15 +79,15 @@ def collapse(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, length
     cells: dict = {}
     features: list = []
 
-    approach = _lay(cells, entry, 1, width=LANE)
+    approach = lay(cells, entry, 1, width=LANE)
     panel_port = approach.ahead(1)
     before = set(cells)
-    panel_end = _lay(cells, panel_port, length, width=LANE)
+    panel_end = lay(cells, panel_port, length, width=LANE)
     panel_area = tuple(sorted(set(cells) - before))
 
     ok_exit = Port(cell=panel_end.cell, facing=entry.facing, height=entry.height,
                    width=LANE)
-    features.extend(_rails(cells, entry, 1 + length, width=LANE))
+    features.extend(rails(cells, entry, 1 + length, width=LANE))
 
     # The way past the hole: a stepped descent -- respecting the same slope
     # budget as any other joiner -- straight on from where the floor was, so a
@@ -97,8 +97,8 @@ def collapse(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, length
     # descent as well.
     foot = _steps(cells, panel_end.ahead(1), -abs(below), width=LANE)
     run = 3
-    landing = _lay(cells, foot.ahead(1), run, height=foot.height, width=LANE)
-    features.extend(_rails(cells, foot.ahead(1), run, width=LANE))
+    landing = lay(cells, foot.ahead(1), run, height=foot.height, width=LANE)
+    features.extend(rails(cells, foot.ahead(1), run, width=LANE))
     missed_exit = Port(cell=landing.cell, facing=entry.facing, height=foot.height,
                        width=LANE)
 

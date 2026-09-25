@@ -24,7 +24,7 @@ from typing import Any
 
 from openglcontext_marble_demo.fragments import fragment
 from openglcontext_marble_demo.mechanisms.burner import Burner
-from openglcontext_marble_demo.pieces import LANE, Piece, Port, _lay, _rails
+from openglcontext_marble_demo.pieces import LANE, Piece, Port, lay, rails
 
 __all__ = ['furnace', 'RULE', 'VARIANTS']
 
@@ -65,10 +65,10 @@ def furnace(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, length:
 
     cells: dict = {}
     features: list = []
-    approach = _lay(cells, entry, 2, width=width)
+    approach = lay(cells, entry, 2, width=width)
     chamber = Port(cell=approach.ahead(1).cell, facing=entry.facing,
                    height=entry.height, width=width)
-    _lay(cells, chamber, length, width=width)
+    lay(cells, chamber, length, width=width)
 
     # One column is fire the whole way down and never gets an island.  Without
     # it every line across the chamber touches something cool sooner or later,
@@ -97,8 +97,8 @@ def furnace(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, length:
     if fire:
         features.append(Burner(cells=tuple(fire), burn_time=burn_time))
 
-    landing = _lay(cells, chamber.ahead(length), 2, width=width)
-    features.extend(_rails(cells, entry, length + 4, width=width))
+    landing = lay(cells, chamber.ahead(length), 2, width=width)
+    features.extend(rails(cells, entry, length + 4, width=width))
     return Piece(name='furnace', cells=cells, entry=entry,
                  exits={'ok': Port(cell=landing.cell, facing=entry.facing,
                                    height=entry.height, width=LANE)},

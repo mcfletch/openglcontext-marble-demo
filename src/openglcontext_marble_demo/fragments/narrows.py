@@ -19,7 +19,7 @@ wrong a player can be and ``taper`` is how long they have to put it right.
 from typing import Any
 
 from openglcontext_marble_demo.fragments import fragment
-from openglcontext_marble_demo.pieces import LANE, Piece, Port, _lay, _ring
+from openglcontext_marble_demo.pieces import LANE, Piece, Port, lay, ring
 
 __all__ = ['narrows', 'VARIANTS']
 
@@ -54,16 +54,16 @@ def narrows(rng: Any, entry: Any, variant: Any='plain', **named: Any) -> Any:
 
 def _narrows(entry: Any, theme: Any='stone', mouth: Any=7, taper: Any=2, hold: Any=2, throat: Any=1) -> Any:
     cells: dict = {}
-    port = _lay(cells, entry, taper, width=mouth)
+    port = lay(cells, entry, taper, width=mouth)
     for width in range(mouth - 2, throat, -2):
-        port = _lay(cells, port.ahead(1), taper, width=width)
-    port = _lay(cells, port.ahead(1), hold, width=throat)
+        port = lay(cells, port.ahead(1), taper, width=width)
+    port = lay(cells, port.ahead(1), hold, width=throat)
     for width in range(throat + 2, mouth + 1, 2):
-        port = _lay(cells, port.ahead(1), taper, width=width)
+        port = lay(cells, port.ahead(1), taper, width=width)
     exit_port = Port(cell=port.cell, facing=entry.facing, height=entry.height,
                      width=LANE)
     ways_out = set(entry.cells()) | set(exit_port.cells())
     return Piece(name='narrows', cells=cells, entry=entry,
                  exits={'ok': exit_port},
-                 features=_ring(cells, set(cells), gaps=ways_out), theme=theme,
+                 features=ring(cells, set(cells), gaps=ways_out), theme=theme,
                  rule=RULE)

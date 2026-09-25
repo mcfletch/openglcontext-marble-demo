@@ -50,7 +50,8 @@ __all__ = ['Port', 'Piece', 'Board', 'Theme', 'THEMES', 'PIECES', 'MAX_STEP',
            'DESIGN_TILT',
            'joined', 'distance', 'navigable', 'reachable_through',
            'chain', 'plateau', 'ramp_down', 'kicker', 'spillway',
-           'hairpin', 'bridge', 'scatter']
+           'hairpin', 'bridge', 'scatter',
+           'LANE', 'SIDE_OF', 'lay', 'slope', 'rails', 'ring', 'build_level']
 
 NEIGHBOURS = ((1, 0), (-1, 0), (0, 1), (0, -1))
 
@@ -74,7 +75,8 @@ MAX_STEP = 0.9
 #: How wide a way between places is, in cells.
 LANE = 3
 
-_SIDE_OF = {(0, -1): 'N', (0, 1): 'S', (1, 0): 'E', (-1, 0): 'W'}
+#: The side of a cell a wall stands on, by the (column, row) step across it.
+SIDE_OF = {step: side for side, step in Wall.OFFSET.items()}
 
 
 @dataclass(frozen=True)
@@ -167,7 +169,7 @@ class Piece:
     def level(self, **named: Any) -> Any:
         """This piece on its own, as a playable level -- which is how a joiner's
         rule is tested: put a marble on it and see whether the rule held."""
-        return _level([self], self.entry.cell, self.exit.cell, **named)
+        return build_level([self], self.entry.cell, self.exit.cell, **named)
 
 
 @dataclass
@@ -179,7 +181,7 @@ class Board:
     finish: tuple
 
     def level(self, **named: Any) -> Any:
-        return _level(self.pieces, self.start, self.finish, **named)
+        return build_level(self.pieces, self.start, self.finish, **named)
 
 
 # -- reachability ---------------------------------------------------------
@@ -281,7 +283,7 @@ def open_the_joins(cells: Any, features: Any) -> Any:
 
 # -- building blocks ------------------------------------------------------
 
-def _lay(cells: Any, port: Any, length: Any, height: Any=None, width: Any=None) -> Any:
+def lay(cells: Any, port: Any, length: Any, height: Any=None, width: Any=None) -> Any:
     """Fill ``length`` cells of lane from ``port`` along its facing.
 
     Answers the port at the far end.  Everything here is built out of this:
@@ -299,7 +301,7 @@ def _lay(cells: Any, port: Any, length: Any, height: Any=None, width: Any=None) 
                 height=height, width=width)
 
 
-def _slope(cells: Any, features: Any, port: Any, length: Any, drop: Any, width: Any=None) -> Any:
+def slope(cells: Any, features: Any, port: Any, length: Any, drop: Any, width: Any=None) -> Any:
     """A run of ``length`` cells falling ``drop`` in total, in equal steps.
 
     The step is capped at :data:`MAX_STEP`, so a slope that asked for more than
@@ -335,7 +337,7 @@ def _slope(cells: Any, features: Any, port: Any, length: Any, drop: Any, width: 
                 height=round(port.height + each * (steps - 1), 6), width=width)
 
 
-def _rails(cells: Any, port: Any, length: Any, sides: Any=('left', 'right'), width: Any=None) -> Any:
+def rails(cells: Any, port: Any, length: Any, sides: Any=('left', 'right'), width: Any=None) -> Any:
     """Walls down one or both sides of a run, facing outward."""
     width = port.width if width is None else width
     across = port.across()
@@ -346,23 +348,23 @@ def _rails(cells: Any, port: Any, length: Any, sides: Any=('left', 'right'), wid
         if 'left' in sides:
             cell = (at.cell[0] - across[0] * half, at.cell[1] - across[1] * half)
             if cell in cells:
-                made.append(Wall(cell=cell, side=_SIDE_OF[(-across[0], -across[1])]))
+                made.append(Wall(cell=cell, side=SIDE_OF[(-across[0], -across[1])]))
         if 'right' in sides:
             offset = width - 1 - half
             cell = (at.cell[0] + across[0] * offset, at.cell[1] + across[1] * offset)
             if cell in cells:
-                made.append(Wall(cell=cell, side=_SIDE_OF[across]))
+                made.append(Wall(cell=cell, side=SIDE_OF[across]))
     return made
 
 
-def _ring(cells: Any, region: Any, gaps: Any=()) -> Any:
+def ring(cells: Any, region: Any, gaps: Any=()) -> Any:
     """Walls round the outside of ``region``, except where a way leads out."""
     spared = set(gaps)
     made = []
     for cell in sorted(region):
         if cell in spared:
             continue
-        for step, side in _SIDE_OF.items():
+        for step, side in SIDE_OF.items():
             beside = (cell[0] + step[0], cell[1] + step[1])
             if beside not in cells:
                 made.append(Wall(cell=cell, side=side))
@@ -380,12 +382,12 @@ def plateau(rng: Any, entry: Any, theme: Any='stone', across: Any=None, along: A
     across = across or rng.choice((5, 5, 7))
     along = along or rng.choice((4, 5, 6))
     cells: dict = {}
-    end = _lay(cells, entry, along, width=across)
+    end = lay(cells, entry, along, width=across)
     exit_port = Port(cell=end.cell, facing=entry.facing, height=entry.height,
                      width=LANE)
     ways_out = set(entry.cells()) | set(exit_port.cells())
     return Piece(name='plateau', cells=cells, entry=entry, exits={'ok': exit_port},
-                 features=_ring(cells, set(cells), gaps=ways_out), theme=theme)
+                 features=ring(cells, set(cells), gaps=ways_out), theme=theme)
 
 
 # -- joiners --------------------------------------------------------------
@@ -401,8 +403,8 @@ def ramp_down(rng: Any, entry: Any, theme: Any='stone', drop: Any=None, length: 
     length = length or 4
     cells: dict = {}
     slopes: list = []
-    end = _slope(cells, slopes, entry, length, drop)
-    walls = _rails(cells, entry, len(cells) // entry.width, width=entry.width)
+    end = slope(cells, slopes, entry, length, drop)
+    walls = rails(cells, entry, len(cells) // entry.width, width=entry.width)
     return Piece(name='ramp_down', cells=cells, entry=entry, exits={'ok': end},
                  features=slopes + walls, theme=theme)
 
@@ -426,11 +428,11 @@ def kicker(rng: Any, entry: Any, theme: Any='stone', depth: Any=None, lift: Any=
     lift = abs(lift if lift is not None else rng.choice((3.6, 4.5)))
     cells: dict = {}
     slopes: list = []
-    bottom = _slope(cells, slopes, entry, 2, -depth)
-    flat = _lay(cells, bottom.ahead(1), 1, height=bottom.height)
-    top = _slope(cells, slopes, flat.ahead(1), 5, depth + lift)
+    bottom = slope(cells, slopes, entry, 2, -depth)
+    flat = lay(cells, bottom.ahead(1), 1, height=bottom.height)
+    top = slope(cells, slopes, flat.ahead(1), 5, depth + lift)
     length = max(row for _, row in cells) - min(row for _, row in cells) + 1
-    walls = _rails(cells, entry, length + 2)
+    walls = rails(cells, entry, length + 2)
     return Piece(name='kicker', cells=cells, entry=entry, exits={'ok': top},
                  features=slopes + walls, theme=theme,
                  rule='carry speed into it or crawl out the far side')
@@ -452,12 +454,12 @@ def spillway(rng: Any, entry: Any, theme: Any='stone', drop: Any=None, run_out: 
     drop = -abs(drop if drop is not None else rng.choice((1.8, 2.7)))
     cells: dict = {}
     slopes: list = []
-    bottom = _slope(cells, slopes, entry, 5, drop)
-    end = _lay(cells, bottom.ahead(1), run_out, height=bottom.height)
+    bottom = slope(cells, slopes, entry, 5, drop)
+    end = lay(cells, bottom.ahead(1), run_out, height=bottom.height)
     length = max(row for _, row in cells) - min(row for _, row in cells) + 1
     # Sides only.  The missing wall at the bottom is the whole piece.
     return Piece(name='spillway', cells=cells, entry=entry, exits={'ok': end},
-                 features=slopes + _rails(cells, entry, length + 2), theme=theme,
+                 features=slopes + rails(cells, entry, length + 2), theme=theme,
                  rule='hold the descent or run off the open end')
 
 
@@ -472,13 +474,13 @@ def hairpin(rng: Any, entry: Any, theme: Any='stone') -> Any:
     if entry.facing in ((1, 0), (-1, 0)):
         turn = rng.choice(((0, 1), (0, -1)))
     cells: dict = {}
-    straight = _lay(cells, entry, 4)
+    straight = lay(cells, entry, 4)
     corner = Port(cell=straight.cell, facing=turn, height=entry.height,
                   width=entry.width)
-    end = _lay(cells, corner.ahead(1), 4)
+    end = lay(cells, corner.ahead(1), 4)
     # The outside of the corner is walled; the inside is where the line is.
-    walls = _rails(cells, entry, 4, sides=('left', 'right'))
-    walls += _rails(cells, corner.ahead(1), 4, sides=('left', 'right'))
+    walls = rails(cells, entry, 4, sides=('left', 'right'))
+    walls += rails(cells, corner.ahead(1), 4, sides=('left', 'right'))
     walls = [wall for wall in walls if wall.cell in cells]
     return Piece(name='hairpin', cells=cells, entry=entry, exits={'ok': end},
                  features=walls, theme=theme,
@@ -494,9 +496,9 @@ def bridge(rng: Any, entry: Any, theme: Any='stone', length: Any=None) -> Any:
     """
     length = length or rng.choice((4, 5, 6))
     cells: dict = {}
-    mouth = _lay(cells, entry, 1)
-    narrow = _lay(cells, mouth.ahead(1), length, width=1)
-    end = _lay(cells, narrow.ahead(1), 1, width=entry.width)
+    mouth = lay(cells, entry, 1)
+    narrow = lay(cells, mouth.ahead(1), length, width=1)
+    end = lay(cells, narrow.ahead(1), 1, width=entry.width)
     return Piece(name='bridge', cells=cells, entry=entry,
                  exits={'ok': Port(cell=end.cell, facing=entry.facing,
                                    height=entry.height, width=entry.width)},
@@ -513,7 +515,7 @@ def scatter(rng: Any, entry: Any, theme: Any='rubber', length: Any=None) -> Any:
     """
     length = length or rng.choice((5, 6, 7))
     cells: dict = {}
-    end = _lay(cells, entry, length, width=5)
+    end = lay(cells, entry, length, width=5)
     across = entry.across()
     posts = []
     for step in range(1, length - 1):
@@ -524,7 +526,7 @@ def scatter(rng: Any, entry: Any, theme: Any='rubber', length: Any=None) -> Any:
             cell = (at.cell[0] + across[0] * offset, at.cell[1] + across[1] * offset)
             if cell in cells:
                 posts.append(Bumper(cell=cell))
-    walls = _rails(cells, entry, length, width=5)
+    walls = rails(cells, entry, length, width=5)
     return Piece(name='scatter', cells=cells, entry=entry,
                  exits={'ok': Port(cell=end.cell, facing=entry.facing,
                                    height=entry.height, width=entry.width)},
@@ -574,8 +576,8 @@ def chain(seed: int, names: Any, entry: Any=None, themes: Any=None) -> Any:
                  finish=built[-1].exit.cell)
 
 
-def _level(built: Any, start: Any, finish: Any, name: str='chained', time_limit: Any=None,
-           cell_size: float=CELL_SIZE, extra_cells: Any=None) -> Any:
+def build_level(built: Any, start: Any, finish: Any, name: str='chained', time_limit: Any=None,
+                cell_size: float=CELL_SIZE, extra_cells: Any=None) -> Any:
     """The cells and features of ``built`` as a playable level.
 
     ``extra_cells`` is board that belongs to no piece -- the runs a story lays

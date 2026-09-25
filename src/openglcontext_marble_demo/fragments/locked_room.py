@@ -20,7 +20,7 @@ from typing import Any
 
 from openglcontext_marble_demo.fragments import fragment
 from openglcontext_marble_demo.mechanisms.lever import Door, Lever
-from openglcontext_marble_demo.pieces import LANE, Piece, Port, _lay, _ring
+from openglcontext_marble_demo.pieces import LANE, Piece, Port, lay, ring
 
 __all__ = ['locked_room', 'RULE', 'VARIANTS']
 
@@ -51,7 +51,7 @@ def locked_room(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, acr
     hardness = hardness or settings['hardness']
 
     cells: dict = {}
-    room = _lay(cells, entry, along, width=across)
+    room = lay(cells, entry, along, width=across)
     channel = 'lock-%d' % rng.randrange(1 << 20)
 
     # The lever stands on the last cell of the room, facing the way in, so a
@@ -60,13 +60,13 @@ def locked_room(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, acr
                   facing=entry.facing)
     # The doorway is the way out, and the door fills it until the lever goes.
     doorway = room.ahead(1)
-    _lay(cells, doorway, 2, width=LANE)
+    lay(cells, doorway, 2, width=LANE)
     door = Door(cell=doorway.cell, channel=channel,
                 side={(0, 1): 'N', (0, -1): 'S', (1, 0): 'W',
                       (-1, 0): 'E'}[entry.facing])
 
     ways_out = set(entry.cells()) | set(doorway.cells())
-    features = _ring(cells, set(cells), gaps=ways_out) + [lever, door]
+    features = ring(cells, set(cells), gaps=ways_out) + [lever, door]
     return Piece(name='locked_room', cells=cells, entry=entry,
                  exits={'ok': Port(cell=doorway.ahead(1).cell,
                                    facing=entry.facing, height=entry.height,

@@ -32,7 +32,7 @@ FORK = 3
 #: goes in cells sideways.
 #: What each variant sets, by name. Values of every kind, which is what a
 #: variant is: the knob a fragment reads by that name.
-_VARIANTS: dict[str, dict[str, Any]] = {
+VARIANTS: dict[str, dict[str, Any]] = {
     'plain': {'theme': 'stone', 'plank': 4, 'detour': 5},
     'long': {'theme': 'stone', 'plank': 6, 'detour': 6},
     'foundry': {'theme': 'foundry', 'plank': 4, 'detour': 8},
@@ -46,7 +46,7 @@ MIN_DETOUR = 4
 
 @fragment('split', tags=('aim', 'place'), cost=5.0,
           rule='take the plank or pay for the long way round',
-          variants=tuple(_VARIANTS))
+          variants=tuple(VARIANTS))
 def split(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, plank: Any=None, detour: Any=None,
           side: Any=None) -> Any:
     """A room with two ways out: ``ok`` over the plank, ``long`` round the side.
@@ -54,7 +54,7 @@ def split(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, plank: An
     ``side`` is which way round the long one goes, ``1`` or ``-1`` across the
     facing; left to the rng when it is not asked for.
     """
-    settings = _VARIANTS[variant]
+    settings = VARIANTS[variant]
     theme = theme or settings['theme']
     plank = plank or settings['plank']
     detour = max(detour or settings['detour'], MIN_DETOUR)
@@ -64,12 +64,12 @@ def split(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, plank: An
     sideways = (across[0] * side, across[1] * side)
 
     cells: dict = {}
-    room = pieces._lay(cells, entry, FORK, width=entry.width + 2)
+    room = pieces.lay(cells, entry, FORK, width=entry.width + 2)
 
     # The quick way: one cell across, and nothing built beside it.
     narrow = Port(cell=room.cell, facing=entry.facing, height=entry.height, width=1)
-    plank_end = pieces._lay(cells, narrow.ahead(1), plank, width=1)
-    mouth = pieces._lay(cells, plank_end.ahead(1), 1, width=entry.width)
+    plank_end = pieces.lay(cells, narrow.ahead(1), plank, width=1)
+    mouth = pieces.lay(cells, plank_end.ahead(1), 1, width=entry.width)
     quick = Port(cell=mouth.cell, facing=entry.facing, height=entry.height,
                  width=entry.width)
 
@@ -77,21 +77,21 @@ def split(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, plank: An
     # on, so the two ways are level with one another where they finish.
     turn = Port(cell=room.ahead(-1).cell, facing=sideways, height=entry.height,
                 width=entry.width)
-    out = pieces._lay(cells, turn.ahead(1), detour)
+    out = pieces.lay(cells, turn.ahead(1), detour)
     down = Port(cell=out.cell, facing=entry.facing, height=entry.height,
                 width=entry.width)
-    along = pieces._lay(cells, down.ahead(1), plank + FORK - 1)
+    along = pieces.lay(cells, down.ahead(1), plank + FORK - 1)
     long_way = Port(cell=along.cell, facing=entry.facing, height=entry.height,
                     width=entry.width)
 
     # Walled wherever the floor stops, except at the three mouths and along the
-    # plank.  ``_ring`` puts a wall only where there is no neighbouring cell, so
+    # plank.  ``ring`` puts a wall only where there is no neighbouring cell, so
     # one call fences the room and the long way round without ever putting a
     # wall across the way between them.
     open_at = set(entry.cells()) | set(quick.cells()) | set(long_way.cells())
     open_at |= {narrow.ahead(step + 1).cell for step in range(plank)}
     return Piece(name='split', cells=cells, entry=entry,
                  exits={'ok': quick, 'long': long_way},
-                 features=pieces._ring(cells, set(cells), gaps=open_at),
+                 features=pieces.ring(cells, set(cells), gaps=open_at),
                  theme=theme,
                  rule='take the plank or pay for the long way round')

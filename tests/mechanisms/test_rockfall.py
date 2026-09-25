@@ -99,12 +99,12 @@ def _descend(feature, offset, speed=6.0):
     # The crash rule is the one thing on the way down that could turn a scatter
     # into a stop, so count the times it fires rather than infer it from speed.
     crashes = [0]
-    scrub = game.controller._scale_horizontal_speed
+    scrub = game.controller._scale_horizontal_speed  # noqa: SLF001 counts the crash rule's firings at the method that applies it
 
     def counted(retain):
         crashes[0] += 1
         return scrub(retain)
-    game.controller._scale_horizontal_speed = counted
+    game.controller._scale_horizontal_speed = counted  # noqa: SLF001 counts the crash rule's firings at the method that applies it
 
     world.position[marble] = (offset, 0.6, 0.0)
     world.linear_velocity[marble] = (0.0, 0.0, speed)

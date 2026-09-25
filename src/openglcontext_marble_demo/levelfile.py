@@ -32,7 +32,7 @@ from typing import Any
 
 from .level import Bumper, Elevator, Finish, Gate, Level, Ramp, RotatingArm, SpringTrap, Wall
 
-__all__ = ['VERSION', 'GENERATOR', 'FEATURES', 'SUFFIX',
+__all__ = ['VERSION', 'GENERATOR', 'FEATURES', 'SUFFIX', 'register_feature',
            'to_json', 'from_json', 'dumps', 'save', 'load']
 
 #: The format's version.  Raise it when a change would stop an older reader
@@ -59,6 +59,12 @@ FEATURES = {
     'arm': RotatingArm,
 }
 _KIND_OF = {cls: kind for kind, cls in FEATURES.items()}
+
+
+def register_feature(kind: str, cls: type) -> None:
+    """Save and load the dataclass ``cls`` under the name ``kind``."""
+    FEATURES[kind] = cls
+    _KIND_OF[cls] = kind
 
 #: Fields of :class:`~openglcontext_marble_demo.level.Level` that are written
 #: as they stand.  ``cells``, ``cell_surfaces`` and ``features`` are not: each

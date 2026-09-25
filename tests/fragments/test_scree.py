@@ -62,7 +62,7 @@ def _open_sides(piece, rows):
 
 @pytest.mark.parametrize('variant', VARIANTS)
 def test_the_slope_is_walled_down_both_sides(variant):
-    """`_rails` skips a cell that is not on the board, so rails asked for at one
+    """`rails` skips a cell that is not on the board, so rails asked for at one
     width fall outside a run laid at another and leave it open.  Asked for at the
     landing's width alone, every descending row of every variant was open on both
     sides — eight of them on `plain`, fourteen on `long`."""

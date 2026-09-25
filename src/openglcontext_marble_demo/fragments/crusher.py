@@ -40,7 +40,7 @@ RUN_OUT = 2
 #: a single press but on a shorter cycle -- the same rule, read faster.
 #: What each variant sets, by name. Values of every kind, which is what a
 #: variant is: the knob a fragment reads by that name.
-_VARIANTS: dict[str, dict[str, Any]] = {
+VARIANTS: dict[str, dict[str, Any]] = {
     'plain': {'theme': 'stone', 'presses': 1, 'width': LANE,
               'period': 3.0, 'strike': 0.25, 'dwell': 0.4},
     'foundry': {'theme': 'foundry', 'presses': 2, 'width': LANE,
@@ -54,11 +54,11 @@ _VARIANTS: dict[str, dict[str, Any]] = {
 
 @fragment('crusher', tags=('gate', 'hazard'), cost=8.0,
           rule='go under the press between blows; stopping there is what it catches',
-          variants=tuple(_VARIANTS))
+          variants=tuple(VARIANTS))
 def crusher(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, presses: Any=None, width: Any=None,
            period: Any=None, strike: Any=None, dwell: Any=None) -> Any:
     """A walled lane with ``presses`` presses striking across it in turn."""
-    settings = _VARIANTS[variant]
+    settings = VARIANTS[variant]
     theme = theme or settings['theme']
     presses = presses or settings['presses']
     width = width or settings['width']
@@ -70,7 +70,7 @@ def crusher(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, presses
     cells: dict = {}
     lane = Port(cell=entry.cell, facing=entry.facing, height=entry.height,
                 width=width)
-    end = pieces._lay(cells, lane, length)
+    end = pieces.lay(cells, lane, length)
 
     slabs = []
     for row in range(presses):
@@ -79,7 +79,7 @@ def crusher(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, presses
                              strike=strike, dwell=dwell, travel=entry.facing,
                              phase=row * period / presses))
 
-    walls = pieces._rails(cells, lane, length, width=width)
+    walls = pieces.rails(cells, lane, length, width=width)
     exit_port = Port(cell=end.cell, facing=entry.facing, height=entry.height,
                      width=entry.width)
     return Piece(name='crusher', cells=cells, entry=entry, exits={'ok': exit_port},

@@ -21,7 +21,7 @@ from typing import Any
 
 from openglcontext_marble_demo.fragments import fragment
 from openglcontext_marble_demo.level import Ramp
-from openglcontext_marble_demo.pieces import MAX_STEP, Piece, Port, _lay, _ring
+from openglcontext_marble_demo.pieces import MAX_STEP, Piece, Port, lay, ring
 
 __all__ = ['banked_turn', 'VARIANTS']
 
@@ -73,12 +73,12 @@ def _banked_turn(entry: Any, theme: Any='stone', run: Any=4, turn: Any=1, bank: 
     across = entry.across()
     aside = (across[0] * turn, across[1] * turn)
     cells: dict = {}
-    straight = _lay(cells, entry, run, width=width)
+    straight = lay(cells, entry, run, width=width)
     # The square where the legs meet is laid whole.  Two legs crossing leave the
     # outside of the bend missing, which is a hole exactly where the bank goes.
-    _lay(cells, straight, half + 1, width=width)
+    lay(cells, straight, half + 1, width=width)
     corner = Port(cell=straight.cell, facing=aside, height=entry.height, width=width)
-    end = _lay(cells, corner.ahead(half + 1), run, width=width)
+    end = lay(cells, corner.ahead(half + 1), run, width=width)
     for cell in cells:
         cells[cell] = round(entry.height + bank * _bank_lanes(entry, cell, run,
                                                               half, banks), 6)
@@ -86,7 +86,7 @@ def _banked_turn(entry: Any, theme: Any='stone', run: Any=4, turn: Any=1, bank: 
     ways_out = set(entry.cells()) | set(exit_port.cells())
     return Piece(name='banked_turn', cells=cells, entry=entry,
                  exits={'ok': exit_port},
-                 features=_ramps(cells) + _ring(cells, set(cells), gaps=ways_out),
+                 features=_ramps(cells) + ring(cells, set(cells), gaps=ways_out),
                  theme=theme, rule=RULE)
 
 

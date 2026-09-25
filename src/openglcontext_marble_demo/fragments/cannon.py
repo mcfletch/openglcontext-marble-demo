@@ -47,7 +47,7 @@ story can afford to send the two exits somewhere genuinely different.
 from typing import Any
 
 from openglcontext_marble_demo.level import Ramp, Wall
-from openglcontext_marble_demo.pieces import _SIDE_OF, LANE, Piece, Port, _lay, _rails
+from openglcontext_marble_demo.pieces import LANE, SIDE_OF, Piece, Port, lay, rails
 
 from . import fragment
 
@@ -103,8 +103,8 @@ def cannon(rng: Any, entry: Any, variant: Any='twin', theme: Any=None, lanes: An
     cells: dict = {}
     features: list = []
 
-    mouth = _lay(cells, entry, RUN_UP, width=width)
-    features.extend(_rails(cells, entry, RUN_UP, width=width))
+    mouth = lay(cells, entry, RUN_UP, width=width)
+    features.extend(rails(cells, entry, RUN_UP, width=width))
     divergence = mouth.ahead(1)
     across = entry.across()
     half = width // 2
@@ -116,18 +116,18 @@ def cannon(rng: Any, entry: Any, variant: Any='twin', theme: Any=None, lanes: An
         lane_entry = Port(cell=(divergence.cell[0] + across[0] * offset,
                                 divergence.cell[1] + across[1] * offset),
                           facing=entry.facing, height=divergence.height, width=1)
-        end = _lay(cells, lane_entry, rows, width=1)
+        end = lay(cells, lane_entry, rows, width=1)
         features.append(Ramp(cell=lane_entry.cell, direction=entry.facing,
                              rise=RISE, boost_speed=BOOST_SPEED, launch=True,
                              launch_up=launch_up))
-        features.extend(_rails(cells, lane_entry, rows, width=1))
+        features.extend(rails(cells, lane_entry, rows, width=1))
         if index == best:
-            pad = _lay(cells, end.ahead(1), 2, width=LANE)
-            features.extend(_rails(cells, end.ahead(1), 2, width=LANE))
+            pad = lay(cells, end.ahead(1), 2, width=LANE)
+            features.extend(rails(cells, end.ahead(1), 2, width=LANE))
             exits['ok'] = Port(cell=pad.cell, facing=entry.facing,
                                height=entry.height, width=LANE)
         else:
-            features.append(Wall(cell=end.cell, side=_SIDE_OF[entry.facing]))
+            features.append(Wall(cell=end.cell, side=SIDE_OF[entry.facing]))
             name = 'short' if index == 0 else 'lane%d' % index
             exits[name] = Port(cell=end.cell, facing=entry.facing,
                                height=entry.height, width=1)

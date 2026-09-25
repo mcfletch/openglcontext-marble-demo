@@ -20,7 +20,7 @@ from typing import Any
 
 from openglcontext_marble_demo.fragments import fragment
 from openglcontext_marble_demo.mechanisms.rockfall import Rockfall
-from openglcontext_marble_demo.pieces import LANE, Piece, Port, _lay, _rails, _slope
+from openglcontext_marble_demo.pieces import LANE, Piece, Port, lay, rails, slope
 
 __all__ = ['scree', 'RULE', 'VARIANTS']
 
@@ -57,16 +57,16 @@ def scree(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, length: A
 
     cells: dict = {}
     features: list = []
-    mouth = _lay(cells, entry, 2, width=width)
+    mouth = lay(cells, entry, 2, width=width)
 
     # The run the rock stands on.  The rockfall owns these cells -- it lays its
     # own tilted tiles over them -- but they are the track and the track belongs
     # to the level, so they are laid here.
     slope_features: list = []
-    foot = _slope(cells, slope_features, Port(cell=mouth.ahead(1).cell,
-                                              facing=entry.facing,
-                                              height=entry.height, width=width),
-                  length, drop, width=width)
+    foot = slope(cells, slope_features, Port(cell=mouth.ahead(1).cell,
+                                             facing=entry.facing,
+                                             height=entry.height, width=width),
+                 length, drop, width=width)
     fall = Rockfall(cell=mouth.ahead(1).cell, direction=entry.facing,
                     length=length, width=width, density=density,
                     seed=rng.randrange(1 << 30))
@@ -78,17 +78,17 @@ def scree(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, length: A
     # aim at: a narrow one would turn a randomiser into a coin toss.
     landing = Port(cell=(entry.cell[0], rows + 1), facing=entry.facing,
                    height=bottom, width=width + 2)
-    _lay(cells, landing, 3, height=bottom, width=width + 2)
-    # Twice, at the two widths the piece is: `_rails` skips a cell that is not
+    lay(cells, landing, 3, height=bottom, width=width + 2)
+    # Twice, at the two widths the piece is: `rails` skips a cell that is not
     # on the board, so rails asked for at the landing's width fall outside the
     # slope's own cells and leave the descent open on both sides.  Which is the
     # one place on the piece it must not be -- a rockfall's whole purpose is
     # knocking a marble sideways, and a marble knocked sideways off an unwalled
     # slope is off the board.
-    features.extend(_rails(cells, entry, rows + 1, width=width))
-    features.extend(_rails(cells, Port(cell=landing.cell, facing=entry.facing,
-                                       height=bottom, width=width + 2),
-                           3, width=width + 2))
+    features.extend(rails(cells, entry, rows + 1, width=width))
+    features.extend(rails(cells, Port(cell=landing.cell, facing=entry.facing,
+                                      height=bottom, width=width + 2),
+                          3, width=width + 2))
     return Piece(name='scree', cells=cells, entry=entry,
                  exits={'ok': Port(cell=landing.ahead(2).cell,
                                    facing=entry.facing, height=bottom,

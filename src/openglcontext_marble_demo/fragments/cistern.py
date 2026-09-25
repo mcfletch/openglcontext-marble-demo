@@ -27,7 +27,7 @@ from typing import Any
 
 from openglcontext_marble_demo.fragments import fragment
 from openglcontext_marble_demo.mechanisms.water import Water
-from openglcontext_marble_demo.pieces import LANE, Piece, Port, _lay, _rails, _slope
+from openglcontext_marble_demo.pieces import LANE, Piece, Port, lay, rails, slope
 
 __all__ = ['cistern', 'RULE', 'VARIANTS']
 
@@ -60,9 +60,9 @@ def cistern(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, depth: 
     cells: dict = {}
     features: list = []
 
-    approach = _lay(cells, entry, 2, width=LANE)
+    approach = lay(cells, entry, 2, width=LANE)
     pool_at = approach.ahead(1)
-    _lay(cells, pool_at, 1, width=LANE)
+    lay(cells, pool_at, 1, width=LANE)
     features.append(Water(cell=pool_at.cell, depth=depth))
 
     # The stair down beside the pool: the long way to the same place, and what
@@ -72,16 +72,16 @@ def cistern(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, depth: 
     beside = Port(cell=(approach.cell[0] + across[0] * hand * 2,
                         approach.cell[1] + across[1] * hand * 2),
                   facing=entry.facing, height=entry.height, width=LANE)
-    _lay(cells, Port(cell=(approach.cell[0] + across[0] * hand,
-                           approach.cell[1] + across[1] * hand),
-                     facing=entry.facing, height=entry.height, width=1), 1)
+    lay(cells, Port(cell=(approach.cell[0] + across[0] * hand,
+                          approach.cell[1] + across[1] * hand),
+                    facing=entry.facing, height=entry.height, width=1), 1)
     floor = entry.height - below
     stair_features: list = []
     # The stair decides where the chamber goes, rather than the other way about:
     # a slope is only allowed to fall so fast, so how many cells it needs is a
     # consequence of the depth and not something to be chosen and then violated.
-    foot = _slope(cells, stair_features, beside, 4, floor - entry.height,
-                  width=LANE)
+    foot = slope(cells, stair_features, beside, 4, floor - entry.height,
+                 width=LANE)
     features.extend(stair_features)
 
     # The chamber that catches what the plug lets out, set two cells beyond the
@@ -92,8 +92,8 @@ def cistern(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, depth: 
     # touch, and the stair is the only way between them that walks.
     catcher = Port(cell=(pool_at.cell[0], foot.cell[1]), facing=entry.facing,
                    height=floor, width=LANE + 2)
-    _lay(cells, catcher, run, height=floor, width=LANE + 2)
-    features.extend(_rails(cells, catcher, run, width=LANE + 2))
+    lay(cells, catcher, run, height=floor, width=LANE + 2)
+    features.extend(rails(cells, catcher, run, width=LANE + 2))
     return Piece(name='cistern', cells=cells, entry=entry,
                  exits={'ok': Port(cell=catcher.ahead(run - 1).cell,
                                    facing=entry.facing, height=floor,

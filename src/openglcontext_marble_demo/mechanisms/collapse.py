@@ -206,7 +206,7 @@ class CollapseWatch:
 class _Panel:
     """The collapsing floor itself: shut, then a quarter turn about its hinge.
 
-    Mirrors :class:`~openglcontext_marble_demo.mechanisms.water._Plug`: the
+    Mirrors :class:`~openglcontext_marble_demo.mechanisms.water.Plug`: the
     pose is a function of the animator's own clock, and :meth:`release` marks
     the moment on that clock, so the swing lasts ``duration`` seconds of the
     time the animator is actually given rather than of the game's.

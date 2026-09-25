@@ -267,8 +267,7 @@ class MarbleGame:
     def reset(self) -> None:
         """Abort the run: marble back to the start, clock full, playing again."""
         self.controller.checkpoint = self.level.start_cell
-        self.controller._checkpoint_surface = self.level.cells[self.level.start_cell]
-        self.controller._respawn()
+        self.controller.respawn()
         self.controller.forget_the_run()
         self.time_left = self.level.time_limit
         self.state = PLAYING

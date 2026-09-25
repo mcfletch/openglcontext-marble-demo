@@ -154,9 +154,9 @@ class Water:
 
     def _build_plug(self, scene: Any, site: Any, material: Any, result: Any) -> None:
         """The flap, its hinge animation, and the trigger that lets it go."""
-        plug = _Plug(hinge=(site.x - site.span / 2.0,
-                            site.floor - self.plug_thickness / 2.0, site.z),
-                     reach=site.span / 2.0, duration=self.open_time)
+        plug = Plug(hinge=(site.x - site.span / 2.0,
+                           site.floor - self.plug_thickness / 2.0, site.z),
+                    reach=site.span / 2.0, duration=self.open_time)
         shut, _ = plug.pose(0.0)
         body = _kinematic_box(scene, size=(site.span, self.plug_thickness, site.span),
                               position=shut, color=PLUG_COLOR, material_index=material)
@@ -231,7 +231,7 @@ class _Pool:
             self.world.linear_damping[body] = damping
 
 
-class _Plug:
+class Plug:
     """The flap in the floor of the pool: shut, then a quarter turn about its hinge.
 
     ``hinge`` is the centre of the hinged edge and ``reach`` how far the flap

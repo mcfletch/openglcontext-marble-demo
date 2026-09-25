@@ -48,7 +48,7 @@ __all__ = ['drop']
 #: than :data:`~openglcontext_marble_demo.pieces.MAX_STEP` in any of them.
 #: What each variant sets, by name. Values of every kind, which is what a
 #: variant is: the knob a fragment reads by that name.
-_VARIANTS: dict[str, dict[str, Any]] = {
+VARIANTS: dict[str, dict[str, Any]] = {
     'plain': {'theme': 'stone', 'fall': 2.7, 'gap': 1, 'landing': 1},
     'wide': {'theme': 'foundry', 'fall': 2.7, 'gap': 1, 'landing': 2},
     'long': {'theme': 'stone', 'fall': 3.6, 'gap': 2, 'landing': 2},
@@ -63,7 +63,7 @@ RUN_UP = 2
 
 @fragment('drop', tags=('speed', 'hazard'), cost=7.0,
           rule='leave the lip fast enough to reach the landing, and no faster',
-          variants=tuple(_VARIANTS))
+          variants=tuple(VARIANTS))
 def drop(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, fall: Any=None, gap: Any=None,
          landing: Any=None, side: Any=None) -> Any:
     """A lip, a gap, and a pad to come down on.
@@ -71,7 +71,7 @@ def drop(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, fall: Any=
     ``side`` is which side of the run-up the ledge steps down, ``1`` or ``-1``
     across the facing; left to the rng when it is not asked for.
     """
-    settings = _VARIANTS[variant]
+    settings = VARIANTS[variant]
     theme = theme or settings['theme']
     fall = abs(fall if fall is not None else settings['fall'])
     gap = gap or settings['gap']
@@ -87,15 +87,15 @@ def drop(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, fall: Any=
 
     across = entry.across()
     sideways = (across[0] * side, across[1] * side)
-    # Which of ``_rails``' two sides is the one the ledge is on.
+    # Which of ``rails``' two sides is the one the ledge is on.
     toward, away = ('right', 'left') if side > 0 else ('left', 'right')
 
     cells: dict = {}
-    lip = pieces._lay(cells, entry, RUN_UP)
+    lip = pieces.lay(cells, entry, RUN_UP)
     floor = entry.height - fall
     pad_entry = Port(cell=lip.ahead(gap + 1).cell, facing=entry.facing,
                      height=floor, width=entry.width)
-    pad = pieces._lay(cells, pad_entry, landing)
+    pad = pieces.lay(cells, pad_entry, landing)
 
     # The ledge: one cell across, outside the lane on ``side``, stepping down
     # beside the gap from the lip's row to the landing's first row.
@@ -114,16 +114,16 @@ def drop(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, fall: Any=
             ramps.append(Ramp(cell=at.cell, direction=entry.facing, rise=rise,
                               boost_speed=None))
 
-    walls = pieces._rails(cells, entry, RUN_UP, sides=(away,))
+    walls = pieces.rails(cells, entry, RUN_UP, sides=(away,))
     # The run-up's ledge side is closed until the lip, so the only way onto the
     # ledge is at the point where the way straight on has run out.
-    walls += pieces._rails(cells, entry, RUN_UP - 1, sides=(toward,))
-    walls += pieces._rails(cells, ledge, steps, sides=(toward,), width=1)
-    walls += pieces._rails(cells, pad_entry, landing, sides=(away,))
+    walls += pieces.rails(cells, entry, RUN_UP - 1, sides=(toward,))
+    walls += pieces.rails(cells, ledge, steps, sides=(toward,), width=1)
+    walls += pieces.rails(cells, pad_entry, landing, sides=(away,))
     # The landing's ledge side is open only where the ledge arrives.
     if landing > 1:
-        walls += pieces._rails(cells, pad_entry.ahead(1), landing - 1,
-                               sides=(toward,))
+        walls += pieces.rails(cells, pad_entry.ahead(1), landing - 1,
+                              sides=(toward,))
     return Piece(name='drop', cells=cells, entry=entry, exits={'ok': pad},
                  features=ramps + [wall for wall in walls if wall.cell in cells],
                  theme=theme,

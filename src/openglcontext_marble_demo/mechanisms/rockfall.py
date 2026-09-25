@@ -203,7 +203,7 @@ class Rockfall:
 
         A cell's height is the height of its uphill edge and the tile falls
         across it to meet the next one, which is the convention
-        :func:`~openglcontext_marble_demo.pieces._slope` builds terraces in.
+        :func:`~openglcontext_marble_demo.pieces.slope` builds terraces in.
         """
         base = level.cells[cell]
         return base + (0.5 + along / level.cell_size) * self._fall(level, cell)

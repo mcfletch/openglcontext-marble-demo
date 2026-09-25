@@ -75,7 +75,7 @@ def main(argv=None):
         # Stand in for the player's hands: the frames run with this held, so a
         # picture can show the board leaning rather than only sitting level.
         held = tuple(args.lean)
-        MarbleContext._lean_demand = lambda self, held=held: held
+        MarbleContext.lean_demand = lambda _self, held=held: held
     if args.size is not None:
         MarbleContext.ContextMainLoop(size=args.size)
     else:

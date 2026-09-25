@@ -49,7 +49,7 @@ WALL_MARGIN = 2.0
 #: without a ramp ever being drawn -- the platform is the ramp.
 #: What each variant sets, by name. Values of every kind, which is what a
 #: variant is: the knob a fragment reads by that name.
-_VARIANTS: dict[str, dict[str, Any]] = {
+VARIANTS: dict[str, dict[str, Any]] = {
     'plain':   {'theme': 'stone',   'travel': 1.0, 'period': 3.0, 'gains': (0.6,)},
     'brisk':   {'theme': 'ice',     'travel': 1.0, 'period': 1.8, 'gains': (0.6,)},
     'foundry': {'theme': 'foundry', 'travel': 1.3, 'period': 4.0, 'gains': (0.85,)},
@@ -60,7 +60,7 @@ _VARIANTS: dict[str, dict[str, Any]] = {
 @fragment('lift', tags=('aim', 'luck'), cost=4.0,
           rule="step off while a platform is level with somewhere -- "
                "wait longer and you go higher",
-          variants=tuple(_VARIANTS))
+          variants=tuple(VARIANTS))
 def lift(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, travel: Any=None, period: Any=None,
          gains: Any=None) -> Any:
     """A wide approach into parallel lanes: one flat, the rest riding lifts.
@@ -71,7 +71,7 @@ def lift(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, travel: An
     so a marble commits to one during the wide approach and cannot drift
     into another once the platforms start moving underneath it.
     """
-    settings = _VARIANTS[variant]
+    settings = VARIANTS[variant]
     theme = theme or settings['theme']
     travel = travel if travel is not None else settings['travel']
     period = period if period is not None else settings['period']
@@ -92,7 +92,7 @@ def lift(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, travel: An
     exits: dict = {}
     open_at = set(entry.cells())
 
-    lead_end = pieces._lay(cells, entry, LEAD, width=entry.width)
+    lead_end = pieces.lay(cells, entry, LEAD, width=entry.width)
     row0 = lead_end.ahead(1)
 
     def lane_cell(offset: Any, ahead: Any) -> Any:
@@ -113,7 +113,7 @@ def lift(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, travel: An
             run_height = base + gain
         run_port = Port(cell=second, facing=entry.facing, height=run_height,
                         width=1)
-        end = pieces._lay(cells, run_port.ahead(1), RUN_OUT, width=1)
+        end = pieces.lay(cells, run_port.ahead(1), RUN_OUT, width=1)
         exits[name] = end
         open_at.add(end.cell)
 
@@ -124,10 +124,10 @@ def lift(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, travel: An
         for ahead in range(0, RUN_OUT + 1):
             cell = lane_cell(offset, ahead)
             for side in (across, left):
-                walls.append(Wall(cell=cell, side=pieces._SIDE_OF[side],
+                walls.append(Wall(cell=cell, side=pieces.SIDE_OF[side],
                                   height=tall))
 
-    boundary = pieces._ring(cells, set(cells), gaps=open_at)
+    boundary = pieces.ring(cells, set(cells), gaps=open_at)
     return Piece(name='lift', cells=cells, entry=entry, exits=exits,
                 features=elevators + walls + boundary, theme=theme,
                 rule="step off while a platform is level with somewhere -- "

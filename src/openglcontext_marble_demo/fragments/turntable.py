@@ -55,7 +55,7 @@ RUN_OUT = 2
 #: than being delayed, which the piece must never do.
 #: What each variant sets, by name. Values of every kind, which is what a
 #: variant is: the knob a fragment reads by that name.
-_VARIANTS: dict[str, dict[str, Any]] = {
+VARIANTS: dict[str, dict[str, Any]] = {
     'plain': {'theme': 'stone', 'hub': 1, 'rpm': 20.0,
               'exits': ('ok', 'left', 'right')},
     'brisk': {'theme': 'ice', 'hub': 1, 'rpm': 30.0,
@@ -79,29 +79,29 @@ def _side_port(hub_cell: Any, across: Any, side: Any, radius: Any, height: Any) 
 
 
 @fragment('turntable', tags=('aim', 'luck'), cost=4.0, rule=RULE,
-          variants=tuple(_VARIANTS))
+          variants=tuple(VARIANTS))
 def turntable(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, hub: Any=None, rpm: Any=None,
               exits: Any=None) -> Any:
     """A lead-in lane, a hub with a spinning bar in it, and a mouth per way off."""
-    settings = _VARIANTS[variant]
+    settings = VARIANTS[variant]
     theme = theme or settings['theme']
     radius = hub or settings['hub']
     rpm = settings['rpm'] if rpm is None else rpm
     exits = tuple(exits) if exits is not None else settings['exits']
 
     cells: dict = {}
-    lead_end = pieces._lay(cells, entry, LEAD)
+    lead_end = pieces.lay(cells, entry, LEAD)
     hub_width = radius * 2 + 1
     hub_start = lead_end.ahead(1)
     # A cross, not a filled square: a corner the horizontal arm does not reach
     # and the vertical one does not pass through is a pocket the board's lean
     # pushes a marble into and nothing ever pulls it back out of -- found by
     # simulating the hub at radius 2, where the far corners are exactly that.
-    far_row = pieces._lay(cells, hub_start, hub_width, width=LANE)
+    far_row = pieces.lay(cells, hub_start, hub_width, width=LANE)
     hub_cell = hub_start.ahead(radius).cell
     across_row = Port(cell=hub_cell, facing=entry.facing, height=entry.height,
                       width=hub_width)
-    pieces._lay(cells, across_row, 1, width=hub_width)
+    pieces.lay(cells, across_row, 1, width=hub_width)
     across = entry.across()
 
     open_at = set(entry.cells())
@@ -111,7 +111,7 @@ def turntable(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, hub: 
         mouth = Port(cell=far_row.cell, facing=entry.facing, height=entry.height,
                      width=LANE)
         open_at |= set(mouth.cells())
-        run_out = pieces._lay(cells, mouth.ahead(1), RUN_OUT, width=LANE)
+        run_out = pieces.lay(cells, mouth.ahead(1), RUN_OUT, width=LANE)
         exit_port = Port(cell=run_out.cell, facing=entry.facing,
                          height=entry.height, width=LANE)
         open_at |= set(exit_port.cells())
@@ -122,13 +122,13 @@ def turntable(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, hub: 
             continue
         mouth = _side_port(hub_cell, across, side, radius, entry.height)
         open_at |= set(mouth.cells())
-        run_out = pieces._lay(cells, mouth.ahead(1), RUN_OUT, width=LANE)
+        run_out = pieces.lay(cells, mouth.ahead(1), RUN_OUT, width=LANE)
         exit_port = Port(cell=run_out.cell, facing=mouth.facing,
                          height=entry.height, width=LANE)
         open_at |= set(exit_port.cells())
         exit_ports[name] = exit_port
 
-    walls = pieces._ring(cells, set(cells), gaps=open_at)
+    walls = pieces.ring(cells, set(cells), gaps=open_at)
     disc = Turntable(cell=hub_cell, radius=radius, rpm=rpm)
     return Piece(name='turntable', cells=cells, entry=entry, exits=exit_ports,
                  features=[disc] + walls, theme=theme, rule=RULE)

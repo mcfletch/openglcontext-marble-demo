@@ -75,7 +75,7 @@ def test_the_door_goes_back_where_it_was():
 def test_resetting_shuts_the_plug_again():
     game = _game([water_module.Water(cell=(0, 4))])
     plugs = [item for item in game.build.resettable
-             if isinstance(item, water_module._Plug)]
+             if isinstance(item, water_module.Plug)]
     assert plugs
     plugs[0].release(game.scene.world, game.marble.index)
     assert plugs[0].released_at is not None

@@ -26,7 +26,7 @@ from typing import Any
 
 from openglcontext_marble_demo.fragments import fragment
 from openglcontext_marble_demo.mechanisms.seesaw import Seesaw
-from openglcontext_marble_demo.pieces import LANE, Piece, Port, _lay, _rails
+from openglcontext_marble_demo.pieces import LANE, Piece, Port, lay, rails
 
 __all__ = ['seesaw', 'RULE', 'VARIANTS']
 
@@ -66,15 +66,15 @@ def seesaw(rng: Any, entry: Any, variant: Any='plain', theme: Any=None, length: 
     cells: dict = {}
 
     # A short mouth at the plank's own width, so lining up for it is a choice.
-    mouth = _lay(cells, entry, 2, width=width)
+    mouth = lay(cells, entry, 2, width=width)
     plank_start = mouth.ahead(1)
-    plank_end = _lay(cells, plank_start, length, width=width)
-    landing = _lay(cells, plank_end.ahead(1), 2, width=width)
+    plank_end = lay(cells, plank_start, length, width=width)
+    landing = lay(cells, plank_end.ahead(1), 2, width=width)
 
     plank = Seesaw(cell=plank_start.cell, facing=entry.facing, length=length,
                    width=width, max_tilt=max_tilt, response=response)
     total = 2 + length + 2
-    features = [plank] + _rails(cells, entry, total, width=width)
+    features = [plank] + rails(cells, entry, total, width=width)
 
     return Piece(name='seesaw', cells=cells, entry=entry,
                  exits={'ok': Port(cell=landing.cell, facing=entry.facing,
