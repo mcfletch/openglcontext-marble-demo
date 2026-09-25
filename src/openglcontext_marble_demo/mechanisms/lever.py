@@ -11,10 +11,9 @@ when its lever is thrown.  Shut it is a barrier like any other; open it has
 dropped a cell's thickness below the surface, which is both how it stops
 colliding and how a player sees it go -- the leaf slides down out of the way.
 Nothing is removed from the world, so the door keeps its body and its place in
-the scene and could be shut again by putting it back.  It stays open for the
-life of the build: a run started over with
-:meth:`~openglcontext_marble_demo.game.MarbleGame.reset` finds it open, and the
-level is built again to set it back.
+the scene. A run started over with
+:meth:`~openglcontext_marble_demo.game.MarbleGame.reset` shuts every door and
+stands every paddle up again.
 
 The two find each other by **channel**: a string both carry, so a board says
 which lever opens which door and neither holds a reference to the other.  One
@@ -26,7 +25,8 @@ on ``'vault'`` all go down together, and any lever on ``'vault'`` opens them.
 
 **How hard is hard enough.**  ``hardness`` is a closing speed in metres a
 second: how fast the marble and the paddle were coming together along the
-contact normal at the moment they met.  The world reports it on the step the
+contact normal at the moment they met. Only the marble's blows count: anything
+else on the board bounces off the paddle whatever its speed.  The world reports it on the step the
 blow lands, as the ``approach`` of a contact event on the paddle, so the
 number a designer writes is the speed the marble has to arrive at, and it can
 be compared with the marble's own speed on the HUD.  The default, 4 m/s, is
@@ -170,29 +170,11 @@ class Lever:
         world.report_contacts(body.index)
         if world.contact_reporting == 'off':
             world.contact_reporting = 'flagged'
-        world.add_contact_listener(self._struck(
-            world, body.index, _channel(result, self.channel), (x, base, z), facing))
-
-    def _struck(self, world: Any, lever: Any, channel: Any, foot: Any,
-                facing: Any) -> Any:
-        """The paddle's contact listener: weigh each blow, and go over for a hard one.
-
-        It runs inside the physics step that the blow lands on, so the paddle
-        is laid over before the next step and the marble carries on past it.
-        """
-        hardness = self.hardness
-        going_over = self._going_over(foot, facing)
-        state = {'over': False}
-
-        def struck(event: Any) -> None:
-            if (state['over'] or event.phase == 'end'
-                    or lever not in (event.a.index, event.b.index)
-                    or event.approach <= hardness):
-                return
-            state['over'] = True
-            going_over(world, lever)
-            channel.throw()
-        return struck
+        paddle = _Paddle(world, body.index, self.hardness, result,
+                         _channel(result, self.channel),
+                         self._going_over((x, base, z), facing))
+        world.add_contact_listener(paddle.struck)
+        result.resettable.append(paddle)
 
     def _going_over(self, foot: Any, facing: Any) -> Any:
         """A call that lays the paddle over about its foot, toward ``facing``."""
@@ -209,6 +191,44 @@ class Lever:
         def over(world: Any, index: Any) -> None:
             world.place_body(index, position=middle, orientation=quaternion)
         return over
+
+
+class _Paddle:
+    """One lever's paddle: goes over for the marble's hard blow, stands up on reset.
+
+    :meth:`struck` is a contact listener, so it runs inside the physics step
+    the blow lands on and the paddle is laid over before the next step: the
+    marble carries on past it.
+    """
+
+    def __init__(self, world: Any, index: int, hardness: float, result: Any,
+                 channel: Any, going_over: Any) -> None:
+        self.world = world
+        self.index = index
+        self.hardness = hardness
+        self.result = result
+        self.channel = channel
+        self.going_over = going_over
+        self.over = False
+        self._upright = (tuple(float(v) for v in world.position[index]),
+                         tuple(float(v) for v in world.orientation[index]))
+
+    def struck(self, event: Any) -> None:
+        """Weigh one contact on the paddle, and go over for a hard one from the marble."""
+        if self.over or event.phase == 'end' or event.approach <= self.hardness:
+            return
+        ends = (event.a.index, event.b.index)
+        if self.index not in ends or self.result.marble not in ends:
+            return
+        self.over = True
+        self.going_over(self.world, self.index)
+        self.channel.throw()
+
+    def reset(self, world: Any = None) -> None:
+        """Stand the paddle up where it was built, ready to be thrown again."""
+        position, orientation = self._upright
+        self.world.place_body(self.index, position=position, orientation=orientation)
+        self.over = False
 
 
 @mechanism('door')

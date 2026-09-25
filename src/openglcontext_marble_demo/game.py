@@ -138,6 +138,7 @@ class MarbleGame:
 
         self.build = level.build_into(self.scene, self.material_index)
         self.marble = self._spawn_marble()
+        self.build.marble = self.marble.index
         # Everything the board is made of hangs off one Transform, so the lean
         # can be *drawn*: see :meth:`scene_graph`.
         self.board = Transform(children=list(self.scene.children))

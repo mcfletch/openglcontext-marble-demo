@@ -404,6 +404,11 @@ class BuildResult:
     # and here rather than hung off the result by each mechanism that wants it,
     # because every mechanism that talks to another will want the same table.
     channels: dict = field(default_factory=dict)
+    # The marble's body index, which the game sets once it has spawned the
+    # marble. A mechanism that listens to the world from the moment it is
+    # built reads it here when it hears a contact, to tell the marble from
+    # anything else that strikes it.
+    marble: Any = None
 
 
 #: How far below the lowest tile of a board the kill plane sits.
