@@ -379,3 +379,28 @@ def test_a_lethal_blow_in_an_early_step_of_a_slow_frame_still_destroys():
         if ctrl.update(frame) != ACTIVE:
             break
     assert ctrl.state == DESTROYED and ctrl.last_loss == STRUCK
+
+
+def test_blows_taken_while_lost_are_not_read_after_the_respawn():
+    """A lost marble is still in the world, and things still hit it.
+
+    It rolls on into the wall again during the destroy delay; the marble set
+    down at the checkpoint afterwards has not been struck.
+    """
+    world, index = _world()
+    _wall(world, index, 8.0)
+    i = _marble(world, index, velocity=(30.0, 0.0, 0.0))
+    ctrl = _controller(world, i)
+    for _ in range(120):
+        world.step(DT)
+        if ctrl.update(DT) != ACTIVE:
+            break
+    assert ctrl.state == DESTROYED and ctrl.loss_count == 1
+    world.position[i] = (5.0, RADIUS, 0.0)
+    world.linear_velocity[i] = (30.0, 0.0, 0.0)
+    while ctrl.state != ACTIVE:
+        world.step(DT)
+        ctrl.update(DT)
+    world.step(DT)
+    assert ctrl.update(DT) == ACTIVE
+    assert ctrl.loss_count == 1

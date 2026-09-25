@@ -337,9 +337,14 @@ class MarbleController:
         world.add_contact_listener(self._touch)
 
     def _touch(self, event: Any) -> None:
-        """Keep one step's contact on the marble, the hardest blow of the frame kept."""
+        """Keep one step's contact on the marble, the hardest blow of the frame kept.
+
+        Only while the marble is in play: a lost marble is still in the world
+        and can still be struck, and nothing reads those blows.
+        """
         i = self.index
-        if event.phase == 'end' or i not in (event.a.index, event.b.index):
+        if (self.state != ACTIVE or event.phase == 'end'
+                or i not in (event.a.index, event.b.index)):
             return
         mine = event.a.index == i
         other = event.b.index if mine else event.a.index
@@ -538,6 +543,11 @@ class MarbleController:
         self._fell_from = 0.0
         self._since_air = self.LANDING_GRACE + 1
         self._squeezed_for = 0.0
+        # Nor has it been struck there: whatever was recorded before it was
+        # lost belongs to the marble that was.
+        self._touched.clear()
+        self._last_touches = []
+        self._read_at = self.world.step_count
         self.state = ACTIVE
         self.respawn_timer = 0.0
         if not was_lost:
