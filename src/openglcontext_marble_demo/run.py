@@ -34,9 +34,8 @@ from collections.abc import Mapping
 from types import MappingProxyType
 from typing import Any, ClassVar
 
-# Core profile + GLFW + the PBR renderer with image-based lighting give reflective
-# marbles and shadows; set before OpenGLContext imports a backend so it takes effect.
-os.environ.setdefault("OPENGLCONTEXT_BACKEND", "glfw")
+# The PBR renderer with image-based lighting gives reflective marbles and
+# shadows; set before OpenGLContext is imported so it takes effect.
 os.environ.setdefault("OPENGLCONTEXT_RENDERER", "pbr")
 os.environ.setdefault("OPENGLCONTEXT_IBL", "full")
 # Every session is recorded unless the caller says otherwise.  A gameplay fault
@@ -48,7 +47,8 @@ os.environ.setdefault("OPENGLCONTEXT_IBL", "full")
 os.environ.setdefault("OPENGLCONTEXT_TELEMETRY", "1")
 
 import numpy as np
-from OpenGLContext import testingcontext
+from OpenGLContext.context import Context
+from OpenGLContext.contextdefinition import ContextDefinition
 from OpenGLContext.events.systemtime import systemTime
 from OpenGLContext.move.followcam import FollowCamera
 from OpenGLContext.physics.demo import disable_vsync
@@ -58,10 +58,6 @@ from OpenGLContext.video.recorder import RecordingMixin
 from . import generator, levelfile, materials, pilot
 from .game import BASE_TILT, PLAYER_TILT, PLAYING, ROLL_DAMPING, SPIN, TILT, MarbleGame
 from .hud import HUD
-
-# Annotated Any: the base class is chosen at runtime by the backend the
-# environment above selects, so it is not a name a checker can resolve.
-BaseContext: Any = testingcontext.getInteractive()
 
 # Isometric-style camera: 30° elevation above the ground *and* 30° of yaw (looking
 # in from a corner) so the boxes show two faces and the scene reads as 3D — not the
@@ -143,8 +139,12 @@ Marble — arrows or WASD lean the board; the board is level until you lean it.
 """
 
 
-class MarbleContext(RecordingMixin, BaseContext):
+class MarbleContext(RecordingMixin, Context):
     """An OpenGLContext window that plays a generated marble level."""
+
+    windowSystemName = 'glfw'
+    #: No navigation: the follow camera is the one thing that moves the view.
+    contextDefinition = ContextDefinition(navigation=None)
 
     # Class attributes set by main() from the command line.
     marble_name = "steel"
@@ -175,16 +175,6 @@ class MarbleContext(RecordingMixin, BaseContext):
     def OnInit(self) -> None:
         disable_vsync()
         _say_where_the_journal_is(self)
-
-        # The follow camera is the sole driver of context.platform, so unbind the
-        # default free-fly movement manager or the two fight over the camera.
-        # Read through the class this mixes with rather than off `self`:
-        # a checker settles an attribute's type from the first assignment
-        # it sees, and the one below is `None`.
-        manager: Any = getattr(self, 'movementManager', None)
-        if manager is not None:
-            manager.unbind(self)
-            self.movementManager = None
         self.view_offset = camera_offset(self.camera_distance)
         self.camera = FollowCamera(self.platform, offset=self.view_offset,
                                    pull_back=CAMERA_PULL_BACK,
