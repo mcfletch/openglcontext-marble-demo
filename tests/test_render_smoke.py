@@ -28,7 +28,7 @@ def _has_gl():
 def test_demo_renders_a_non_blank_frame(tmp_path):
     env = dict(os.environ)
     env.update(
-        OPENGLCONTEXT_PROFILE="core", OPENGLCONTEXT_BACKEND="glfw",
+        OPENGLCONTEXT_PROFILE="core",
         OPENGLCONTEXT_RENDERER="pbr", OPENGLCONTEXT_IBL="full",
         OPENGLCONTEXT_DISABLE_FPS_DISPLAY="1",
         OPENGLCONTEXT_AUTO_EXIT_FRAMES="40",

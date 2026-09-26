@@ -52,7 +52,7 @@ def main(argv=None):
     if name.endswith(".png"):
         name = name[:-4]
     os.environ.update(
-        OPENGLCONTEXT_PROFILE="core", OPENGLCONTEXT_BACKEND="glfw",
+        OPENGLCONTEXT_PROFILE="core",
         OPENGLCONTEXT_RENDERER="pbr", OPENGLCONTEXT_IBL="full",
         OPENGLCONTEXT_DISABLE_FPS_DISPLAY="1",
         OPENGLCONTEXT_AUTO_EXIT_FRAMES=str(args.frames),
