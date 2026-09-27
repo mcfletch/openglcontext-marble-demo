@@ -12,6 +12,7 @@ designer loses without being told.
 import dataclasses
 import json
 import math
+import os
 
 import pytest
 
@@ -211,7 +212,7 @@ def test_a_failed_write_leaves_the_previous_file_alone(tmp_path, monkeypatch):
 
     def explode(_source, _destination):
         raise OSError('disk full')
-    monkeypatch.setattr(levelfile.os, 'replace', explode)
+    monkeypatch.setattr(os, 'replace', explode)
     with pytest.raises(OSError):
         levelfile.save(_level(name='replacement'), str(path))
     assert 'original' in path.read_text(encoding='utf-8')

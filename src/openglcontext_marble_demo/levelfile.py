@@ -22,14 +22,12 @@ spelled and re-parsed.
     >>> from_json(to_json(board)).cells == board.cells
     True
 """
-import contextlib
 import dataclasses
 import json
-import os
-import tempfile
 import typing
 from typing import Any
 
+from OpenGLContext import atomicfiles
 from OpenGLContext.loaders.documentvalues import (
     DocumentError,
     JSONObject,
@@ -256,26 +254,12 @@ def dumps(document: Any) -> Any:
 def save(level: Any, path: str) -> Any:
     """Write ``level`` to ``path``; return the path.
 
-    Written beside the target and moved onto it, because a board file is the
-    only copy of what a designer drew: a write that truncated the file first
-    would leave nothing at all if the disk filled or the machine went down half
-    way through.  ``os.replace`` is atomic on every platform this runs on, so
-    the file is either the old board or the new one.
+    Written whole or not at all (:func:`OpenGLContext.atomicfiles.write_text`),
+    because a board file is the only copy of what a designer drew: a write that
+    truncated the file first would leave nothing at all if the disk filled or
+    the machine went down half way through.
     """
-    document = dumps(to_json(level))
-    beside = os.path.dirname(os.path.abspath(path))
-    handle, temporary = tempfile.mkstemp(dir=beside, suffix='.marble-new')
-    try:
-        with os.fdopen(handle, 'w', encoding='utf-8') as writing:
-            writing.write(document)
-        os.replace(temporary, path)
-    except BaseException:
-        # Nothing half-written left beside the designer's file, whatever went
-        # wrong -- including an interrupt.
-        with contextlib.suppress(OSError):
-            os.unlink(temporary)
-        raise
-    return path
+    return atomicfiles.write_text(path, dumps(to_json(level)))
 
 
 def load(path: str) -> Any:
